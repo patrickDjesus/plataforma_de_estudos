@@ -389,8 +389,22 @@ export async function importBackup(json: string) {
   if (parsed?.app !== 'mendonca' || !parsed.data) throw new Error('Arquivo não é um backup do Mendonça.')
   await db.transaction('rw', TABLES.map((t) => db.table(t)), async () => {
     for (const t of TABLES) {
-      await db.table(t).clear()
+      await wipeTable(t)
       if (Array.isArray(parsed.data[t])) await db.table(t).bulkAdd(parsed.data[t])
     }
+  })
+}
+
+/** Apaga registro por registro (e não com clear()) para a nuvem receber cada exclusão. */
+async function wipeTable(t: string) {
+  const keys = await db.table(t).toCollection().primaryKeys()
+  if (keys.length) await db.table(t).bulkDelete(keys)
+}
+
+/** Reinicia o Mendonça: apaga tudo neste navegador e, pela sincronização, na nuvem. */
+export async function resetAllData() {
+  await db.transaction('rw', [...TABLES.map((t) => db.table(t)), db.timer], async () => {
+    for (const t of TABLES) await wipeTable(t)
+    await db.timer.clear()
   })
 }

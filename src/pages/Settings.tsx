@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
-import { Download, Settings2, Upload } from 'lucide-react'
+import { Download, RotateCcw, Settings2, Upload } from 'lucide-react'
 import { useSettings } from '../db/hooks'
-import { exportBackup, importBackup, updateSettings } from '../db/repo'
+import { exportBackup, importBackup, resetAllData, updateSettings } from '../db/repo'
+import { useNavigate } from 'react-router-dom'
 import type { Settings } from '../db/types'
 import { toISODate } from '../lib/dates'
 import { Btn, Card, Field, PageHeader, inputCls } from '../components/ui'
@@ -45,6 +46,8 @@ export function SettingsPage() {
   const settings = useSettings()
   const fileRef = useRef<HTMLInputElement>(null)
   const [msg, setMsg] = useState('')
+  const [resetting, setResetting] = useState(false)
+  const navigate = useNavigate()
   const [backupText, setBackupText] = useState('')
   const [pasted, setPasted] = useState('')
 
@@ -188,6 +191,31 @@ export function SettingsPage() {
             </Btn>
           </div>
           {msg && <p className="mt-3 text-sm font-semibold">{msg}</p>}
+        </Card>
+
+        <Card className="border-rose-100 lg:col-span-2">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="max-w-xl">
+              <h2 className="text-lg font-bold text-rose-700">Reiniciar todos os dados</h2>
+              <p className="text-sm text-muted">
+                Apaga matérias, tópicos, notas, semanas, histórico, revisões, mapa, conquistas e ajustes, neste navegador e na nuvem (os outros dispositivos também são limpos). Não dá para desfazer: exporte um backup antes se quiser guardar algo.
+              </p>
+            </div>
+            <Btn
+              variant="danger"
+              disabled={resetting}
+              onClick={async () => {
+                if (!(await askConfirm('Apagar TODOS os dados do Mendonça, aqui e na nuvem? Isso não pode ser desfeito.'))) return
+                setResetting(true)
+                await resetAllData()
+                setResetting(false)
+                navigate('/materias')
+                showMascot({ pose: 'acenando', title: 'Tudo novo!', text: 'Os dados foram apagados. Vamos começar do zero: cadastre suas matérias e eu monto a próxima semana.', autoHideMs: 9000 })
+              }}
+            >
+              <RotateCcw size={16} /> {resetting ? 'Apagando…' : 'Reiniciar tudo'}
+            </Btn>
+          </div>
         </Card>
       </div>
     </>
