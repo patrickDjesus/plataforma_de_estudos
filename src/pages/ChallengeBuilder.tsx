@@ -8,6 +8,7 @@ import { Capybara } from '../components/Capybara'
 import { ChallengeModal } from '../components/ChallengeModal'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Card } from '../components/ui'
+import { VoiceTextarea } from '../components/Voice'
 
 const TYPES: { id: ChallengeType; label: string; hint: string; icon: ReactNode }[] = [
   { id: 'multipla', label: 'Múltipla escolha', hint: '4 alternativas', icon: <ListChecks size={18} /> },
@@ -22,11 +23,21 @@ const LEVELS: { id: Difficulty; label: string; emoji: string; hint: string }[] =
   { id: 'dificil', label: 'Difícil', emoji: '🚀', hint: 'situações novas e pegadinhas' },
 ]
 const COUNTS = [3, 5, 10]
+const Q_COUNTS = [5, 10, 20]
 
 const hasText = (html?: string) => !!html && html.replace(/<[^>]+>/g, '').trim().length >= 40
 
 /** Montador de desafio: escolha matéria, tópico, quantidade, dificuldade e tipos. */
-export function ChallengeBuilderPage() {
+const Q_STYLES: { id: string; label: string; hint: string; icon: ReactNode; types: ChallengeType[]; vestibular?: boolean }[] = [
+  { id: 'vestibular', label: 'Estilo vestibular', hint: 'enunciado com contexto e 5 alternativas', icon: <ListChecks size={18} />, types: ['multipla'], vestibular: true },
+  { id: 'discursiva', label: 'Discursivas', hint: 'respostas escritas, corrigidas pelo Claude', icon: <MessageSquareText size={18} />, types: ['aberta'] },
+  { id: 'vf', label: 'Verdadeiro ou falso', hint: 'rápidas para revisar', icon: <ToggleLeft size={18} />, types: ['vf'] },
+  { id: 'misto', label: 'Misto', hint: 'um pouco de tudo', icon: <Sparkles size={18} />, types: ['multipla', 'vf', 'aberta', 'explique'], vestibular: true },
+]
+const REQUEST_HINTS = ['Com cálculos e números', 'Focadas em interpretação', 'Do jeito que cai no ENEM', 'Com exemplos do dia a dia', 'Comparando conceitos parecidos']
+
+export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 'questoes' }) {
+  const isQ = mode === 'questoes'
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const subjects = useSubjects()
@@ -35,7 +46,10 @@ export function ChallengeBuilderPage() {
   const [subjectId, setSubjectId] = useState(params.get('materia') ?? '')
   const [topicId, setTopicId] = useState(params.get('topico') ?? '')
   const [query, setQuery] = useState('')
-  const [count, setCount] = useState(5)
+  const [count, setCount] = useState(isQ ? 10 : 5)
+  const [qStyle, setQStyle] = useState('vestibular')
+  const [base, setBase] = useState<'notas' | 'geral'>('notas')
+  const [request, setRequest] = useState('')
   const [difficulty, setDifficulty] = useState<Difficulty>('medio')
   const [types, setTypes] = useState<ChallengeType[]>(['multipla', 'vf', 'aberta', 'explique', 'lacunas'])
   const [running, setRunning] = useState(false)
@@ -46,12 +60,14 @@ export function ChallengeBuilderPage() {
   const visibleTopics = query.trim() ? subjectTopics.filter((t) => t.name.toLowerCase().includes(query.toLowerCase())) : subjectTopics
   const topic = subjectTopics.find((t) => t.id === topicId)
   const notedTopics = useMemo(() => new Set(notes.filter((n) => n.topicId && hasText(n.content)).map((n) => n.topicId!)), [notes])
-  const fromNotes = topic ? notedTopics.has(topic.id) : false
+  const fromNotes = (topic ? notedTopics.has(topic.id) : false) && !(isQ && base === 'geral')
   const effectiveTypes = types.filter((t) => t !== 'lacunas' || fromNotes)
 
   const toggleType = (t: ChallengeType) => setTypes((prev) => (prev.includes(t) ? (prev.length > 1 ? prev.filter((x) => x !== t) : prev) : [...prev, t]))
 
-  const capiLine = !subject
+  const capiLine = isQ && !subject
+    ? 'Que questões você quer resolver hoje?'
+    : !subject
     ? 'Qual matéria vamos testar hoje?'
     : !topic
       ? `Boa! ${subject.name}. Quer um tópico específico ou a matéria inteira?`
@@ -61,9 +77,11 @@ export function ChallengeBuilderPage() {
 
   return (
     <>
-      <button onClick={() => navigate('/recuperacao')} className="mb-3 flex items-center gap-1.5 rounded-xl px-2 py-1.5 text-sm font-semibold text-slate-600 hover:bg-white">
-        <ArrowLeft size={16} /> Recuperação
-      </button>
+      {!isQ && (
+        <button onClick={() => navigate('/recuperacao')} className="mb-3 flex items-center gap-1.5 rounded-xl px-2 py-1.5 text-sm font-semibold text-slate-600 hover:bg-white">
+          <ArrowLeft size={16} /> Recuperação
+        </button>
+      )}
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_340px]">
         <div className="space-y-5">
@@ -142,7 +160,7 @@ export function ChallengeBuilderPage() {
                 <div>
                   <div className="mb-2 text-xs font-semibold text-muted">Quantas questões?</div>
                   <div className="grid grid-cols-3 gap-2">
-                    {COUNTS.map((c) => (
+                    {(isQ ? Q_COUNTS : COUNTS).map((c) => (
                       <button key={c} onClick={() => setCount(c)} className={`rounded-2xl border py-3 text-center transition ${count === c ? 'border-transparent text-white' : 'border-line hover:bg-slate-50'}`} style={count === c ? { background: color } : undefined}>
                         <div className="font-display text-2xl font-extrabold">{c}</div>
                         <div className={`text-[11px] ${count === c ? 'text-white/80' : 'text-muted'}`}>≈ {String(c * 1.5).replace(".", ",")} min</div>
@@ -163,7 +181,60 @@ export function ChallengeBuilderPage() {
                   <p className="mt-1.5 text-[11px] text-muted">{LEVELS.find((l) => l.id === difficulty)?.hint}</p>
                 </div>
               </div>
-              <div className="mt-5">
+              {isQ && (
+                <div className="mt-5">
+                  <div className="mb-2 text-xs font-semibold text-muted">Estilo das questões</div>
+                  <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                    {Q_STYLES.map((q) => {
+                      const on = qStyle === q.id
+                      return (
+                        <button
+                          key={q.id}
+                          onClick={() => setQStyle(q.id)}
+                          className={`flex flex-col items-start gap-1 rounded-2xl border p-3 text-left transition ${on ? 'border-transparent' : 'border-line bg-white hover:bg-slate-50'}`}
+                          style={on ? { background: tint(color, 0.1), boxShadow: `inset 0 0 0 2px ${color}`, color: `color-mix(in srgb, ${color} 80%, #000)` } : undefined}
+                        >
+                          {q.icon}
+                          <span className="text-xs font-bold">{q.label}</span>
+                          <span className="text-[10px] text-muted">{q.hint}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div className="mt-5 grid gap-5 md:grid-cols-[auto_1fr]">
+                    <div>
+                      <div className="mb-2 text-xs font-semibold text-muted">Base</div>
+                      <div className="flex rounded-2xl bg-[#f1f2f5] p-1">
+                        {(['notas', 'geral'] as const).map((b) => (
+                          <button key={b} onClick={() => setBase(b)} className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${base === b ? 'bg-white shadow-sm' : 'text-muted'}`} style={base === b ? { color } : undefined}>
+                            {b === 'notas' ? '📄 Minhas anotações' : '🌎 Conhecimento geral'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="mb-2 text-xs font-semibold text-muted">Pedido livre (opcional)</div>
+                      <VoiceTextarea
+                        id="questoes-pedido"
+                        color={color}
+                        value={request}
+                        onValue={setRequest}
+                        rows={2}
+                        placeholder='Ex.: "questões de pH com contas" ou "focadas em interpretação de gráficos"'
+                        className="w-full rounded-2xl border border-line bg-[#f8f9fb] px-4 py-3 text-sm outline-none focus:border-brand/50 focus:bg-white"
+                      />
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {REQUEST_HINTS.map((h) => (
+                          <button key={h} onClick={() => setRequest(h)} className="rounded-full bg-[#f1f2f5] px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:bg-[#e8e9ee]">
+                            {h}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className={isQ ? 'hidden' : 'mt-5'}>
                 <div className="mb-2 text-xs font-semibold text-muted">Tipos de questão</div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                   {TYPES.map((t) => {
@@ -205,12 +276,19 @@ export function ChallengeBuilderPage() {
               <Row label="Tópico" value={subject ? (topic?.name ?? 'Matéria inteira') : '—'} />
               <Row label="Questões" value={`${count} · ${LEVELS.find((l) => l.id === difficulty)?.label}`} />
               <Row label="Base" value={topic ? (fromNotes ? 'Suas anotações' : 'Conhecimento geral') : 'Conhecimento geral'} />
+              {isQ && request.trim() && <Row label="Pedido" value={request.trim()} />}
               <div className="flex flex-wrap gap-1 pt-1">
-                {effectiveTypes.map((t) => (
-                  <span key={t} className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: tint(color, 0.12), color }}>
-                    {TYPES.find((x) => x.id === t)?.label}
+                {isQ ? (
+                  <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: tint(color, 0.12), color }}>
+                    {Q_STYLES.find((q) => q.id === qStyle)?.label}
                   </span>
-                ))}
+                ) : (
+                  effectiveTypes.map((t) => (
+                    <span key={t} className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: tint(color, 0.12), color }}>
+                      {TYPES.find((x) => x.id === t)?.label}
+                    </span>
+                  ))
+                )}
               </div>
               <button
                 onClick={() => setRunning(true)}
@@ -218,7 +296,7 @@ export function ChallengeBuilderPage() {
                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-display text-lg font-bold text-white transition hover:-translate-y-0.5 disabled:opacity-40"
                 style={{ background: color, boxShadow: `0 16px 34px -16px ${color}` }}
               >
-                <Sparkles size={20} /> Gerar desafio
+                <Sparkles size={20} /> {isQ ? `Gerar ${count} questões` : 'Gerar desafio'}
               </button>
               <p className="flex items-center justify-center gap-1 text-[11px] text-muted">
                 <BookOpenCheck size={12} /> Erros e acertos ficam no histórico
@@ -232,9 +310,13 @@ export function ChallengeBuilderPage() {
         <ChallengeModal
           subjectId={subject.id}
           topicId={topic?.id}
-          origin="demanda"
+          origin={isQ ? 'questoes' : 'demanda'}
           count={count}
-          options={{ types: effectiveTypes, difficulty }}
+          options={
+            isQ
+              ? { types: Q_STYLES.find((q) => q.id === qStyle)!.types, vestibular: Q_STYLES.find((q) => q.id === qStyle)!.vestibular, difficulty, base, request }
+              : { types: effectiveTypes, difficulty }
+          }
           onClose={() => setRunning(false)}
         />
       )}

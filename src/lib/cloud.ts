@@ -25,7 +25,7 @@ declare global {
   }
 }
 
-export const SYNCED_TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews', 'mapPositions', 'mapLinks', 'achievements', 'cards', 'challenges'] as const
+export const SYNCED_TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews', 'mapPositions', 'mapLinks', 'achievements', 'cards', 'challenges', 'errors', 'writings'] as const
 type TableName = (typeof SYNCED_TABLES)[number]
 
 // ---- Estado observável ----

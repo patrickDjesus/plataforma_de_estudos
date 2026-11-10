@@ -53,6 +53,12 @@ export type Difficulty = 'facil' | 'medio' | 'dificil'
 export interface ChallengeOptions {
   types?: ChallengeType[]
   difficulty?: Difficulty
+  /** Pedido livre do estudante (aba Questões). */
+  request?: string
+  /** 'geral' ignora as anotações. */
+  base?: 'notas' | 'geral'
+  /** Múltipla escolha no estilo de vestibular (enunciado com contexto, 5 alternativas). */
+  vestibular?: boolean
 }
 
 const TYPE_SPEC: Record<ChallengeType, string> = {
@@ -69,7 +75,7 @@ const DIFFICULTY_TEXT: Record<Difficulty, string> = {
 }
 
 export function challengePrompt(c: StudyContext, count: number, opts: ChallengeOptions = {}) {
-  const { text, fromNotes } = contextBlock(c)
+  const { text, fromNotes } = contextBlock(opts.base === 'geral' ? { ...c, noteHtml: undefined } : c)
   let types = opts.types?.length ? opts.types : (['multipla', 'vf', 'aberta', 'explique', 'lacunas'] as ChallengeType[])
   if (!fromNotes) types = types.filter((t) => t !== 'lacunas')
   if (!types.length) types = ['multipla']
@@ -80,8 +86,8 @@ ${text}
 
 ${DIFFICULTY_TEXT[opts.difficulty ?? 'medio']}
 
-Crie exatamente ${count} itens usando estes tipos. ${repeat}
-${types.map((t) => TYPE_SPEC[t]).join('\n')}
+${opts.request?.trim() ? `Pedido do estudante (siga com prioridade, desde que seja sobre estudo): "${opts.request.trim().slice(0, 400)}"\n\n` : ''}Crie exatamente ${count} itens usando estes tipos. ${repeat}
+${types.map((t) => (t === 'multipla' && opts.vestibular ? '- "multipla": questão no estilo de vestibular/ENEM: enunciado com um pequeno contexto (situação, dado ou trecho) e 5 alternativas plausíveis, só uma correta. Campos: question (enunciado completo), options (5 textos, sem letras), correct (índice 0 a 4), explanation (por que a correta está certa).' : TYPE_SPEC[t])).join('\n')}
 
 Responda apenas com JSON neste formato:
 {"items": [{"type": "${types[0]}", ...campos do tipo}]}`
@@ -108,4 +114,34 @@ Itens:
 ${entries.map((e) => `[${e.index}] (${e.kind}) ${e.question}\nReferência: ${e.reference}\nResposta do estudante: ${e.answer.trim() || '(em branco)'}`).join('\n\n')}
 
 Responda apenas com JSON: {"results": [{"index": 0, "score": 1, "feedback": "…", "missing": []}]}`
+}
+
+// ---------- Treino de escrita ----------
+
+export function writingThemePrompt(avoid: string[]) {
+  return `Você propõe temas para um estudante brasileiro treinar a escrita na norma-padrão.
+Proponha UM tema atual e interessante para um texto curto (1 a 3 parágrafos), sobre o qual qualquer estudante consiga opinar.
+${avoid.length ? `Evite estes temas já usados: ${avoid.slice(-8).join('; ')}.` : ''}
+
+Responda apenas com JSON: {"tema": "título curto", "contexto": "2 frases apresentando a questão", "dicas": ["3 ideias curtas para desenvolver o texto"]}`
+}
+
+export function writingCorrectionPrompt(theme: string, text: string) {
+  return `Você é um revisor de língua portuguesa (norma-padrão do Brasil), justo e didático.
+Tema do texto: ${theme}
+
+Texto do estudante:
+"""
+${text.slice(0, 6000)}
+"""
+
+Encontre os desvios da norma-padrão: crase, vírgula, concordância, regência, acentuação, ortografia, pontuação e colocação pronominal.
+- Não corrija estilo nem opinião; só desvios reais da norma-padrão.
+- "trecho": copie EXATAMENTE do texto o pedaço curto que tem o desvio (3 a 12 palavras), para ele poder ser destacado.
+- "correcao": o mesmo trecho corrigido.
+- "categoria": uma destas: crase, virgula, concordancia, regencia, acentuacao, ortografia, pontuacao, colocacao, outro.
+- "explicacao": a regra, em 1 ou 2 frases simples.
+Também diga em "resumo" uma avaliação geral em 1 a 2 frases e em "pontosFortes" até 3 coisas que o estudante fez bem.
+
+Responda apenas com JSON: {"resumo": "…", "pontosFortes": ["…"], "desvios": [{"trecho": "…", "correcao": "…", "categoria": "virgula", "explicacao": "…"}]}`
 }

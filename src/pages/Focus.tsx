@@ -14,6 +14,7 @@ import { showMascot } from '../lib/mascotBus'
 import { buildPhases } from '../lib/focus'
 import { ratingFromScore } from '../lib/challenge'
 import { ChallengeRunner } from '../components/ChallengeRunner'
+import { VoiceTextarea } from '../components/Voice'
 import { useStudyContext } from '../components/ChallengeModal'
 import { Capybara } from '../components/Capybara'
 import { NoteEditor } from '../components/NoteEditor'
@@ -209,10 +210,11 @@ export function FocusPage() {
             <label htmlFor="focus-goal" className="mb-2 block text-sm font-semibold">
               Meu objetivo
             </label>
-            <textarea
+            <VoiceTextarea
               id="focus-goal"
+              color={color}
               value={goal}
-              onChange={(e) => setGoal(e.target.value)}
+              onValue={setGoal}
               rows={2}
               placeholder="Ex.: entender a diferença entre velocidade média e instantânea"
               className="w-full resize-none rounded-2xl border border-line bg-[#f8f9fb] px-4 py-3 outline-none focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10"
@@ -385,10 +387,11 @@ export function FocusPage() {
             <section>
               <h3 className="mb-1 font-sans text-sm font-bold">2. Tela em branco (opcional)</h3>
               <p className="mb-2 text-xs text-muted">Sem olhar as anotações, escreva tudo o que você lembra. É o exercício que mais fixa o conteúdo.</p>
-              <textarea
+              <VoiceTextarea
                 id="focus-recall"
+                color={color}
                 value={recall}
-                onChange={(e) => setRecall(e.target.value)}
+                onValue={setRecall}
                 rows={5}
                 placeholder="O que eu lembro sobre o tópico…"
                 className="w-full rounded-2xl border border-line bg-[#f8f9fb] px-4 py-3 text-sm outline-none focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10"

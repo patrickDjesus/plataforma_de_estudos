@@ -91,6 +91,7 @@ export function RecoveryPage() {
 
         <div className="space-y-5">
         <FreeChallenge />
+        <ErrorsCard />
         <History />
         <Card className="p-6">
           <h2 className="mb-3 text-lg font-bold">Seus cartões por matéria</h2>
@@ -296,7 +297,7 @@ function FreeChallenge() {
   )
 }
 
-const ORIGIN_LABEL = { bloco: 'fim de bloco', revisao: 'revisão', demanda: 'desafio livre' }
+const ORIGIN_LABEL = { bloco: 'fim de bloco', revisao: 'revisão', demanda: 'desafio livre', questoes: 'lista de questões' }
 
 function History() {
   const list = useLiveQuery(() => db.challenges.orderBy('createdAt').reverse().limit(8).toArray(), [], [])
@@ -328,5 +329,24 @@ function History() {
         })}
       </div>
     </Card>
+  )
+}
+
+function ErrorsCard() {
+  const navigate = useNavigate()
+  const today = toISODate(new Date())
+  const due = useLiveQuery(() => db.errors.filter((e) => !e.resolved && e.due <= today).count(), [today], 0)
+  const open = useLiveQuery(() => db.errors.filter((e) => !e.resolved).count(), [], 0)
+  return (
+    <button onClick={() => navigate('/erros')} className="flex w-full items-center gap-4 rounded-[22px] border border-line bg-white p-5 text-left shadow-[0_8px_24px_-12px_rgba(16,24,40,0.08)] transition hover:-translate-y-0.5">
+      <span className="subject-icon h-12 w-12 shrink-0 rounded-[14px] text-xl" style={{ background: 'linear-gradient(145deg,#ef4444,#b91c1c)' }}>
+        <span className="relative z-10">📕</span>
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="font-display text-lg font-bold">Caderno de erros</div>
+        <div className="text-xs text-muted">{open ? `${open} em aberto · revisa até acertar 2× seguidas` : 'Seus erros aparecem aqui para revisar'}</div>
+      </div>
+      {due > 0 && <span className="rounded-full bg-rose-500 px-2.5 py-1 text-xs font-bold text-white">{due} hoje</span>}
+    </button>
   )
 }

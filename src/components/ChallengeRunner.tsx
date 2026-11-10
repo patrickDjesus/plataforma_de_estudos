@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, CircleSlash, Flag, Loader2, RotateCcw, X, XCircle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, CircleSlash, Flag, RotateCcw, X, XCircle } from 'lucide-react'
+import { Spinner, VoiceTextarea } from './Voice'
 import { uid } from '../db/db'
-import { saveChallenge } from '../db/repo'
+import { logChallengeErrors, saveChallenge } from '../db/repo'
 import type { Challenge, ChallengeItem, ChallengeResult } from '../db/types'
 import { AIError, getAI } from '../lib/ai'
 import { ITEM_LABEL, finalScore, gradeLocal, needsAIGrading, sanitizeItems } from '../lib/challenge'
@@ -81,7 +82,7 @@ export function ChallengeRunner({ ctx, subjectId, topicId, origin, count, color,
 
   const persist = async (res: (ChallengeResult | null)[]) => {
     const done = res.map((r) => r ?? { score: 0, correct: false, feedback: 'Sem correção.' })
-    const c: Challenge = { id: idRef.current, subjectId, topicId, origin, fromNotes, createdAt: createdAt.current, items, answers, results: done, score: finalScore(done) }
+    const c: Challenge = { id: idRef.current, subjectId, topicId, origin, fromNotes, createdAt: createdAt.current, items, answers, results: done, score: finalScore(done), request: options?.request?.trim() || undefined }
     await saveChallenge(c)
     return c
   }
@@ -135,7 +136,11 @@ export function ChallengeRunner({ ctx, subjectId, topicId, origin, count, color,
     if (next.every(Boolean)) await persist(next)
   }
 
-  const finish = async () => onFinish(await persist(results))
+  const finish = async () => {
+    const c = await persist(results)
+    await logChallengeErrors(c) // erros vão para o caderno de erros
+    onFinish(c)
+  }
 
   // ---------- telas ----------
   if (stage === 'gerando' || stage === 'corrigindo')
@@ -143,7 +148,7 @@ export function ChallengeRunner({ ctx, subjectId, topicId, origin, count, color,
       <div className="flex flex-col items-center py-10 text-center">
         <Capybara pose={stage === 'gerando' ? 'pensando' : 'estudando'} size={130} />
         <p className="mt-3 flex items-center gap-2 font-display text-lg font-bold">
-          <Loader2 size={18} className="animate-spin" /> {stage === 'gerando' ? 'Preparando seu desafio…' : 'Corrigindo suas respostas…'}
+          <Spinner size={24} /> {stage === 'gerando' ? 'Preparando seu desafio…' : 'Corrigindo suas respostas…'}
         </p>
         <p className="mt-1 text-sm text-muted">{stage === 'gerando' ? (fromNotes ? 'Usando as suas anotações.' : 'Sua nota está vazia: vou usar conhecimento geral do tópico.') : 'Pode levar alguns segundos.'}</p>
         {onCancel && stage === 'gerando' && (
@@ -250,9 +255,10 @@ export function ChallengeRunner({ ctx, subjectId, topicId, origin, count, color,
         {(it.type === 'aberta' || it.type === 'explique') && (
           <>
             <p className="mb-3 font-display text-xl leading-snug font-bold">{it.type === 'aberta' ? it.question : it.prompt}</p>
-            <textarea
+            <VoiceTextarea
+              color={color}
               value={String(a ?? '')}
-              onChange={(e) => setAnswer(e.target.value)}
+              onValue={(v) => setAnswer(v)}
               rows={it.type === 'explique' ? 7 : 4}
               placeholder={it.type === 'explique' ? 'Explique com suas palavras, como se ensinasse a um colega…' : 'Sua resposta…'}
               className="w-full rounded-2xl border border-line bg-[#f8f9fb] px-4 py-3 text-sm outline-none focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10"
@@ -363,7 +369,7 @@ function capiComment(it: ChallengeItem, r: ChallengeResult | null): string {
   return 'Essa escapou. Dá uma olhada na resposta certa ao lado.'
 }
 
-function ResultView({
+export function ResultView({
   items,
   answers,
   results,

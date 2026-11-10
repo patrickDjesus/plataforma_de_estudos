@@ -197,7 +197,9 @@ export interface Challenge {
   id: string
   subjectId: string
   topicId?: string
-  origin: 'bloco' | 'revisao' | 'demanda'
+  origin: 'bloco' | 'revisao' | 'demanda' | 'questoes'
+  /** Lista de questões: o que foi pedido (pedido livre, dificuldade). */
+  request?: string
   fromNotes: boolean
   createdAt: number
   items: ChallengeItem[]
@@ -206,4 +208,46 @@ export interface Challenge {
   results: ChallengeResult[]
   /** Nota final 0–1 (sem os itens contestados). */
   score: number
+}
+
+// ---------- Caderno de erros ----------
+
+export type ErrorReason = 'nao-sabia' | 'confundi' | 'desatencao' | 'tempo'
+export type WritingCategory = 'crase' | 'virgula' | 'concordancia' | 'regencia' | 'acentuacao' | 'ortografia' | 'pontuacao' | 'colocacao' | 'outro'
+
+export interface ErrorEntry {
+  id: string
+  source: 'desafio' | 'questoes' | 'flashcard' | 'escrita'
+  subjectId?: string
+  topicId?: string
+  question: string
+  yourAnswer: string
+  correctAnswer: string
+  explanation?: string
+  /** Só no treino de escrita. */
+  category?: WritingCategory
+  reason?: ErrorReason
+  createdAt: number
+  due: string // YYYY-MM-DD
+  /** Acertos seguidos; com 2, o erro é resolvido. */
+  streak: number
+  resolved: boolean
+  history: { date: string; ok: boolean }[]
+}
+
+export interface WritingDeviation {
+  excerpt: string
+  correction: string
+  category: WritingCategory
+  explanation: string
+}
+
+export interface Writing {
+  id: string
+  theme: string
+  text: string
+  createdAt: number
+  summary?: string
+  strengths?: string[]
+  deviations: WritingDeviation[]
 }

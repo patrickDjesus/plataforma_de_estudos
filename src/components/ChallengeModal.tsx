@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Copy, Loader2, Sparkles, X } from 'lucide-react'
+import { Copy, Sparkles, X } from 'lucide-react'
+import { Spinner } from './Voice'
 import { db } from '../db/db'
 import { AREAS } from '../db/hooks'
 import { updateNote } from '../db/repo'
@@ -72,7 +73,7 @@ export function ChallengeModal({
   const color = data.subject.color
   return (
     <Frame
-      title={origin === 'revisao' ? `Revisão: ${data.topic?.name ?? data.subject.name}` : `Desafio: ${data.topic?.name ?? data.subject.name}`}
+      title={origin === 'revisao' ? `Revisão: ${data.topic?.name ?? data.subject.name}` : origin === 'questoes' ? `Questões: ${data.topic?.name ?? data.subject.name}` : `Desafio: ${data.topic?.name ?? data.subject.name}`}
       subtitle={origin === 'revisao' ? 'O resultado define a próxima revisão' : data.subject.name}
       icon={<SubjectIcon subject={data.subject} size={40} />}
       onClose={onClose}
@@ -142,7 +143,7 @@ export function ExplainModal({ subjectId, topicId, noteId, onClose, onInserted }
     <Frame title={`Explicar: ${data.topic?.name ?? data.subject.name}`} subtitle={`${data.subject.name} · gerado pelo Claude, pode conter erros`} icon={<SubjectIcon subject={data.subject} size={40} />} onClose={onClose}>
       {status === 'carregando' && !text && (
         <p className="flex items-center gap-2 py-8 text-sm font-semibold text-muted">
-          <Loader2 size={16} className="animate-spin" /> O Claude está escrevendo…
+          <Spinner size={16} /> O Claude está escrevendo…
         </p>
       )}
       {status === 'erro' && <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}

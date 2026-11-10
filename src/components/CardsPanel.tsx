@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Check, Layers3, Loader2, Pencil, Plus, Sparkles, Trash2, X } from 'lucide-react'
+import { Check, Layers3, Pencil, Plus, Sparkles, Trash2, X } from 'lucide-react'
+import { Spinner } from './Voice'
 import { db } from '../db/db'
 import { addCards, deleteCard, updateCard } from '../db/repo'
 import type { Flashcard, Note, Subject, Topic } from '../db/types'
@@ -73,7 +74,7 @@ export function CardsPanel({ note, subject, topic }: { note: Note; subject?: Sub
             style={{ background: color }}
             title={fromNotes ? 'Cria cartões a partir desta nota' : 'A nota está vazia: os cartões virão do conhecimento geral sobre o tópico'}
           >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />} {loading ? 'Pensando…' : 'Sugerir com o Claude'}
+            {loading ? <Spinner size={14} /> : <Sparkles size={14} />} {loading ? 'Pensando…' : 'Sugerir com o Claude'}
           </button>
         )}
       </div>

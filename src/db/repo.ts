@@ -1,8 +1,9 @@
 import { db, uid } from './db'
-import type { AreaId, AreaPercents, Availability, Block, Challenge, Flashcard, Note, ReviewRating, Session, Settings, Subject, TimerState, Topic, Week } from './types'
+import type { AreaId, AreaPercents, Availability, Block, Challenge, ErrorReason, Flashcard, Writing, Note, ReviewRating, Session, Settings, Subject, TimerState, Topic, Week } from './types'
 import { autoColor } from '../lib/colors'
 import { addDays, minutesNow, toISODate, weekIdOf } from '../lib/dates'
 import { applyRating, newReview, nextInterval, RATING_LABEL } from '../lib/review'
+import { errorsFromChallenge, reviewError } from '../lib/errors'
 import { planWeek } from '../lib/planner'
 import { showMascot } from '../lib/mascotBus'
 import { XP_PER_BLOCK } from '../lib/xp'
@@ -397,6 +398,49 @@ export async function addSession(s: Omit<Session, 'id'>) {
 
 export const saveChallenge = (c: Challenge) => db.challenges.put(c)
 
+// ---------- Caderno de erros ----------
+
+/** Registra os erros de um desafio concluído (sem duplicar; contestados saem). */
+export async function logChallengeErrors(c: Challenge) {
+  const today = toISODate(new Date())
+  const errs = errorsFromChallenge(c, today)
+  const existing = await db.errors.bulkGet(errs.map((e) => e.id))
+  const fresh = errs.filter((_, i) => !existing[i])
+  if (fresh.length) await db.errors.bulkAdd(fresh)
+  const contested = c.results.map((r, k) => (r?.contested ? `${c.id}-${k}` : null)).filter((x): x is string => !!x)
+  if (contested.length) await db.errors.bulkDelete(contested)
+}
+
+export async function reviewErrorEntry(id: string, ok: boolean) {
+  const e = await db.errors.get(id)
+  if (e) await db.errors.put(reviewError(e, ok, toISODate(new Date())))
+}
+
+export const setErrorReason = (id: string, reason: ErrorReason) => db.errors.update(id, { reason })
+export const deleteErrorEntry = (id: string) => db.errors.delete(id)
+
+/** Treino de escrita: salva o texto e manda cada desvio para o caderno de erros. */
+export async function saveWriting(w: Writing) {
+  const today = toISODate(new Date())
+  await db.writings.put(w)
+  await db.errors.bulkPut(
+    w.deviations.map((d, k) => ({
+      id: `${w.id}-${k}`,
+      source: 'escrita' as const,
+      question: `Corrija: "${d.excerpt}"`,
+      yourAnswer: d.excerpt,
+      correctAnswer: d.correction,
+      explanation: d.explanation,
+      category: d.category,
+      createdAt: w.createdAt,
+      due: addDays(today, 1),
+      streak: 0,
+      resolved: false,
+      history: [],
+    })),
+  )
+}
+
 // ---------- Flashcards ----------
 
 export async function addCards(cards: Pick<Flashcard, 'subjectId' | 'topicId' | 'noteId' | 'front' | 'back' | 'source'>[]) {
@@ -414,11 +458,14 @@ export async function rateCard(id: string, rating: ReviewRating) {
   const today = toISODate(new Date())
   const intervalDays = c.count === 0 ? (rating === 'dificil' ? 1 : rating === 'ok' ? 1 : 7) : nextInterval(c.intervalDays, rating)
   await db.cards.update(id, { intervalDays, due: addDays(today, intervalDays), count: c.count + 1, history: [...c.history, { date: today, rating }] })
+  // Cartão difícil também entra no caderno de erros
+  if (rating === 'dificil' && !(await db.errors.get(`card-${id}`)))
+    await db.errors.add({ id: `card-${id}`, source: 'flashcard', subjectId: c.subjectId, topicId: c.topicId, question: c.front, yourAnswer: '(achei difícil)', correctAnswer: c.back, createdAt: Date.now(), due: addDays(today, 1), streak: 0, resolved: false, history: [] })
 }
 
 // ---------- Backup ----------
 
-const TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews', 'mapPositions', 'mapLinks', 'achievements', 'cards', 'challenges'] as const
+const TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews', 'mapPositions', 'mapLinks', 'achievements', 'cards', 'challenges', 'errors', 'writings'] as const
 
 export async function exportBackup(): Promise<string> {
   const data: Record<string, unknown[]> = {}

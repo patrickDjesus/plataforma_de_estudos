@@ -73,7 +73,7 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 .subject-icon svg { position: relative; z-index: 1; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
+  :where(*):not(.essential-motion, .essential-motion *), *::before, *::after { animation: none !important; transition: none !important; }
 }
 
 /* Capi, a capivara */
@@ -102,3 +102,11 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 /* Placar que sobe */
 @keyframes pop-score { 0% { transform: scale(.6); opacity: 0 } 70% { transform: scale(1.08) } 100% { transform: scale(1); opacity: 1 } }
 .pop-score { animation: pop-score .6s cubic-bezier(.2, .9, .3, 1.3) both; }
+
+/* Carregando: três bolinhas pulando */
+@keyframes spinner-dot { 0%, 80%, 100% { transform: translateY(0) scale(.7); opacity: .45 } 40% { transform: translateY(-40%) scale(1); opacity: 1 } }
+.spinner-dot { display: inline-block; animation: spinner-dot 1s ease-in-out infinite; }
+
+/* Microfone gravando */
+@keyframes mic-live { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, .55) } 100% { box-shadow: 0 0 0 14px rgba(239, 68, 68, 0) } }
+.mic-live { animation: mic-live 1.2s ease-out infinite; }
