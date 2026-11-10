@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { BookOpen, Check, Clock3, Coffee, Flag, Play, RotateCcw, Trash2, X } from 'lucide-react'
 import { AREAS, useSubjects, useTopics } from '../db/hooks'
-import { addBlock, deleteBlock, rateReview, setBlockDone, startTimer, updateBlock } from '../db/repo'
+import { addBlock, deleteBlock, rateReview, setBlockDone, updateBlock } from '../db/repo'
 import type { Block, BlockKind, ReviewRating } from '../db/types'
 import { RATING_LABEL } from '../lib/review'
 import { tint } from '../lib/colors'
@@ -40,6 +41,7 @@ function Section({ n, title, children }: { n: number; title: string; children: R
 }
 
 export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string; block?: Block; draft?: Draft; onClose: () => void }) {
+  const navigate = useNavigate()
   const subjects = useSubjects()
   const topics = useTopics()
   const open = !!block || !!draft
@@ -197,8 +199,8 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
               {!block.done && (
                 <button
                   onClick={() => {
-                    startTimer({ blockId: block.id, subjectId: block.subjectId, topicId: block.topicId, label: topic?.name ?? subject?.name ?? 'Estudo' })
                     onClose()
+                    navigate(`/foco/${block.id}`)
                   }}
                   className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3 text-sm font-bold text-ink shadow-lg transition hover:-translate-y-0.5"
                 >

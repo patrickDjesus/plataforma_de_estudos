@@ -40,6 +40,8 @@ const NUMBER_FIELDS: { key: keyof Settings; label: string; min: number; max: num
   { key: 'maxSameSubjectInRow', label: 'Máx. blocos seguidos da mesma matéria', min: 1, max: 6 },
   { key: 'reviewMinutes', label: 'Duração da revisão (min)', min: 10, max: 60, def: 20 },
   { key: 'maxReviewShare', label: 'Máx. da semana para revisões (%)', min: 5, max: 50, def: 20, scale: 100 },
+  { key: 'focusMinutes', label: 'Modo foco: minutos de foco por ciclo', min: 10, max: 90, def: 25 },
+  { key: 'focusPauseMinutes', label: 'Modo foco: minutos de pausa', min: 1, max: 30, def: 5 },
 ]
 
 export function SettingsPage() {

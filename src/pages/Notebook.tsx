@@ -8,6 +8,7 @@ import type { Note } from '../db/types'
 import { AREA_COLOR, tint } from '../lib/colors'
 import { linkedTitles, renameLinks } from '../lib/wikilink'
 import { NoteEditor } from '../components/NoteEditor'
+import { CardsPanel } from '../components/CardsPanel'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
 import { askConfirm } from '../components/confirm'
@@ -218,6 +219,8 @@ export function NotebookPage() {
             />
             <NoteEditor key={note.id} note={note} subject={subject} allTitles={allTitles} />
           </Card>
+
+          <CardsPanel key={`cards-${note.id}`} note={note} subject={subject} topic={topics.find((t) => t.id === note.topicId)} />
 
           {(backlinks.length > 0 || outgoing.length > 0) && (
             <Card className="mt-4">

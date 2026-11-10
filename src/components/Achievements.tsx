@@ -27,7 +27,8 @@ export const ACHIEVEMENT_ICONS: Record<AchievementIcon, LucideIcon> = {
 /** Lê tudo que a gamificação precisa. */
 export function useStats() {
   return useLiveQuery(async () => {
-    const [sessions, blocks, reviews, notes, subjects, unlocked] = await Promise.all([
+    const [cards, sessions, blocks, reviews, notes, subjects, unlocked] = await Promise.all([
+      db.cards.toArray(),
       db.sessions.toArray(),
       db.blocks.toArray(),
       db.reviews.toArray(),
@@ -35,7 +36,7 @@ export function useStats() {
       db.subjects.toArray(),
       db.achievements.toArray(),
     ])
-    return { stats: computeStats({ sessions, blocks, reviews, notes, subjects }), unlocked: new Map(unlocked.map((u) => [u.id, u.unlockedAt])) }
+    return { stats: computeStats({ sessions, blocks, reviews, notes, subjects, cards }), unlocked: new Map(unlocked.map((u) => [u.id, u.unlockedAt])) }
   }, [])
 }
 
@@ -44,7 +45,7 @@ export function AchievementsSection() {
   const list = useMemo(() => (data ? achievements(data.stats) : []), [data])
   if (!data) return null
   const { stats } = data
-  const total = levelInfo(xpFrom(stats.totalSeconds, stats.doneBlocks, stats.reviewsDone))
+  const total = levelInfo(xpFrom(stats.totalSeconds, stats.doneBlocks, stats.reviewsDone, stats.cardsDone))
   const levels = areaLevels(stats)
   const got = list.filter((a) => a.unlocked).length
 

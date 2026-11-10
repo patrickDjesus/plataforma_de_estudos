@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { ArrowRight, BarChart3, BookOpen, RotateCcw, CalendarCheck2, Check, ChevronRight, Clock3, Flame, Globe2, Medal, Play, Target, Trophy, Zap } from 'lucide-react'
 import { db } from '../db/db'
 import { AREAS, useSessions, useSettings, useSubjectMap, useTimer, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
-import { currentWeekId, rateReview, startTimer } from '../db/repo'
+import { currentWeekId, rateReview } from '../db/repo'
 import { RATING_LABEL } from '../lib/review'
 import type { ReviewRating } from '../db/types'
 import type { Block } from '../db/types'
@@ -45,10 +45,12 @@ export function HomePage() {
   const scopeSeconds = scopeSessions.reduce((a, s) => a + s.seconds, 0)
 
   // XP
+  const cardsDone = useLiveQuery(async () => (await db.cards.toArray()).reduce((a, c) => a + c.history.length, 0), [], 0)
   const totalXp = xpFrom(
     sessions.reduce((a, s) => a + s.seconds, 0),
     doneBlocksAll.length,
     reviews.reduce((a, r) => a + r.history.length, 0),
+    cardsDone,
   )
   const lvl = levelInfo(totalXp)
   const scopeXp = xpFrom(scopeSeconds, scoped.filter((b) => b.done).length)
@@ -77,9 +79,7 @@ export function HomePage() {
     .sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start)[0]
   const startBlock = (b?: Block) => {
     if (!b) return navigate('/calendario')
-    const s = b.subjectId ? subjects.get(b.subjectId) : undefined
-    const t = b.topicId ? topicMap.get(b.topicId) : undefined
-    startTimer({ blockId: b.id, subjectId: b.subjectId, topicId: b.topicId, label: t?.name ?? s?.name ?? 'Estudo' })
+    navigate(`/foco/${b.id}`) // sessão guiada
   }
 
   const focusArea = week ? AREAS.reduce((best, a) => (week.percents[a.id] > week.percents[best.id] ? a : best), AREAS[0]) : AREAS[0]
@@ -457,6 +457,7 @@ function ReviewsPanel() {
   const navigate = useNavigate()
   const today = toISODate(new Date())
   const reviews = useLiveQuery(() => db.reviews.orderBy('due').toArray(), [], [])
+  const cardsDue = useLiveQuery(() => db.cards.where('due').belowOrEqual(today).count(), [today], 0)
   const topics = useTopics()
   const subjects = useSubjectMap()
   const due = reviews.filter((r) => r.due <= today)
@@ -469,6 +470,12 @@ function ReviewsPanel() {
         {due.length > 0 && <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-bold text-white">{due.length}</span>}
       </h3>
       <p className="mb-3 text-xs text-muted">Revise o tópico e diga como foi. Difícil volta logo; fácil espaça mais.</p>
+      {cardsDue > 0 && (
+        <button onClick={() => navigate('/recuperacao')} className="mb-3 flex w-full items-center justify-between rounded-2xl bg-brand-soft px-4 py-2.5 text-left text-sm font-bold text-brand hover:brightness-95">
+          <span>🃏 {cardsDue} flashcard{cardsDue === 1 ? '' : 's'} para revisar hoje</span>
+          <span className="text-xs">Revisar →</span>
+        </button>
+      )}
       {reviews.length === 0 && (
         <div className="flex items-center gap-3 rounded-2xl bg-[#f6f7f9] p-4 text-sm text-muted">
           <Capybara pose="estudando" size={64} />

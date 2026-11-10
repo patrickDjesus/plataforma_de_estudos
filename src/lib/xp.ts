@@ -15,6 +15,9 @@ export function levelInfo(xp: number) {
 /** Bônus por revisão registrada (revisar vale mais). */
 export const XP_PER_REVIEW = 15
 
-export function xpFrom(sessionsSeconds: number, doneBlocks: number, reviewsDone = 0) {
-  return Math.floor(sessionsSeconds / 60) + doneBlocks * XP_PER_BLOCK + reviewsDone * XP_PER_REVIEW
+/** Cada flashcard revisado. */
+export const XP_PER_CARD = 3
+
+export function xpFrom(sessionsSeconds: number, doneBlocks: number, reviewsDone = 0, cardsDone = 0) {
+  return Math.floor(sessionsSeconds / 60) + doneBlocks * XP_PER_BLOCK + reviewsDone * XP_PER_REVIEW + cardsDone * XP_PER_CARD
 }

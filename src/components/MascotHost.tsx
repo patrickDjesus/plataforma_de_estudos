@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { X } from 'lucide-react'
 import { db } from '../db/db'
-import { currentWeekId, replanMissed, setBlockDone, startTimer } from '../db/repo'
+import { currentWeekId, replanMissed, setBlockDone } from '../db/repo'
 import { addDays, minutesNow, toISODate } from '../lib/dates'
 import { capiQuestion, capiWelcome, type CapiContext } from '../lib/capiTalk'
 import { onMascot, showMascot, type MascotMessage } from '../lib/mascotBus'
@@ -29,8 +29,9 @@ export function MascotHost() {
   const data = useLiveQuery(async () => {
     const weekId = currentWeekId()
     const todayIso = toISODate(new Date())
-    const [unlocked, allBlocks, notes, reviews, settings, subjectsCount, week, todayBlocks, notesCount, timer, sessions, doneBlocks, topics, subjects] = await Promise.all([
+    const [unlocked, cards, allBlocks, notes, reviews, settings, subjectsCount, week, todayBlocks, notesCount, timer, sessions, doneBlocks, topics, subjects] = await Promise.all([
       db.achievements.toArray(),
+      db.cards.toArray(),
       db.blocks.toArray(),
       db.notes.toArray(),
       db.reviews.toArray(),
@@ -45,7 +46,7 @@ export function MascotHost() {
       db.topics.toArray(),
       db.subjects.toArray(),
     ])
-    return { unlocked, allBlocks, notes, reviews, settings, subjectsCount, week, todayBlocks, notesCount, timer, sessions, doneBlocks, topics, subjects, todayIso }
+    return { unlocked, cards, allBlocks, notes, reviews, settings, subjectsCount, week, todayBlocks, notesCount, timer, sessions, doneBlocks, topics, subjects, todayIso }
   }, [])
 
   const say = useCallback((m: MascotMessage) => {
@@ -111,8 +112,8 @@ export function MascotHost() {
       streak,
       timerRunning: !!data.timer,
       startBlock: (id: string) => {
-        const b = data.todayBlocks.find((x) => x.id === id)
-        if (b) startTimer({ blockId: b.id, subjectId: b.subjectId, topicId: b.topicId, label: label(b.topicId, b.subjectId) })
+        // Abre a sessão guiada (modo foco) do bloco
+        if (data.todayBlocks.some((x) => x.id === id)) navigate(`/foco/${id}`)
       },
       markDone: (id: string) => setBlockDone(id, true),
     }
@@ -130,7 +131,7 @@ export function MascotHost() {
   // Subiu de nível
   useEffect(() => {
     if (!data) return
-    const lvl = levelInfo(xpFrom(data.sessions.reduce((a, s) => a + s.seconds, 0), data.doneBlocks.length, data.reviews.reduce((a, r) => a + r.history.length, 0))).level
+    const lvl = levelInfo(xpFrom(data.sessions.reduce((a, s) => a + s.seconds, 0), data.doneBlocks.length, data.reviews.reduce((a, r) => a + r.history.length, 0), data.cards.reduce((a, c) => a + c.history.length, 0))).level
     if (lastLevel.current !== null && lvl > lastLevel.current) {
       window.setTimeout(
         () => showMascot({ pose: 'formado', title: `Nível ${lvl}! 🎓`, text: 'Você subiu de nível. Cada minuto estudado está valendo a pena!', autoHideMs: 8000 }),

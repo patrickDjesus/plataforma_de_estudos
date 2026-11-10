@@ -1,8 +1,8 @@
 import { db, uid } from './db'
-import type { AreaId, AreaPercents, Availability, Block, Note, ReviewRating, Settings, Subject, TimerState, Topic, Week } from './types'
+import type { AreaId, AreaPercents, Availability, Block, Flashcard, Note, ReviewRating, Session, Settings, Subject, TimerState, Topic, Week } from './types'
 import { autoColor } from '../lib/colors'
 import { addDays, minutesNow, toISODate, weekIdOf } from '../lib/dates'
-import { applyRating, newReview, RATING_LABEL } from '../lib/review'
+import { applyRating, newReview, nextInterval, RATING_LABEL } from '../lib/review'
 import { planWeek } from '../lib/planner'
 import { showMascot } from '../lib/mascotBus'
 import { XP_PER_BLOCK } from '../lib/xp'
@@ -20,6 +20,8 @@ export const DEFAULT_SETTINGS: Settings = {
   maxSameSubjectInRow: 2,
   reviewMinutes: 20,
   maxReviewShare: 0.2,
+  focusMinutes: 25,
+  focusPauseMinutes: 5,
   defaultAvailability: [eve, eve, eve, eve, eve, [{ start: 9 * 60, end: 12 * 60 }], []],
   lastPercents: { faculdade: 70, ensino: 20, idiomas: 10 },
 }
@@ -56,8 +58,9 @@ export async function addSubject(areaId: AreaId, name: string): Promise<string> 
 export const updateSubject = (id: string, patch: Partial<Subject>) => db.subjects.update(id, patch)
 
 export async function deleteSubject(id: string) {
-  await db.transaction('rw', [db.subjects, db.topics, db.notes, db.blocks, db.reviews], async () => {
+  await db.transaction('rw', [db.subjects, db.topics, db.notes, db.blocks, db.reviews, db.cards], async () => {
     await db.subjects.delete(id)
+    await db.cards.where('subjectId').equals(id).delete()
     await db.reviews.where('subjectId').equals(id).delete()
     await db.topics.where('subjectId').equals(id).delete()
     await db.notes.where('subjectId').equals(id).delete()
@@ -152,8 +155,9 @@ export async function replanMissed(now = new Date()): Promise<number> {
 }
 
 export async function deleteTopic(id: string) {
-  await db.transaction('rw', [db.topics, db.notes, db.blocks, db.reviews], async () => {
+  await db.transaction('rw', [db.topics, db.notes, db.blocks, db.reviews, db.cards], async () => {
     await db.topics.delete(id)
+    await db.cards.where('topicId').equals(id).delete()
     await db.reviews.delete(id)
     await db.notes.where('topicId').equals(id).modify({ topicId: undefined })
     await db.blocks.where('topicId').equals(id).modify({ topicId: undefined })
@@ -344,15 +348,18 @@ export async function resumeTimer() {
 }
 
 /** Para o cronômetro e grava a sessão. `markDone` também conclui o bloco. */
-export async function stopTimer(markDone = false) {
+/** Para o cronômetro e grava a sessão. Devolve o id da sessão gravada (se houver). `quiet` não chama o Capi. */
+export async function stopTimer(markDone = false, quiet = false): Promise<string | undefined> {
   const t = await getTimer()
   if (!t) return
   const seconds = Math.round(elapsedOf(t))
+  let sessionId: string | undefined
   await db.transaction('rw', [db.timer, db.sessions, db.blocks, db.topics], async () => {
     await db.timer.delete('timer')
     if (seconds >= 10) {
+      sessionId = uid()
       await db.sessions.add({
-        id: uid(),
+        id: sessionId,
         blockId: t.blockId,
         subjectId: t.subjectId,
         topicId: t.topicId,
@@ -369,15 +376,45 @@ export async function stopTimer(markDone = false) {
       if (b) await db.blocks.update(t.blockId, { studiedSeconds: b.studiedSeconds + seconds, done: b.done || markDone })
     }
   })
+  if (quiet) return sessionId
   const finished = markDone && t.blockId ? await db.blocks.get(t.blockId) : undefined
   if (finished) celebrateBlock(finished, seconds)
   else if (seconds >= 60)
     showMascot({ pose: 'focado', title: 'Sessão salva', text: `Foram ${Math.round(seconds / 60)} minutos de foco. +${Math.floor(seconds / 60)} XP!`, autoHideMs: 5000 })
+  return sessionId
+}
+
+export const updateSession = (id: string, patch: Partial<Session>) => db.sessions.update(id, patch)
+
+/** Registra uma sessão curta (ex.: modo foco encerrado rápido), para não perder a autoavaliação. */
+export async function addSession(s: Omit<Session, 'id'>) {
+  const id = uid()
+  await db.sessions.add({ ...s, id })
+  return id
+}
+
+// ---------- Flashcards ----------
+
+export async function addCards(cards: Pick<Flashcard, 'subjectId' | 'topicId' | 'noteId' | 'front' | 'back' | 'source'>[]) {
+  const today = toISODate(new Date())
+  await db.cards.bulkAdd(cards.map((c) => ({ ...c, front: c.front.trim(), back: c.back.trim(), id: uid(), createdAt: Date.now(), due: today, intervalDays: 0, count: 0, history: [] })))
+}
+
+export const updateCard = (id: string, patch: Partial<Flashcard>) => db.cards.update(id, patch)
+export const deleteCard = (id: string) => db.cards.delete(id)
+
+/** Avalia um flashcard e agenda a próxima vez, com a mesma escada das revisões. */
+export async function rateCard(id: string, rating: ReviewRating) {
+  const c = await db.cards.get(id)
+  if (!c) return
+  const today = toISODate(new Date())
+  const intervalDays = c.count === 0 ? (rating === 'dificil' ? 1 : rating === 'ok' ? 1 : 7) : nextInterval(c.intervalDays, rating)
+  await db.cards.update(id, { intervalDays, due: addDays(today, intervalDays), count: c.count + 1, history: [...c.history, { date: today, rating }] })
 }
 
 // ---------- Backup ----------
 
-const TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews', 'mapPositions', 'mapLinks', 'achievements'] as const
+const TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews', 'mapPositions', 'mapLinks', 'achievements', 'cards'] as const
 
 export async function exportBackup(): Promise<string> {
   const data: Record<string, unknown[]> = {}

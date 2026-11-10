@@ -1,4 +1,4 @@
-import type { AreaId, Block, Note, Review, Session, Subject } from '../db/types'
+import type { AreaId, Block, Flashcard, Note, Review, Session, Subject } from '../db/types'
 import { addDays, toISODate } from './dates'
 import { linkedTitles } from './wikilink'
 import { XP_PER_BLOCK, XP_PER_REVIEW, levelInfo } from './xp'
@@ -9,6 +9,7 @@ export interface StatsInput {
   reviews: Review[]
   notes: Note[]
   subjects: Subject[]
+  cards?: Flashcard[]
 }
 
 export interface Stats {
@@ -17,6 +18,7 @@ export interface Stats {
   xpByArea: Record<AreaId, number>
   doneBlocks: number
   reviewsDone: number
+  cardsDone: number
   longestSession: number
   longestStreak: number
   notesCount: number
@@ -28,7 +30,7 @@ export interface Stats {
 
 const AREAS: AreaId[] = ['faculdade', 'ensino', 'idiomas']
 
-export function computeStats({ sessions, blocks, reviews, notes, subjects }: StatsInput): Stats {
+export function computeStats({ sessions, blocks, reviews, notes, subjects, cards = [] }: StatsInput): Stats {
   const areaOf = new Map(subjects.map((s) => [s.id, s.areaId]))
   const secondsByArea = { faculdade: 0, ensino: 0, idiomas: 0 } as Record<AreaId, number>
   const xpByArea = { faculdade: 0, ensino: 0, idiomas: 0 } as Record<AreaId, number>
@@ -72,6 +74,7 @@ export function computeStats({ sessions, blocks, reviews, notes, subjects }: Sta
     xpByArea,
     doneBlocks: done.length,
     reviewsDone: reviews.reduce((a, r) => a + r.history.length, 0),
+    cardsDone: cards.reduce((a, c) => a + c.history.length, 0),
     longestSession: Math.max(0, ...sessions.map((s) => s.seconds)),
     longestStreak,
     notesCount: notes.filter((n) => n.content.replace(/<[^>]+>/g, '').trim().length >= 20).length,

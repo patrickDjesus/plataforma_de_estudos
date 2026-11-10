@@ -36,7 +36,7 @@ export function Logo() {
   return (
     <span className="flex items-center gap-2.5">
       <LogoMark size={40} />
-      <span className="hidden flex-col leading-none lg:flex">
+      <span className="hidden flex-col leading-none 2xl:flex">
         <span className="font-display text-[19px] font-bold tracking-tight text-ink">Mendonça</span>
         <span className="mt-1 text-[10px] font-semibold tracking-[0.18em] text-muted uppercase">rota de estudos</span>
       </span>

@@ -13,6 +13,8 @@ import { NotebookPage } from './pages/Notebook'
 import { SubjectsPage } from './pages/Subjects'
 import { SettingsPage } from './pages/Settings'
 import { MindMapPage } from './pages/MindMap'
+import { FocusPage } from './pages/Focus'
+import { RecoveryPage } from './pages/Recovery'
 
 startCloudSync()
 
@@ -25,12 +27,15 @@ createRoot(document.getElementById('root')!).render(
       <Routes>
         {/* Check-in: tela cheia, separada do resto do site */}
         <Route path="checkin" element={<CheckInPage />} />
+        {/* Sessão guiada: também em tela cheia */}
+        <Route path="foco/:blockId" element={<FocusPage />} />
         <Route element={<Layout />}>
           <Route index element={<HomePage />} />
           <Route path="calendario" element={<CalendarPage />} />
           <Route path="caderno" element={<NotebookPage />} />
           <Route path="caderno/:noteId" element={<NotebookPage />} />
           <Route path="mapa" element={<MindMapPage />} />
+          <Route path="recuperacao" element={<RecoveryPage />} />
           <Route path="materias" element={<SubjectsPage />} />
           <Route path="config" element={<SettingsPage />} />
         </Route>

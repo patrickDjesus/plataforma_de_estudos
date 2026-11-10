@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { BookOpen, CalendarRange, House, Layers, Settings, Waypoints } from 'lucide-react'
+import { BookOpen, Brain, CalendarRange, House, Layers, Settings, Waypoints } from 'lucide-react'
 import { db } from '../db/db'
 import { currentWeekId } from '../db/repo'
 import { TimerPill } from './TimerPill'
@@ -13,6 +13,7 @@ import { MascotHost } from './MascotHost'
 const NAV = [
   { to: '/', label: 'Início', icon: House },
   { to: '/calendario', label: 'Semana', icon: CalendarRange },
+  { to: '/recuperacao', label: 'Recuperação', icon: Brain },
   { to: '/caderno', label: 'Caderno', icon: BookOpen },
   { to: '/mapa', label: 'Mapa', icon: Waypoints },
   { to: '/materias', label: 'Matérias', icon: Layers },
@@ -49,13 +50,13 @@ export function Layout() {
                 to={to}
                 end={to === '/'}
                 className={({ isActive }) =>
-                  `relative flex items-center gap-2 px-3 text-sm font-semibold whitespace-nowrap transition after:absolute after:inset-x-2 after:bottom-0 after:h-[3px] after:rounded-t-full ${
+                  `relative flex items-center gap-1.5 px-2.5 text-[13.5px] font-semibold whitespace-nowrap transition after:absolute after:inset-x-2 after:bottom-0 after:h-[3px] after:rounded-t-full ${
                     isActive ? 'text-brand after:bg-brand' : 'text-slate-700 after:bg-transparent hover:text-ink'
                   }`
                 }
               >
-                <Icon size={19} strokeWidth={2} />
-                <span className="hidden sm:inline">{label}</span>
+                <Icon size={18} strokeWidth={2} />
+                <span className="hidden md:inline">{label}</span>
               </NavLink>
             ))}
           </nav>

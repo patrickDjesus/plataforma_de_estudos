@@ -97,6 +97,12 @@ export interface Session {
   topicId?: string
   startedAt: number
   seconds: number
+  /** Sessão guiada: objetivo escrito antes de começar. */
+  goal?: string
+  /** Sessão guiada: autoavaliação de confiança (1–5) no fim. */
+  confidence?: number
+  /** Sessão guiada: o que você lembrou de memória ("tela em branco"). */
+  recall?: string
 }
 
 export interface Settings {
@@ -113,6 +119,9 @@ export interface Settings {
   reviewMinutes?: number
   /** Fatia máxima da semana para revisões (0–1). */
   maxReviewShare?: number
+  /** Sessão guiada: minutos de foco e de pausa por ciclo. */
+  focusMinutes?: number
+  focusPauseMinutes?: number
   /** Versão dos conteúdos padrão já aplicada. */
   seedVersion?: number
   /** Capi dá boas-vindas ao abrir o site (padrão: sim). */
@@ -147,4 +156,20 @@ export interface MapLink {
 export interface UnlockedAchievement {
   id: string
   unlockedAt: number
+}
+
+/** Flashcard com revisão espaçada própria. */
+export interface Flashcard {
+  id: string
+  subjectId: string
+  topicId?: string
+  noteId?: string
+  front: string
+  back: string
+  source: 'manual' | 'ia'
+  createdAt: number
+  due: string // YYYY-MM-DD
+  intervalDays: number
+  count: number
+  history: { date: string; rating: ReviewRating }[]
 }

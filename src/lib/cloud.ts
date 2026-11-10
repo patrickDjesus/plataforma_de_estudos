@@ -16,13 +16,16 @@ type DocRef = { set(d: Record<string, unknown>): Promise<void> }
 type ColRef = { doc(id: string): DocRef; onSnapshot(next: (s: QuerySnap) => void, err?: (e: { code: string }) => void): () => void }
 type CloudDB = { collection(path: string): ColRef }
 type CloudUser = { id(): Promise<string | null> }
+/** Capacidade `sample`: pedir ao Claude pela conta de quem está vendo a página. */
+export type SampleOpts = { modelTier?: 'quick' | 'default' | 'complex'; signal?: AbortSignal; onText?: (u: { text: string; delta: string }) => void; cache?: boolean }
+export type ClaudeSample = ((input: string, opts?: SampleOpts) => Promise<{ text: string; truncated?: boolean }>) & { json<T>(input: string, opts?: SampleOpts): Promise<T> }
 declare global {
   interface Window {
-    claude?: { use(name: 'db'): Promise<CloudDB | null>; use(name: 'user'): Promise<CloudUser | null> }
+    claude?: { use(name: 'db'): Promise<CloudDB | null>; use(name: 'user'): Promise<CloudUser | null>; use(name: 'sample'): Promise<ClaudeSample | null> }
   }
 }
 
-export const SYNCED_TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews', 'mapPositions', 'mapLinks', 'achievements'] as const
+export const SYNCED_TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews', 'mapPositions', 'mapLinks', 'achievements', 'cards'] as const
 type TableName = (typeof SYNCED_TABLES)[number]
 
 // ---- Estado observável ----
