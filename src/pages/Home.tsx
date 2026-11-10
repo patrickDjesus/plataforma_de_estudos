@@ -135,7 +135,11 @@ export function HomePage() {
       </Card>
 
       {/* Painel com barra lateral escura */}
-      <div className="flex overflow-hidden rounded-[22px] border border-line bg-white shadow-[0_8px_24px_-12px_rgba(16,24,40,0.08)]">
+      {/* Altura fixa: a barra escura não muda de tamanho ao trocar de seção; o conteúdo rola por dentro */}
+      <div
+        className="flex overflow-hidden rounded-[22px] border border-line bg-white shadow-[0_8px_24px_-12px_rgba(16,24,40,0.08)]"
+        style={{ height: 'max(620px, calc(100vh - 290px))' }}
+      >
         <aside className="flex w-[84px] shrink-0 flex-col items-center gap-2 bg-[#1c1d22] py-5">
           <SideItem active={section === 'geral'} onClick={() => setSection('geral')} icon={<Globe2 size={22} />} label="Geral" />
           <SideItem active={section === 'resultados'} onClick={() => setSection('resultados')} icon={<BarChart3 size={22} />} label="Resultados" />
@@ -143,7 +147,7 @@ export function HomePage() {
           <SideItem active={section === 'conquistas'} onClick={() => setSection('conquistas')} icon={<Trophy size={22} />} label="Conquistas" />
         </aside>
 
-        <div className="min-w-0 flex-1 p-5">
+        <div key={section} className="thin-scroll min-w-0 flex-1 overflow-y-auto p-5">
           {section === 'geral' && (
             <>
               <div className="mb-5">
