@@ -6,8 +6,31 @@ import type { Settings } from '../db/types'
 import { toISODate } from '../lib/dates'
 import { Btn, Card, Field, PageHeader, inputCls } from '../components/ui'
 import { askConfirm } from '../components/confirm'
+import { CAPI_POSES, Capybara, type CapiPose } from '../components/Capybara'
+import { showMascot } from '../lib/mascotBus'
 
 const IS_ARTIFACT = !!import.meta.env.VITE_ARTIFACT
+
+const POSE_TITLE: Record<CapiPose, string> = {
+  acenando: 'Oi, oi!',
+  estudando: 'Modo estudo',
+  comemorando: 'Uhuul!',
+  pensando: 'Hmm…',
+  dormindo: 'Zzz…',
+  relaxando: 'De boa',
+  focado: 'Foco total',
+  formado: 'Subiu de nível!',
+}
+const POSE_TEXT: Record<CapiPose, string> = {
+  acenando: 'É assim que eu te recebo quando você abre o site.',
+  estudando: 'Apareço assim quando é hora de estudar ou anotar.',
+  comemorando: 'Essa é pra quando você conclui um bloco!',
+  pensando: 'Quando tenho uma pergunta pra te fazer.',
+  dormindo: 'Se você abrir o site muito tarde, eu te lembro de dormir.',
+  relaxando: 'Dia livre? Laranja na cabeça e tranquilidade.',
+  focado: 'Durante as sessões de foco.',
+  formado: 'Quando você sobe de nível.',
+}
 
 const NUMBER_FIELDS: { key: keyof Settings; label: string; min: number; max: number }[] = [
   { key: 'blockMinutes', label: 'Duração padrão do bloco (min)', min: 15, max: 180 },
@@ -67,6 +90,36 @@ export function SettingsPage() {
                 onBlur={(e) => updateSettings({ userName: e.target.value.trim() || undefined })}
               />
             </Field>
+          </div>
+        </Card>
+        <Card className="lg:col-span-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold">Conheça o Capi</h2>
+              <p className="text-sm text-muted">A capivara que te dá boas-vindas, faz perguntas e comemora com você. Clique nele no canto da tela para conversar.</p>
+            </div>
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
+              <input
+                id="mascot-welcome"
+                type="checkbox"
+                className="h-4 w-4 accent-[#3e63f2]"
+                checked={settings.mascotWelcome !== false}
+                onChange={(e) => updateSettings({ mascotWelcome: e.target.checked })}
+              />
+              Boas-vindas ao abrir o site
+            </label>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+            {CAPI_POSES.map((p) => (
+              <button
+                key={p}
+                onClick={() => showMascot({ pose: p, title: POSE_TITLE[p], text: POSE_TEXT[p], autoHideMs: 5000 })}
+                className="flex flex-col items-center rounded-2xl bg-[#f6f7f9] px-2 pt-3 pb-2 transition hover:bg-brand-soft"
+              >
+                <Capybara pose={p} size={86} />
+                <span className="mt-1 text-xs font-semibold capitalize">{p}</span>
+              </button>
+            ))}
           </div>
         </Card>
         <Card>

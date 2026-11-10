@@ -3,6 +3,8 @@ import type { AreaId, AreaPercents, Availability, Block, Note, Settings, Subject
 import { autoColor } from '../lib/colors'
 import { minutesNow, toISODate, weekIdOf } from '../lib/dates'
 import { planWeek } from '../lib/planner'
+import { showMascot } from '../lib/mascotBus'
+import { XP_PER_BLOCK } from '../lib/xp'
 
 // ---------- Configurações ----------
 
@@ -172,7 +174,23 @@ export async function updateBlock(id: string, patch: Partial<Block>) {
 export const deleteBlock = (id: string) => db.blocks.delete(id)
 
 export async function setBlockDone(id: string, done: boolean) {
+  const b = await db.blocks.get(id)
   await db.blocks.update(id, { done })
+  if (done && b && !b.done) celebrateBlock(b.topicId, b.subjectId, 0)
+}
+
+const CHEERS = ['Mandou bem!', 'Isso aí!', 'Mais um pra conta!', 'Que orgulho!', 'Arrasou!', 'Capivarístico!']
+
+async function celebrateBlock(topicId: string | undefined, subjectId: string | undefined, seconds: number) {
+  const [topic, subject] = await Promise.all([topicId ? db.topics.get(topicId) : undefined, subjectId ? db.subjects.get(subjectId) : undefined])
+  const what = topic?.name ?? subject?.name ?? 'o bloco'
+  const xp = Math.floor(seconds / 60) + XP_PER_BLOCK
+  showMascot({
+    pose: 'comemorando',
+    title: CHEERS[Math.floor(Math.random() * CHEERS.length)],
+    text: `Você concluiu ${what}. +${xp} XP pra você! 🎉`,
+    autoHideMs: 6000,
+  })
 }
 
 // ---------- Cronômetro ----------
@@ -229,6 +247,9 @@ export async function stopTimer(markDone = false) {
       if (b) await db.blocks.update(t.blockId, { studiedSeconds: b.studiedSeconds + seconds, done: b.done || markDone })
     }
   })
+  if (markDone && t.blockId) celebrateBlock(t.topicId, t.subjectId, seconds)
+  else if (seconds >= 60)
+    showMascot({ pose: 'focado', title: 'Sessão salva', text: `Foram ${Math.round(seconds / 60)} minutos de foco. +${Math.floor(seconds / 60)} XP!`, autoHideMs: 5000 })
 }
 
 // ---------- Backup ----------

@@ -9,7 +9,7 @@ import type { AreaId, AreaPercents, Availability } from '../db/types'
 import { AREA_COLOR } from '../lib/colors'
 import { DAY_NAMES, dayIndex, fmtTime, fmtWeekRange, parseTime } from '../lib/dates'
 import { Btn, Card, Chip } from '../components/ui'
-import { LogoMark } from '../components/Logo'
+import { Capybara } from '../components/Capybara'
 
 const FAC_FLOOR = 66
 
@@ -90,8 +90,14 @@ export function CheckInPage() {
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-8 flex flex-col items-center text-center">
-        <LogoMark size={56} />
-        <p className="mt-4 mb-2 rounded-full bg-brand-soft px-3 py-1 text-xs font-bold tracking-wider text-brand uppercase">{fmtWeekRange(weekId)}</p>
+        <div className="flex items-end gap-1">
+          <Capybara pose="pensando" size={110} />
+          <div className="relative mb-12 rounded-2xl border border-line bg-white px-4 py-2.5 text-left text-sm font-semibold shadow-sm">
+            <span className="absolute bottom-3 -left-1.5 h-3 w-3 rotate-45 border-b border-l border-line bg-white" />
+            {existing ? 'Mudou alguma coisa na semana?' : 'Onde vai ser o foco desta semana?'}
+          </div>
+        </div>
+        <p className="mt-2 mb-2 rounded-full bg-brand-soft px-3 py-1 text-xs font-bold tracking-wider text-brand uppercase">{fmtWeekRange(weekId)}</p>
         <h1 className="text-3xl font-extrabold sm:text-4xl">
           {existing ? 'Reajustar a semana' : 'Nova semana, novo foco 🚀'}
         </h1>

@@ -6,6 +6,7 @@ import { db } from '../db/db'
 import { currentWeekId } from '../db/repo'
 import { TimerPill } from './TimerPill'
 import { Logo } from './Logo'
+import { MascotHost } from './MascotHost'
 
 const NAV = [
   { to: '/', label: 'Início', icon: House },
@@ -60,6 +61,7 @@ export function Layout() {
       <main className="mx-auto max-w-[1240px] px-4 py-6">
         <Outlet />
       </main>
+      <MascotHost />
     </div>
   )
 }

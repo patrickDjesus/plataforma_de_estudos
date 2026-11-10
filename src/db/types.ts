@@ -92,6 +92,8 @@ export interface Settings {
   defaultAvailability: Availability
   lastPercents: AreaPercents
   userName?: string
+  /** Capi dá boas-vindas ao abrir o site (padrão: sim). */
+  mascotWelcome?: boolean
 }
 
 export interface TimerState {

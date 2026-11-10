@@ -11,6 +11,7 @@ import { DAY_SHORT, addDays, fmtDuration, fmtTime, minutesNow, toISODate, weekDa
 import { XP_PER_BLOCK, levelInfo, xpFrom } from '../lib/xp'
 import { LogoMark } from '../components/Logo'
 import { SubjectIcon } from '../components/SubjectIcon'
+import { Capybara } from '../components/Capybara'
 import { Card, Ring, Tabs } from '../components/ui'
 
 type Section = 'geral' | 'resultados' | 'metas'
@@ -174,7 +175,12 @@ export function HomePage() {
                 {/* Tarefas */}
                 <Panel title={scope === 'hoje' ? 'Tarefas do dia' : 'Tarefas da semana'} icon={<CalendarCheck2 size={18} />}>
                   <div className="thin-scroll -mx-1 max-h-[300px] flex-1 divide-y divide-line overflow-y-auto px-1">
-                    {scoped.length === 0 && <p className="py-10 text-center text-sm text-muted">Nenhum bloco de estudo {scope === 'hoje' ? 'hoje' : 'nesta semana'}.</p>}
+                    {scoped.length === 0 && (
+                      <div className="flex flex-col items-center py-4 text-center">
+                        <Capybara pose="relaxando" size={96} />
+                        <p className="mt-1 text-sm text-muted">Nenhum bloco de estudo {scope === 'hoje' ? 'hoje' : 'nesta semana'}. Dia de capivara. 🍊</p>
+                      </div>
+                    )}
                     {scoped.map((b) => {
                       const s = b.subjectId ? subjects.get(b.subjectId) : undefined
                       const t = b.topicId ? topicMap.get(b.topicId) : undefined

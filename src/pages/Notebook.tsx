@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { BookOpen, ChevronDown, ChevronRight, FilePlus2, FileText, Link2, Search, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, FilePlus2, FileText, Link2, Search, Trash2 } from 'lucide-react'
 import { AREAS, useNote, useNotes, useSubjects, useTopics } from '../db/hooks'
 import { createNote, deleteNote, updateNote } from '../db/repo'
 import { db } from '../db/db'
@@ -9,6 +9,7 @@ import { AREA_COLOR, tint } from '../lib/colors'
 import { linkedTitles, renameLinks } from '../lib/wikilink'
 import { NoteEditor } from '../components/NoteEditor'
 import { SubjectIcon } from '../components/SubjectIcon'
+import { Capybara } from '../components/Capybara'
 import { askConfirm } from '../components/confirm'
 import { Btn, Card, inputCls } from '../components/ui'
 
@@ -225,9 +226,7 @@ export function NotebookPage() {
         </div>
       ) : (
         <Card className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-brand text-white shadow-lg">
-            <BookOpen size={28} />
-          </div>
+          <Capybara pose="estudando" size={130} />
           <h2 className="text-xl font-bold">Seu caderno</h2>
           <p className="mt-1 max-w-sm text-sm text-muted">Escolha uma nota à esquerda ou crie uma nova. Use [[Nome]] para conectar notas entre matérias.</p>
           {subjects[0] && (
