@@ -1,39 +1,33 @@
 /**
- * Logo do Mendonça: um "M" desenhado como constelação.
- * Os nós são as três áreas (Faculdade, Ensino Médio, Idiomas) ligadas entre si,
- * a mesma ideia do caderno conectado, e a estrela no alto representa a meta.
+ * Logo do Mendonça: o rosto do Capi, a capivara mascote.
+ * Formas simples e cores chapadas para ser reconhecível até em tamanho de ícone.
  */
 export function LogoMark({ size = 40 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
-      <defs>
-        <linearGradient id="lm-bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#1b2559" />
-          <stop offset="1" stopColor="#0b1026" />
-        </linearGradient>
-        <linearGradient id="lm-line" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#ff9a3d" />
-          <stop offset=".5" stopColor="#7c8cff" />
-          <stop offset="1" stopColor="#2fd89a" />
-        </linearGradient>
-        <radialGradient id="lm-glow" cx=".5" cy=".35" r=".6">
-          <stop offset="0" stopColor="#5b6cff" stopOpacity=".55" />
-          <stop offset="1" stopColor="#5b6cff" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <rect width="48" height="48" rx="14" fill="url(#lm-bg)" />
-      <rect width="48" height="48" rx="14" fill="url(#lm-glow)" />
-      {/* órbita */}
-      <ellipse cx="24" cy="25" rx="19" ry="7.5" fill="none" stroke="#ffffff" strokeOpacity=".12" strokeWidth="1.2" transform="rotate(-18 24 25)" />
-      {/* M constelação */}
-      <path d="M11 35 L16.5 14 L24 27 L31.5 14 L37 35" fill="none" stroke="url(#lm-line)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="11" cy="35" r="3.3" fill="#ff9a3d" stroke="#0b1026" strokeWidth="1.5" />
-      <circle cx="16.5" cy="14" r="3.3" fill="#5b7cff" stroke="#0b1026" strokeWidth="1.5" />
-      <circle cx="24" cy="27" r="3.6" fill="#ffffff" stroke="#0b1026" strokeWidth="1.5" />
-      <circle cx="31.5" cy="14" r="3.3" fill="#b06bff" stroke="#0b1026" strokeWidth="1.5" />
-      <circle cx="37" cy="35" r="3.3" fill="#2fd89a" stroke="#0b1026" strokeWidth="1.5" />
-      {/* estrela-meta */}
-      <path d="M38.5 5.5 L39.6 8.9 L43 10 L39.6 11.1 L38.5 14.5 L37.4 11.1 L34 10 L37.4 8.9 Z" fill="#ffd34d" />
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+      <defs><linearGradient id="lmh" gradientUnits="userSpaceOnUse" x1="0" y1="10" x2="0" y2="60"><stop offset="0" stopColor="#d9a26c" /><stop offset="1" stopColor="#c08552" /></linearGradient></defs>
+      <ellipse cx="13" cy="12.5" rx="4.6" ry="5.2" fill="#7a4e2d" />
+      <ellipse cx="51" cy="12.5" rx="4.6" ry="5.2" fill="#7a4e2d" />
+      <rect x="5" y="10" width="54" height="50" rx="17" fill="url(#lmh)" />
+      <path d="M9 18 Q12 11.5 22 11" fill="none" stroke="#fff" strokeOpacity=".3" strokeWidth="2.4" strokeLinecap="round" />
+      <circle cx="32" cy="8.6" r="6" fill="#ff9f2e" />
+      <circle cx="30" cy="6.6" r="1.7" fill="#fff" opacity=".5" />
+      <ellipse cx="35.6" cy="2.9" rx="3.4" ry="1.7" fill="#3fbf6a" transform="rotate(-25 35.6 2.9)" />
+      <circle cx="20.5" cy="26" r="8" fill="#fff" />
+      <circle cx="43.5" cy="26" r="8" fill="#fff" />
+      <circle cx="21.5" cy="28.3" r="4.4" fill="#24160c" />
+      <circle cx="42.5" cy="28.3" r="4.4" fill="#24160c" />
+      <circle cx="23" cy="27.6" r="1.4" fill="#fff" />
+      <circle cx="44" cy="27.6" r="1.4" fill="#fff" />
+      <path d="M12.3 25.6 A8.2 8.2 0 0 1 28.7 25.6 Z" fill="url(#lmh)" />
+      <path d="M35.3 25.6 A8.2 8.2 0 0 1 51.7 25.6 Z" fill="url(#lmh)" />
+      <path d="M12.4 25.7 L28.6 25.7 M35.4 25.7 L51.6 25.7" stroke="#5e3a22" strokeWidth="2.2" strokeLinecap="round" />
+      <ellipse cx="9.5" cy="39" rx="3.4" ry="2.3" fill="#ff8f7e" opacity=".65" />
+      <ellipse cx="54.5" cy="39" rx="3.4" ry="2.3" fill="#ff8f7e" opacity=".65" />
+      <rect x="12" y="34" width="40" height="26" rx="13" fill="#9c653a" />
+      <path d="M20.5 38.8 Q32 34 43.5 38.8 Q44.5 45.5 38 46 L26 46 Q19.5 45.5 20.5 38.8 Z" fill="#4e2f1a" />
+      <path d="M25 40.6 Q27 42.8 29.4 41.3 M39 40.6 Q37 42.8 34.6 41.3" fill="none" stroke="#1d110a" strokeWidth="1.7" strokeLinecap="round" />
+      <path d="M26 51 Q32 55.5 38 51" fill="none" stroke="#2b1a0f" strokeWidth="2.3" strokeLinecap="round" />
     </svg>
   )
 }
@@ -41,11 +35,9 @@ export function LogoMark({ size = 40 }: { size?: number }) {
 export function Logo() {
   return (
     <span className="flex items-center gap-2.5">
-      <LogoMark size={38} />
+      <LogoMark size={40} />
       <span className="hidden flex-col leading-none lg:flex">
-        <span className="font-display text-[19px] font-bold tracking-tight text-ink">
-          Mendonça
-        </span>
+        <span className="font-display text-[19px] font-bold tracking-tight text-ink">Mendonça</span>
         <span className="mt-1 text-[10px] font-semibold tracking-[0.18em] text-muted uppercase">rota de estudos</span>
       </span>
     </span>
