@@ -35,7 +35,7 @@ export function TimerPill() {
           {timer.label}
         </span>
       )}
-      <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 tabular-nums">
+      <span className={`items-center gap-1.5 rounded-full px-2.5 py-1 tabular-nums ${timer ? 'flex' : 'hidden sm:flex'}`}>
         <Timer size={15} className="text-slate-400" />
         {fmtClock(elapsed)}
       </span>

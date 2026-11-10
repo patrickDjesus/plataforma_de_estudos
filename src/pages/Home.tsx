@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowRight, BarChart3, BookOpen, RotateCcw, CalendarCheck2, Check, ChevronRight, Clock3, Flame, Globe2, Medal, Play, Target, Trophy, Zap } from 'lucide-react'
+import { Layers, Settings, ArrowRight, BarChart3, BookOpen, RotateCcw, CalendarCheck2, Check, ChevronRight, Clock3, Flame, Globe2, Medal, Play, Target, Trophy, Zap } from 'lucide-react'
 import { db } from '../db/db'
 import { AREAS, useSessions, useSettings, useSubjectMap, useTimer, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
 import { currentWeekId, rateReview } from '../db/repo'
@@ -147,6 +147,11 @@ export function HomePage() {
           <SideItem active={section === 'resultados'} onClick={() => setSection('resultados')} icon={<BarChart3 size={22} />} label="Resultados" />
           <SideItem active={section === 'metas'} onClick={() => setSection('metas')} icon={<Target size={22} />} label="Metas" />
           <SideItem active={section === 'conquistas'} onClick={() => setSection('conquistas')} icon={<Trophy size={22} />} label="Conquistas" />
+          {/* Atalhos para páginas que saíram do topo */}
+          <div className="mt-auto flex w-full flex-col items-center gap-1 border-t border-white/10 pt-3">
+            <SideItem active={false} onClick={() => navigate('/materias')} icon={<Layers size={20} />} label="Matérias" />
+            <SideItem active={false} onClick={() => navigate('/config')} icon={<Settings size={20} />} label="Ajustes" />
+          </div>
         </aside>
 
         <div key={section} className="thin-scroll min-w-0 flex-1 overflow-y-auto p-5">
