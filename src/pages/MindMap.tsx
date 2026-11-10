@@ -26,6 +26,8 @@ import { AREAS, useNotes, useSubjects, useTopics } from '../db/hooks'
 import type { AreaId } from '../db/types'
 import { AREA_COLOR, tint } from '../lib/colors'
 import { buildGraph, type GNode } from '../lib/graph'
+import { masteryColor, masteryLabel } from '../lib/mastery'
+import { useMastery } from '../db/mastery'
 import { askConfirm } from '../components/confirm'
 import { Capybara } from '../components/Capybara'
 import { SubjectIcon } from '../components/SubjectIcon'
@@ -63,6 +65,25 @@ function SubjectNode({ data }: NodeProps<Node<NodeData>>) {
 }
 
 function TopicNode({ data }: NodeProps<Node<NodeData>>) {
+  if (data.byMastery) {
+    const has = data.mastery !== undefined
+    const c = masteryColor(data.mastery)
+    return (
+      <div
+        className={`group flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap ${has ? '' : 'border-dashed'}`}
+        style={{ background: has ? tint(c, 0.16) : '#fff', borderColor: has ? c : '#cbd5e1', color: has ? `color-mix(in srgb, ${c} 70%, #000)` : '#64748b' }}
+        title={has ? `Domínio: ${data.mastery}% (${masteryLabel(data.mastery)})` : 'Ainda sem dados de domínio'}
+      >
+        <Handles />
+        {data.label}
+        {has && (
+          <span className="rounded-full px-1.5 text-[10px] font-extrabold text-white" style={{ background: c }}>
+            {data.mastery}%
+          </span>
+        )}
+      </div>
+    )
+  }
   return (
     <div
       className="group flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap"
@@ -112,11 +133,14 @@ function MindMap() {
   const focus = params.get('nota') ?? undefined
   const view: 'global' | 'local' = focus ? 'local' : 'global'
   const [query, setQuery] = useState('')
+  const [byMastery, setByMastery] = useState(true)
+  const mastery = useMastery()
+  const masteryMap = useMemo(() => new Map([...mastery.topics.entries()].map(([k, v]) => [k, v.value])), [mastery])
   const { fitView } = useReactFlow()
 
   const graph = useMemo(
-    () => (positions ? buildGraph({ subjects, topics, notes, links, positions, areas, subjectIds: subjectFilter, focusNoteId: focus }) : { nodes: [], edges: [] }),
-    [subjects, topics, notes, links, positions, areas, subjectFilter, focus],
+    () => (positions ? buildGraph({ subjects, topics, notes, links, positions, areas, subjectIds: subjectFilter, focusNoteId: focus, mastery: masteryMap, colorByMastery: byMastery }) : { nodes: [], edges: [] }),
+    [subjects, topics, notes, links, positions, areas, subjectFilter, focus, masteryMap, byMastery],
   )
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([])
@@ -218,6 +242,13 @@ function MindMap() {
               )}
             </div>
           )}
+          <button
+            onClick={() => setByMastery(!byMastery)}
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition ${byMastery ? 'border-transparent bg-ink text-white' : 'border-line bg-white text-slate-600'}`}
+            title="Pinta cada tópico de vermelho (fraco) a verde (dominado)"
+          >
+            <span className="h-3 w-8 rounded-full" style={{ background: 'linear-gradient(90deg,#ef4444,#eab308,#10b981)' }} /> Domínio
+          </button>
           <span className="mx-1 hidden h-6 w-px bg-line md:block" />
           <div className="flex flex-wrap gap-1.5">
             {AREAS.map((a) => {
@@ -301,6 +332,11 @@ function MindMap() {
           <span className="flex items-center gap-2">
             <span className="h-[3px] w-6 rounded bg-amber-500" /> Ligação manual
           </span>
+          {byMastery && (
+            <span className="flex items-center gap-2">
+              <span className="h-2 w-16 rounded-full" style={{ background: 'linear-gradient(90deg,#ef4444,#f97316,#eab308,#84cc16,#10b981)' }} /> domínio do tópico (fraco → dominado)
+            </span>
+          )}
           <span className="ml-auto">Arraste para organizar · puxe da bolinha lateral de um nó até outro para ligar · duplo clique abre a nota</span>
         </div>
       </Card>

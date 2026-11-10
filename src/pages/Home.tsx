@@ -16,6 +16,8 @@ import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
 import { AchievementsSection } from '../components/Achievements'
 import { ChallengeModal } from '../components/ChallengeModal'
+import { useMastery } from '../db/mastery'
+import { masteryColor, masteryLabel } from '../lib/mastery'
 import { ratingFromScore } from '../lib/challenge'
 import { Card, Ring, Tabs } from '../components/ui'
 
@@ -409,6 +411,7 @@ function WeekGoals({ weekId }: { weekId: string }) {
   const study = blocks.filter((b) => b.kind === 'study')
   return (
     <div className="grid gap-5 lg:grid-cols-2">
+      <WeakPoints />
       <div className="rounded-[18px] border border-line p-5">
         <h3 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold">
           <Target size={18} /> Plano da semana por área
@@ -624,6 +627,72 @@ function YearHeatmap() {
         ))}
         mais
       </div>
+    </div>
+  )
+}
+
+/** Tópicos com menor domínio: onde vale a pena reforçar. */
+function WeakPoints() {
+  const navigate = useNavigate()
+  const mastery = useMastery()
+  const subjects = useSubjectMap()
+  const topics = useTopics()
+  const weak = [...mastery.topics.entries()].sort((a, b) => a[1].value - b[1].value).slice(0, 6)
+  const subjectAvgs = [...mastery.subjects.entries()].sort((a, b) => a[1] - b[1])
+  return (
+    <div className="rounded-[18px] border border-line p-5 lg:col-span-2">
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 font-sans text-sm font-semibold">
+          <Target size={18} /> Pontos fracos
+        </h3>
+        <span className="text-[11px] text-muted">Domínio = desafios 50% · revisões e cartões 25% · confiança 15% · tempo 10%</span>
+      </div>
+      <p className="mb-4 text-xs text-muted">O planejador já dá prioridade a esses tópicos. Um desafio rápido ajuda a subir o domínio.</p>
+      {weak.length === 0 ? (
+        <div className="flex items-center gap-3 rounded-2xl bg-[#f6f7f9] p-4 text-sm text-muted">
+          <Capybara pose="pensando" size={60} />
+          Ainda não há dados de domínio. Faça desafios, revisões e use o modo foco: o domínio de cada tópico aparece aqui.
+        </div>
+      ) : (
+        <div className="grid gap-2 md:grid-cols-2">
+          {weak.map(([id, m]) => {
+            const t = topics.find((x) => x.id === id)
+            const s = t ? subjects.get(t.subjectId) : undefined
+            const c = masteryColor(m.value)
+            return (
+              <div key={id} className="flex items-center gap-3 rounded-2xl border border-line p-2.5">
+                <SubjectIcon subject={s} size={36} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-sm font-bold">{t?.name}</span>
+                    <span className="text-xs font-extrabold" style={{ color: c }}>
+                      {m.value}%
+                    </span>
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#eef0f4]">
+                    <div className="h-full rounded-full" style={{ width: `${Math.max(4, m.value)}%`, background: c }} />
+                  </div>
+                  <div className="mt-0.5 text-[10px] text-muted">
+                    {s?.name} · {masteryLabel(m.value)}
+                  </div>
+                </div>
+                <button onClick={() => navigate(`/desafio?materia=${t?.subjectId}&topico=${id}`)} className="shrink-0 rounded-xl px-2.5 py-1.5 text-xs font-bold text-white" style={{ background: s?.color ?? '#3e63f2' }}>
+                  ⚔️ Desafio
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {subjectAvgs.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-1.5 border-t border-line pt-3">
+          {subjectAvgs.map(([id, v]) => (
+            <span key={id} className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: tint(masteryColor(v), 0.14), color: `color-mix(in srgb, ${masteryColor(v)} 75%, #000)` }}>
+              {subjects.get(id)?.name}: {v}%
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

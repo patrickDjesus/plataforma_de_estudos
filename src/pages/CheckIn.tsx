@@ -14,6 +14,12 @@ import { Capybara, type CapiPose } from '../components/Capybara'
 import { LogoMark } from '../components/Logo'
 import { guessIcon } from '../components/SubjectIcon'
 import { useSettings } from '../db/hooks'
+import { VoiceTextarea } from '../components/Voice'
+import { loadWeekStats, saveRetro } from '../db/retro'
+import { RETRO_TAGS, completionRate, hasWeekData, retroHints, trimAvailability, type WeekStats } from '../lib/retro'
+import { CATEGORY_LABEL, REASON_LABEL } from '../lib/errors'
+import { masteryColor } from '../lib/mastery'
+import type { RetroTag, WeekRetro } from '../db/types'
 
 const FAC_FLOOR = 66
 
@@ -37,8 +43,8 @@ function rebalance(p: AreaPercents, changed: AreaId, value: number): AreaPercent
   return next
 }
 
-type Step = 'inicio' | 'foco' | 'horarios' | 'materias' | 'resumo'
-const STEPS: { id: Exclude<Step, 'inicio'>; label: string; icon: typeof Target }[] = [
+type Step = 'retro' | 'inicio' | 'foco' | 'horarios' | 'materias' | 'resumo'
+const STEPS: { id: Exclude<Step, 'inicio' | 'retro'>; label: string; icon: typeof Target }[] = [
   { id: 'foco', label: 'Foco', icon: Target },
   { id: 'horarios', label: 'Horários', icon: Clock3 },
   { id: 'materias', label: 'Matérias', icon: Layers },
@@ -63,6 +69,10 @@ export function CheckInPage() {
   const weekEnd = addDays(weekId, 6)
   const reviewsThisWeek = useLiveQuery(() => db.reviews.where('due').belowOrEqual(weekEnd).count(), [weekEnd], 0)
   const today = dayIndex()
+  const prevWeekId = addDays(weekId, -7)
+  const [prevStats, setPrevStats] = useState<WeekStats | null>(null)
+  const [prevRetro, setPrevRetro] = useState<WeekRetro | undefined>()
+  const [trimmed, setTrimmed] = useState(false)
 
   useEffect(() => {
     if (percents) return
@@ -73,7 +83,14 @@ export function CheckInPage() {
         setPaused(w?.pausedSubjectIds ?? [])
       })
     })
-  }, [weekId, percents])
+    Promise.all([loadWeekStats(prevWeekId), db.weeks.get(prevWeekId)]).then(([st, pw]) => {
+      setPrevStats(st)
+      setPrevRetro(pw?.retro)
+      // Revisão semanal: primeiro passo quando a semana passada teve estudo e ainda não foi revisada
+      if (hasWeekData(st) && !pw?.retro) setStep('retro')
+    })
+  }, [weekId, percents, prevWeekId])
+  const hints = useMemo(() => retroHints(prevStats, prevRetro), [prevStats, prevRetro])
 
   const minutes = useMemo(() => (availability ? totalMinutes(availability, today) : 0), [availability, today])
   if (!percents || !availability) return null
@@ -198,6 +215,7 @@ export function CheckInPage() {
   const name = settings.userName?.trim() || 'estudante'
   const stepIdx = STEPS.findIndex((x) => x.id === step)
   const go = (dir: 1 | -1) => {
+    if (step === 'retro') return setStep('inicio')
     if (step === 'inicio') return setStep('foco')
     const i = stepIdx + dir
     setStep(i < 0 ? 'inicio' : STEPS[Math.min(i, STEPS.length - 1)].id)
@@ -207,6 +225,7 @@ export function CheckInPage() {
   const active = subjects.filter((s) => !paused.includes(s.id))
 
   const CAPI: Record<Step, { pose: CapiPose; text: string }> = {
+    retro: { pose: 'pensando', text: `Antes de planejar, ${name}, bora olhar a semana passada? O que funcionou e o que travou?` },
     inicio: { pose: 'acenando', text: existing ? `Oi, ${name}! Mudou alguma coisa? Bora reajustar a semana.` : `Oi, ${name}! Semana nova chegando. Bora planejar juntos?` },
     foco: { pose: 'pensando', text: 'Onde você quer colocar sua energia esta semana?' },
     horarios: { pose: 'focado', text: 'Quando você vai ter tempo livre para estudar?' },
@@ -241,7 +260,7 @@ export function CheckInPage() {
             <div className="mt-1 text-[10px] font-semibold tracking-[0.18em] text-muted uppercase">Check-in da semana</div>
           </div>
         </div>
-        {step !== 'inicio' && (
+        {step !== 'inicio' && step !== 'retro' && (
           <ol className="hidden items-center gap-2 md:flex">
             {STEPS.map((x, i) => {
               const Icon = x.icon
@@ -288,6 +307,22 @@ export function CheckInPage() {
 
         {/* Conteúdo do passo */}
         <section key={`s-${step}`} className="capi-pop min-w-0 flex-1">
+          {step === 'retro' && prevStats && (
+            <RetroStep
+              stats={prevStats}
+              onDone={async (worked, blocked, tags) => {
+                await saveRetro(prevWeekId, worked, blocked, tags)
+                setPrevRetro({ worked, blocked, tags, at: Date.now() })
+                setStep('inicio')
+              }}
+              onSkip={async () => {
+                // Pular também conta como revisada, para não perguntar de novo
+                await saveRetro(prevWeekId, '', '', [])
+                setStep('inicio')
+              }}
+            />
+          )}
+
           {step === 'inicio' && (
             <div className="rounded-[28px] border border-line bg-white p-8 shadow-[0_20px_50px_-28px_rgba(16,24,40,0.35)] sm:p-10">
               <p className="mb-3 inline-flex rounded-full bg-brand-soft px-3 py-1 text-xs font-bold tracking-wider text-brand uppercase">{fmtWeekRange(weekId)}</p>
@@ -323,6 +358,7 @@ export function CheckInPage() {
 
           {step === 'foco' && (
             <StepCard title="Foco por área" subtitle={`${today > 0 ? `Planejando de ${DAY_NAMES[today].toLowerCase()} em diante · ` : ''}${hours(minutes)} disponíveis`}>
+              <Hints items={hints.foco} />
               <div className="space-y-7">
                 {AREAS.map((a) => (
                   <div key={a.id}>
@@ -381,6 +417,20 @@ export function CheckInPage() {
                 </button>
               }
             >
+              <Hints items={hints.horarios}>
+                {hints.trim && !trimmed && (
+                  <button
+                    onClick={() => {
+                      setAvailability(trimAvailability(availability, hints.trim!))
+                      setTrimmed(true)
+                    }}
+                    className="mt-2 rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-600"
+                  >
+                    Enxugar horários para {Math.round(hints.trim * 100)}%
+                  </button>
+                )}
+                {trimmed && <p className="mt-2 text-xs font-bold text-emerald-700">✓ Horários enxugados. Ajuste à vontade abaixo.</p>}
+              </Hints>
               {availabilityEditor}
             </StepCard>
           )}
@@ -477,7 +527,7 @@ export function CheckInPage() {
             </StepCard>
           )}
 
-          {step !== 'inicio' && (
+          {step !== 'inicio' && step !== 'retro' && (
             <div className="mt-5 flex items-center justify-between">
               <button onClick={() => go(-1)} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-white">
                 <ArrowLeft size={16} /> Voltar
@@ -521,5 +571,130 @@ function Summary({ label, value }: { label: string; value: string }) {
       <div className="text-xs font-semibold text-muted">{label}</div>
       <div className="mt-1 font-display text-2xl font-bold">{value}</div>
     </div>
+  )
+}
+
+function Hints({ items, children }: { items: string[]; children?: React.ReactNode }) {
+  if (!items.length) return null
+  return (
+    <div className="mb-5 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3.5">
+      <Capybara pose="pensando" size={46} />
+      <div className="min-w-0 flex-1">
+        <div className="text-[11px] font-extrabold tracking-wider text-amber-700 uppercase">Da sua revisão semanal</div>
+        <ul className="mt-1 space-y-1 text-sm text-amber-900">
+          {items.map((t) => (
+            <li key={t}>• {t}</li>
+          ))}
+        </ul>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function RetroStep({ stats, onDone, onSkip }: { stats: WeekStats; onDone: (worked: string, blocked: string, tags: RetroTag[]) => Promise<void>; onSkip: () => void }) {
+  const [worked, setWorked] = useState('')
+  const [blocked, setBlocked] = useState('')
+  const [tags, setTags] = useState<RetroTag[]>([])
+  const [saving, setSaving] = useState(false)
+  const rate = completionRate(stats)
+  const total = AREAS.reduce((a, x) => a + stats.minutesByArea[x.id], 0)
+  const reasons = Object.entries(stats.errorsByReason).sort((a, b) => b[1] - a[1])
+  const cats = Object.entries(stats.errorsByCategory).sort((a, b) => b[1] - a[1]).slice(0, 3)
+  const h = (m: number) => `${(m / 60).toFixed(1).replace('.0', '')}h`
+  const toggle = (t: RetroTag) => setTags(tags.includes(t) ? tags.filter((x) => x !== t) : [...tags, t])
+  return (
+    <StepCard title="Revisão da semana passada" subtitle={fmtWeekRange(stats.weekId)}>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl bg-[#f6f7f9] p-4">
+          <div className="text-xs font-bold text-muted uppercase">Tempo estudado</div>
+          <div className="mt-1 font-display text-3xl font-extrabold">{h(total)}</div>
+          <div className="mt-2 flex h-2.5 overflow-hidden rounded-full bg-white">
+            {AREAS.map((a) => (total ? <span key={a.id} style={{ width: `${(stats.minutesByArea[a.id] / total) * 100}%`, background: AREA_COLOR[a.id] }} /> : null))}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted">
+            {AREAS.map((a) => (
+              <span key={a.id} className="flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full" style={{ background: AREA_COLOR[a.id] }} />
+                {a.name}: {h(stats.minutesByArea[a.id])}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-2xl bg-[#f6f7f9] p-4">
+          <div className="text-xs font-bold text-muted uppercase">Plano cumprido</div>
+          <div className="mt-1 font-display text-3xl font-extrabold" style={{ color: masteryColor(rate * 100) }}>
+            {stats.planned ? `${Math.round(rate * 100)}%` : '—'}
+          </div>
+          <div className="mt-1 text-xs text-muted">{stats.planned ? `${stats.done} de ${stats.planned} blocos` : 'Sem blocos planejados'}</div>
+        </div>
+        {stats.weakest.length > 0 && (
+          <div className="rounded-2xl bg-[#f6f7f9] p-4">
+            <div className="mb-1.5 text-xs font-bold text-muted uppercase">Pontos mais fracos</div>
+            {stats.weakest.map((t) => (
+              <div key={t.topicId} className="flex items-center justify-between gap-2 text-sm">
+                <span className="truncate">
+                  {t.name} <span className="text-[11px] text-muted">· {t.subjectName}</span>
+                </span>
+                <b style={{ color: masteryColor(t.value) }}>{t.value}%</b>
+              </div>
+            ))}
+          </div>
+        )}
+        {(reasons.length > 0 || cats.length > 0) && (
+          <div className="rounded-2xl bg-[#f6f7f9] p-4">
+            <div className="mb-1.5 text-xs font-bold text-muted uppercase">Erros mais comuns</div>
+            <div className="flex flex-wrap gap-1.5">
+              {reasons.map(([r, n]) => (
+                <span key={r} className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold">
+                  {REASON_LABEL[r as keyof typeof REASON_LABEL].emoji} {REASON_LABEL[r as keyof typeof REASON_LABEL].label} ×{n}
+                </span>
+              ))}
+              {cats.map(([c, n]) => (
+                <span key={c} className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold">
+                  ✍️ {CATEGORY_LABEL[c as keyof typeof CATEGORY_LABEL]} ×{n}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-bold">✅ O que funcionou?</span>
+          <VoiceTextarea value={worked} onValue={setWorked} rows={3} placeholder="Ex.: estudar de manhã, os desafios rápidos…" className="w-full rounded-2xl border border-line bg-white p-3 text-sm outline-none focus:border-brand" />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-bold">🚧 O que travou?</span>
+          <VoiceTextarea value={blocked} onValue={setBlocked} rows={3} placeholder="Ex.: muitas provas, cansaço à noite…" className="w-full rounded-2xl border border-line bg-white p-3 text-sm outline-none focus:border-brand" />
+        </label>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {RETRO_TAGS.map((t) => {
+          const on = tags.includes(t.id)
+          return (
+            <button key={t.id} onClick={() => toggle(t.id)} aria-pressed={on} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${on ? 'border-brand bg-brand text-white' : 'border-line bg-white text-slate-600 hover:border-brand/40'}`}>
+              {t.emoji} {t.label}
+            </button>
+          )
+        })}
+      </div>
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <button onClick={onSkip} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-muted hover:bg-[#f1f2f5]">
+          Pular revisão
+        </button>
+        <button
+          disabled={saving}
+          onClick={async () => {
+            setSaving(true)
+            await onDone(worked, blocked, tags)
+          }}
+          className="flex items-center gap-2 rounded-xl bg-ink px-5 py-2.5 text-sm font-bold text-white hover:bg-black disabled:opacity-40"
+        >
+          Salvar e planejar <ArrowRight size={16} />
+        </button>
+      </div>
+    </StepCard>
   )
 }

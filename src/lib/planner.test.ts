@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Subject, Topic } from '../db/types'
-import { buildSlots, planWeek, subtract, type PlanInput } from './planner'
+import { buildSlots, orderTopics, planWeek, subtract, type PlanInput } from './planner'
 
 const sub = (id: string, areaId: Subject['areaId'], extra: Partial<Subject> = {}): Subject => ({
   id,
@@ -115,6 +115,22 @@ describe('planWeek', () => {
     const normal = planWeek(base()).filter((b) => b.subjectId === 'ing').length
     const carried = planWeek(base({ carryOver: { ing: 100 } })).filter((b) => b.subjectId === 'ing').length
     expect(carried).toBeGreaterThan(normal)
+  })
+
+  it('tópicos fracos já estudados vêm primeiro; concluídos muito fracos voltam', () => {
+    const topics: Topic[] = [
+      { id: 'a', subjectId: 'calc', name: 'A', order: 0, done: false, studiedSeconds: 0 },
+      { id: 'b', subjectId: 'calc', name: 'B', order: 1, done: false, studiedSeconds: 0 },
+      { id: 'c', subjectId: 'calc', name: 'C', order: 2, done: true, studiedSeconds: 0 },
+      { id: 'd', subjectId: 'calc', name: 'D', order: 3, done: true, studiedSeconds: 0 },
+    ]
+    expect(orderTopics(topics, { b: 45, c: 20, d: 90 }).map((t) => t.id)).toEqual(['c', 'b', 'a'])
+  })
+
+  it('matéria com domínio baixo ganha mais tempo', () => {
+    const normal = planWeek(base()).filter((b) => b.subjectId === 'fis').length
+    const fraca = planWeek(base({ subjectMastery: { fis: 10, calc: 90 } })).filter((b) => b.subjectId === 'fis').length
+    expect(fraca).toBeGreaterThan(normal)
   })
 
   it('sem matérias, não gera nada', () => {

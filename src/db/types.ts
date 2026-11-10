@@ -55,6 +55,17 @@ export interface Week {
   availability: Availability
   pausedSubjectIds: string[]
   createdAt: number
+  /** Revisão semanal feita no check-in seguinte. */
+  retro?: WeekRetro
+}
+
+export type RetroTag = 'pouco-tempo' | 'cansaco' | 'distracoes' | 'materia-dificil' | 'plano-irreal'
+
+export interface WeekRetro {
+  worked: string
+  blocked: string
+  tags: RetroTag[]
+  at: number
 }
 
 export type BlockKind = 'study' | 'revisao' | 'compromisso' | 'prova'

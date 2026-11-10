@@ -31,6 +31,27 @@ export interface PlanInput {
   reviews?: PlanReview[]
   /** Minutos perdidos por matéria, que ganham prioridade no replanejamento. */
   carryOver?: Record<string, number>
+  /** Domínio (0–100) por tópico; tópicos sem dados ficam de fora. */
+  mastery?: Record<string, number>
+  /** Domínio médio por matéria. */
+  subjectMastery?: Record<string, number>
+}
+
+/** Matérias com domínio baixo ganham até +60% de tempo. */
+export function masteryBoost(avg: number | undefined) {
+  return avg === undefined ? 1 : 1 + Math.max(0, (60 - avg) / 100)
+}
+
+/**
+ * Ordem dos tópicos de uma matéria: primeiro os fracos que você já estudou (do mais fraco),
+ * depois os pendentes na ordem da lista. Tópicos concluídos voltam se ficaram muito fracos (< 40).
+ */
+export function orderTopics(topics: Topic[], mastery: Record<string, number> = {}): Topic[] {
+  const has = (t: Topic) => mastery[t.id] !== undefined
+  const candidates = topics.filter((t) => !t.done || (has(t) && mastery[t.id] < 40))
+  const weak = candidates.filter((t) => has(t) && mastery[t.id] < 50).sort((a, b) => mastery[a.id] - mastery[b.id])
+  const rest = candidates.filter((t) => !weak.includes(t)).sort((a, b) => a.order - b.order)
+  return [...weak, ...rest]
 }
 
 export interface Slot {
@@ -107,8 +128,9 @@ export function subjectTargets(input: PlanInput, totalMinutes: number): Map<stri
   for (const area of areas) {
     const areaMin = (totalMinutes * percents[area]) / pctSum // áreas vazias redistribuem
     const list = subjects.filter((s) => s.areaId === area)
-    const wSum = list.reduce((acc, s) => acc + effectiveWeight(s, now), 0)
-    for (const s of list) targets.set(s.id, (areaMin * effectiveWeight(s, now)) / wSum)
+    const w = (s: Subject) => effectiveWeight(s, now) * masteryBoost(input.subjectMastery?.[s.id])
+    const wSum = list.reduce((acc, s) => acc + w(s), 0)
+    for (const s of list) targets.set(s.id, (areaMin * w(s)) / wSum)
   }
   return targets
 }
@@ -165,7 +187,10 @@ export function planWeek(input: PlanInput): PlannedBlock[] {
   for (const s of input.subjects) {
     topicsBySubject.set(
       s.id,
-      input.topics.filter((t) => t.subjectId === s.id && !t.done).sort((a, b) => a.order - b.order),
+      orderTopics(
+        input.topics.filter((t) => t.subjectId === s.id),
+        input.mastery,
+      ),
     )
   }
   const topicCursor = new Map<string, number>()

@@ -5,6 +5,7 @@ import { addDays, minutesNow, toISODate, weekIdOf } from '../lib/dates'
 import { applyRating, newReview, nextInterval, RATING_LABEL } from '../lib/review'
 import { errorsFromChallenge, reviewError } from '../lib/errors'
 import { planWeek } from '../lib/planner'
+import { loadMastery } from './mastery'
 import { showMascot } from '../lib/mascotBus'
 import { XP_PER_BLOCK } from '../lib/xp'
 import { SEED_SUBJECTS, SEED_VERSION } from '../data/seedContent'
@@ -191,7 +192,7 @@ export async function findNoteByTitle(title: string): Promise<Note | undefined> 
 
 export async function saveCheckin(weekId: string, percents: AreaPercents, availability: Availability, pausedSubjectIds: string[]) {
   const existing = await db.weeks.get(weekId)
-  const week: Week = { id: weekId, percents, availability, pausedSubjectIds, createdAt: existing?.createdAt ?? Date.now() }
+  const week: Week = { id: weekId, percents, availability, pausedSubjectIds, createdAt: existing?.createdAt ?? Date.now(), ...(existing?.retro ? { retro: existing.retro } : {}) }
   await db.weeks.put(week)
   await updateSettings({ defaultAvailability: availability, lastPercents: percents })
   await regeneratePlan(weekId)
@@ -222,7 +223,11 @@ export async function regeneratePlan(weekId: string, now = new Date()) {
   // Minutos perdidos por matéria ganham prioridade
   const carryOver: Record<string, number> = {}
   for (const b of keep) if (b.missed && !b.done && b.kind === 'study' && b.subjectId) carryOver[b.subjectId] = (carryOver[b.subjectId] ?? 0) + (b.end - b.start)
+  // Domínio: prioriza tópicos e matérias mais fracos
+  const mm = await loadMastery(now.getTime())
   const planned = planWeek({
+    mastery: Object.fromEntries([...mm.topics.entries()].map(([k, v]) => [k, v.value])),
+    subjectMastery: Object.fromEntries(mm.subjects),
     reviews,
     carryOver,
     weekId,

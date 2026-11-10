@@ -6,6 +6,8 @@ import type { AreaId, Subject, Topic } from '../db/types'
 import { AREA_COLOR, tint } from '../lib/colors'
 import { daysUntil, fmtDuration } from '../lib/dates'
 import { askConfirm } from '../components/confirm'
+import { useMastery } from '../db/mastery'
+import { masteryColor, masteryLabel } from '../lib/mastery'
 import { SUBJECT_ICONS, SubjectIcon, guessIcon } from '../components/SubjectIcon'
 import { Btn, Card, Field, Modal, PageHeader, inputCls } from '../components/ui'
 
@@ -35,6 +37,7 @@ export function SubjectsPage() {
 }
 
 function AreaSection({ areaId, name, subjects, topics, onOpen }: { areaId: AreaId; name: string; subjects: Subject[]; topics: Topic[]; onOpen: (id: string) => void }) {
+  const mastery = useMastery()
   const [newName, setNewName] = useState('')
   const add = async () => {
     if (!newName.trim()) return
@@ -68,7 +71,7 @@ function AreaSection({ areaId, name, subjects, topics, onOpen }: { areaId: AreaI
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-4">
           {subjects.map((s) => (
-            <SubjectCard key={s.id} subject={s} topics={topics.filter((t) => t.subjectId === s.id)} onOpen={() => onOpen(s.id)} />
+            <SubjectCard key={s.id} subject={s} topics={topics.filter((t) => t.subjectId === s.id)} mastery={mastery.subjects.get(s.id)} onOpen={() => onOpen(s.id)} />
           ))}
         </div>
       )}
@@ -76,7 +79,7 @@ function AreaSection({ areaId, name, subjects, topics, onOpen }: { areaId: AreaI
   )
 }
 
-function SubjectCard({ subject: s, topics, onOpen }: { subject: Subject; topics: Topic[]; onOpen: () => void }) {
+function SubjectCard({ subject: s, topics, mastery, onOpen }: { subject: Subject; topics: Topic[]; mastery?: number; onOpen: () => void }) {
   const done = topics.filter((t) => t.done).length
   const pct = topics.length ? Math.round((done / topics.length) * 100) : 0
   const deadline = s.deadline ? daysUntil(s.deadline) : null
@@ -96,6 +99,11 @@ function SubjectCard({ subject: s, topics, onOpen }: { subject: Subject; topics:
       <div className="flex flex-1 flex-col gap-2 p-4">
         <div className="flex flex-wrap gap-1.5">
           <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-[11px] font-semibold text-brand">Progresso: {pct}%</span>
+          {mastery !== undefined && (
+            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white" style={{ background: masteryColor(mastery) }} title="Média do domínio dos tópicos que você já praticou">
+              Domínio: {mastery}%
+            </span>
+          )}
           {s.mandatory && <span className="rounded-full bg-[#f1f2f5] px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">Obrigatória</span>}
           {deadline !== null && deadline >= 0 && (
             <span className="rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-semibold text-rose-600">{deadline === 0 ? 'Prazo hoje' : `Prazo em ${deadline}d`}</span>
@@ -112,6 +120,7 @@ function SubjectCard({ subject: s, topics, onOpen }: { subject: Subject; topics:
 }
 
 function SubjectModal({ subject: s, topics, onClose }: { subject: Subject; topics: Topic[]; onClose: () => void }) {
+  const mastery = useMastery()
   const [topicName, setTopicName] = useState('')
   const [dragId, setDragId] = useState<string | null>(null)
   const addT = async () => {
@@ -243,6 +252,11 @@ function SubjectModal({ subject: s, topics, onClose }: { subject: Subject; topic
                   onBlur={(e) => e.target.value.trim() && e.target.value !== t.name && updateTopic(t.id, { name: e.target.value.trim() })}
                 />
                 {t.studiedSeconds > 0 && <span className="text-xs text-muted">{fmtDuration(t.studiedSeconds)}</span>}
+                {mastery.topics.has(t.id) && (
+                  <span className="rounded-full px-1.5 py-0.5 text-[10px] font-extrabold text-white" style={{ background: masteryColor(mastery.topics.get(t.id)!.value) }} title={`Domínio: ${masteryLabel(mastery.topics.get(t.id)!.value)}`}>
+                    {mastery.topics.get(t.id)!.value}%
+                  </span>
+                )}
                 <button onClick={() => deleteTopic(t.id)} className="text-slate-300 opacity-0 group-hover:opacity-100 hover:text-rose-600" title="Excluir tópico">
                   <Trash2 size={14} />
                 </button>

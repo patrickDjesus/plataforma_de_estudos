@@ -13,6 +13,10 @@ export interface GNode {
   x: number
   y: number
   done?: boolean
+  /** Domínio 0–100 (tópicos com dados). */
+  mastery?: number
+  /** Pintar o tópico pela cor do domínio. */
+  byMastery?: boolean
   focus?: boolean
 }
 
@@ -36,6 +40,8 @@ export interface GraphInput {
   areas?: AreaId[] // filtro (vazio = todas)
   subjectIds?: string[] // filtro (vazio = todas)
   focusNoteId?: string // visão local
+  mastery?: Map<string, number>
+  colorByMastery?: boolean
   /** Esconde notas ainda vazias e sem ligações (padrão: sim). */
   hideEmptyNotes?: boolean
 }
@@ -141,7 +147,7 @@ export function buildGraph(input: GraphInput): { nodes: GNode[]; edges: GEdge[] 
 
   const nodes: GNode[] = [
     ...subjects.map((s) => ({ id: sid(s.id), kind: 'subject' as const, refId: s.id, label: s.name, color: s.color, subjectId: s.id, ...at(sid(s.id)) })),
-    ...topics.map((t) => ({ id: tid(t.id), kind: 'topic' as const, refId: t.id, label: t.name, color: color.get(t.subjectId) ?? '#3e63f2', subjectId: t.subjectId, done: t.done, ...at(tid(t.id)) })),
+    ...topics.map((t) => ({ id: tid(t.id), kind: 'topic' as const, refId: t.id, label: t.name, color: color.get(t.subjectId) ?? '#3e63f2', subjectId: t.subjectId, done: t.done, mastery: input.mastery?.get(t.id), byMastery: input.colorByMastery, ...at(tid(t.id)) })),
     ...notes.map((n) => ({
       id: nid(n.id),
       kind: 'note' as const,
