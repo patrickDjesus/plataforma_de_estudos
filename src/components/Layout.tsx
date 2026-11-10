@@ -6,6 +6,8 @@ import { db } from '../db/db'
 import { currentWeekId } from '../db/repo'
 import { TimerPill } from './TimerPill'
 import { Logo } from './Logo'
+import { SyncBadge } from './SyncBadge'
+import { useSyncStatus } from '../lib/cloud'
 import { MascotHost } from './MascotHost'
 
 const NAV = [
@@ -25,10 +27,13 @@ export function Layout() {
   const navigate = useNavigate()
   const weekId = currentWeekId()
   const status = useLiveQuery(async () => ({ week: await db.weeks.get(weekId) }), [weekId])
+  const sync = useSyncStatus()
 
   useEffect(() => {
+    // Espera a nuvem responder: em outro dispositivo a semana pode já existir lá
+    if (sync === 'carregando') return
     if (status && !status.week && !FREE_ROUTES.includes(location.pathname)) navigate('/checkin', { replace: true })
-  }, [status, location.pathname, navigate])
+  }, [status, sync, location.pathname, navigate])
 
   return (
     <div className="min-h-full">
@@ -54,7 +59,8 @@ export function Layout() {
               </NavLink>
             ))}
           </nav>
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <SyncBadge />
             <TimerPill />
           </div>
         </div>

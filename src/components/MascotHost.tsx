@@ -10,6 +10,7 @@ import { onMascot, showMascot, type MascotMessage } from '../lib/mascotBus'
 import { levelInfo, xpFrom } from '../lib/xp'
 import { achievements, computeStats } from '../lib/achievements'
 import { Capybara } from './Capybara'
+import { useSyncStatus } from '../lib/cloud'
 
 /**
  * Onde o Capi mora: o botão no canto da tela, o balão de fala,
@@ -24,6 +25,7 @@ export function MascotHost() {
   const lastLevel = useRef<number | null>(null)
   const hideTimer = useRef<number | undefined>(undefined)
 
+  const sync = useSyncStatus()
   const data = useLiveQuery(async () => {
     const weekId = currentWeekId()
     const todayIso = toISODate(new Date())
@@ -118,12 +120,12 @@ export function MascotHost() {
 
   // Boas-vindas ao abrir o site
   useEffect(() => {
-    if (!ctx || !data || welcomed.current) return
+    if (!ctx || !data || welcomed.current || sync === 'carregando') return
     welcomed.current = true
     if (data.settings?.mascotWelcome === false) return
     // Sem limpar o timeout: os dados mudam logo após abrir e cancelariam as boas-vindas
     window.setTimeout(() => say(capiWelcome(ctx)), 700)
-  }, [ctx, data, say])
+  }, [ctx, data, say, sync])
 
   // Subiu de nível
   useEffect(() => {

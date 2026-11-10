@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ConfirmHost } from './components/confirm'
+import { startCloudSync } from './lib/cloud'
 import './index.css'
 import { Layout } from './components/Layout'
 import { HomePage } from './pages/Home'
@@ -11,6 +12,8 @@ import { NotebookPage } from './pages/Notebook'
 import { SubjectsPage } from './pages/Subjects'
 import { SettingsPage } from './pages/Settings'
 import { MindMapPage } from './pages/MindMap'
+
+startCloudSync()
 
 // Na página publicada no claude.ai a URL não pode mudar: usa roteamento em memória
 const Router = import.meta.env.VITE_ARTIFACT ? MemoryRouter : BrowserRouter

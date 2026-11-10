@@ -149,7 +149,7 @@ export function SettingsPage() {
         <Card>
           <h2 className="mb-1 text-lg font-bold">Backup</h2>
           <p className="mb-4 text-sm text-muted">
-            Seus dados ficam só neste navegador. Baixe um backup de vez em quando — se limpar os dados do site, ele é a única cópia.
+            Aberto pelo claude.ai, o Mendonça salva tudo na sua área privada da nuvem e sincroniza entre seus dispositivos (veja o selo ao lado do cronômetro). O backup é uma cópia extra, guardada por você.
           </p>
           <div className="flex flex-wrap gap-2">
             <Btn variant="primary" onClick={doExport}>
