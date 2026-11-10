@@ -66,7 +66,8 @@ export function Layout() {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-[1240px] px-4 py-6">
+      {/* A chave muda a cada página: o conteúdo entra com um deslizar suave */}
+      <main key={`/${location.pathname.split('/')[1]}`} className="page-in mx-auto max-w-[1240px] px-4 py-6">
         <Outlet />
       </main>
       <MascotHost />

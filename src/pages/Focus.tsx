@@ -457,7 +457,7 @@ export function FocusPage() {
 
 function Shell({ children, onClose, color = '#3e63f2', title }: { children: React.ReactNode; onClose: () => void; color?: string; title?: string }) {
   return (
-    <div className="relative min-h-screen overflow-hidden" style={{ background: `radial-gradient(900px 500px at 50% -10%, ${tint(color, 0.14)}, transparent 70%), #f3f4f7` }}>
+    <div className="page-in relative min-h-screen overflow-hidden" style={{ background: `radial-gradient(900px 500px at 50% -10%, ${tint(color, 0.14)}, transparent 70%), #f3f4f7` }}>
       <header className="relative z-10 flex items-center justify-between gap-4 px-6 py-5">
         <div className="flex items-center gap-2.5">
           <LogoMark size={36} />

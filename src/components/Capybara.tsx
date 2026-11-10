@@ -11,8 +11,9 @@ export type CapiPose =
   | 'relaxando' // laranja na cabeça
   | 'focado' // fones de ouvido
   | 'formado' // subiu de nível
+  | 'chorando' // foi mal no desafio
 
-export const CAPI_POSES: CapiPose[] = ['acenando', 'estudando', 'comemorando', 'pensando', 'dormindo', 'relaxando', 'focado', 'formado']
+export const CAPI_POSES: CapiPose[] = ['acenando', 'estudando', 'comemorando', 'pensando', 'dormindo', 'relaxando', 'focado', 'formado', 'chorando']
 
 const C = {
   head: '#c99260',
@@ -26,8 +27,8 @@ const C = {
   brand: '#3e63f2',
 }
 
-type Eyes = 'normal' | 'feliz' | 'fechado' | 'cima' | 'determinado' | 'piscando'
-type Mouth = 'sorriso' | 'aberta' | 'reta' | 'o'
+type Eyes = 'normal' | 'feliz' | 'fechado' | 'cima' | 'determinado' | 'piscando' | 'triste'
+type Mouth = 'sorriso' | 'aberta' | 'reta' | 'o' | 'triste'
 
 const POSE: Record<CapiPose, { eyes: Eyes; mouth: Mouth }> = {
   acenando: { eyes: 'feliz', mouth: 'aberta' },
@@ -38,6 +39,7 @@ const POSE: Record<CapiPose, { eyes: Eyes; mouth: Mouth }> = {
   relaxando: { eyes: 'fechado', mouth: 'sorriso' },
   focado: { eyes: 'determinado', mouth: 'reta' },
   formado: { eyes: 'piscando', mouth: 'sorriso' },
+  chorando: { eyes: 'triste', mouth: 'triste' },
 }
 
 function Eye({ x, kind, side }: { x: number; kind: Eyes; side: 'l' | 'r' }) {
@@ -45,6 +47,13 @@ function Eye({ x, kind, side }: { x: number; kind: Eyes; side: 'l' | 'r' }) {
   const arc = (dy: number) => <path d={`M${x - 7} ${y + 2} Q${x} ${y + dy} ${x + 7} ${y + 2}`} fill="none" stroke={C.eye} strokeWidth="3.6" strokeLinecap="round" />
   if (kind === 'feliz' || (kind === 'piscando' && side === 'l')) return arc(-7)
   if (kind === 'fechado') return arc(5)
+  if (kind === 'triste')
+    return (
+      <g>
+        <path d={`M${x - 8} ${y + 3} Q${x} ${y - 5} ${x + 8} ${y + 3}`} fill="none" stroke={C.eye} strokeWidth="3.6" strokeLinecap="round" />
+        <path d={side === 'l' ? `M${x - 9} ${y - 10} L${x + 5} ${y - 14}` : `M${x + 9} ${y - 10} L${x - 5} ${y - 14}`} stroke={C.eye} strokeWidth="3" strokeLinecap="round" />
+      </g>
+    )
   const py = kind === 'cima' ? y - 4 : y
   return (
     <g>
@@ -66,6 +75,7 @@ function Mouth({ kind }: { kind: Mouth }) {
       </g>
     )
   if (kind === 'o') return <ellipse cx="100" cy="114" rx="4.5" ry="5" fill="#5a2418" />
+  if (kind === 'triste') return <path d="M90 117 Q100 107 110 117" fill="none" stroke={C.eye} strokeWidth="3.2" strokeLinecap="round" />
   if (kind === 'reta') return <path d="M92 112 L108 112" stroke={C.eye} strokeWidth="3" strokeLinecap="round" />
   return <path d="M89 109 Q100 118 111 109" fill="none" stroke={C.eye} strokeWidth="3" strokeLinecap="round" />
 }
@@ -177,6 +187,14 @@ export function Capybara({ pose = 'acenando', size = 120, className = '' }: { po
           <Eye x={124} kind={p.eyes} side="r" />
         </g>
 
+        {pose === 'chorando' && (
+          <g>
+            <path className="capi-tear" d="M70 66 Q66 76 70 80 Q74 76 70 66 Z" fill="#7cc4ff" />
+            <path className="capi-tear capi-tear-2" d="M130 66 Q126 76 130 80 Q134 76 130 66 Z" fill="#7cc4ff" />
+            <ellipse cx="70" cy="64" rx="9" ry="3" fill="#7cc4ff" opacity=".55" />
+            <ellipse cx="130" cy="64" rx="9" ry="3" fill="#7cc4ff" opacity=".55" />
+          </g>
+        )}
         {/* acessórios da cabeça */}
         {pose === 'estudando' && (
           <g>

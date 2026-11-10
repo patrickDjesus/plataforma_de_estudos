@@ -7,7 +7,7 @@ import { updateNote } from '../db/repo'
 import type { Challenge } from '../db/types'
 import { AIError, getAI } from '../lib/ai'
 import { markdownToHtml } from '../lib/markdown'
-import { explainPrompt, type StudyContext } from '../lib/prompts'
+import { explainPrompt, type ChallengeOptions, type StudyContext } from '../lib/prompts'
 import { ChallengeRunner } from './ChallengeRunner'
 import { SubjectIcon } from './SubjectIcon'
 
@@ -57,6 +57,7 @@ export function ChallengeModal({
   count = 5,
   onClose,
   onFinish,
+  options,
 }: {
   subjectId: string
   topicId?: string
@@ -64,6 +65,7 @@ export function ChallengeModal({
   count?: number
   onClose: () => void
   onFinish?: (c: Challenge) => void
+  options?: ChallengeOptions
 }) {
   const data = useStudyContext(subjectId, topicId)
   if (!data) return null
@@ -81,6 +83,7 @@ export function ChallengeModal({
         topicId={topicId}
         origin={origin}
         count={count}
+        options={options}
         color={color}
         onCancel={onClose}
         onFinish={(c) => {

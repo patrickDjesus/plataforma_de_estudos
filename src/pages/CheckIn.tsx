@@ -224,7 +224,7 @@ export function CheckInPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#f3f4f7]">
+    <div className="page-in relative flex min-h-screen flex-col overflow-hidden bg-[#f3f4f7]">
       {/* fundo decorativo */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-40 -left-40 h-[520px] w-[520px] rounded-full bg-[#3e63f2]/12 blur-3xl" />

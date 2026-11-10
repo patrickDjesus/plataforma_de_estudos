@@ -11,7 +11,6 @@ import type { Flashcard, ReviewRating } from '../db/types'
 import { RATING_LABEL } from '../lib/review'
 import { tint } from '../lib/colors'
 import { daysUntil, toISODate } from '../lib/dates'
-import { AREAS } from '../db/hooks'
 import { Capybara } from '../components/Capybara'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Btn, Card, PageHeader } from '../components/ui'
@@ -91,7 +90,7 @@ export function RecoveryPage() {
         </div>
 
         <div className="space-y-5">
-        <FreeChallenge onStart={(subjectId, topicId) => setModal({ subjectId, topicId, origin: 'demanda' })} />
+        <FreeChallenge />
         <History />
         <Card className="p-6">
           <h2 className="mb-3 text-lg font-bold">Seus cartões por matéria</h2>
@@ -274,55 +273,26 @@ function ReviewsToday({ onChallenge }: { onChallenge: (subjectId: string, topicI
   )
 }
 
-/** Desafio sob demanda: escolha a matéria e, se quiser, um tópico. */
-function FreeChallenge({ onStart }: { onStart: (subjectId: string, topicId?: string) => void }) {
-  const subjects = useSubjectMap()
-  const topics = useTopics()
-  const [subjectId, setSubjectId] = useState('')
-  const [topicId, setTopicId] = useState('')
-  const list = [...subjects.values()]
-  const sel = subjects.get(subjectId)
+/** Desafio sob demanda: leva ao montador de desafio. */
+function FreeChallenge() {
+  const navigate = useNavigate()
   return (
-    <Card className="p-6">
-      <h2 className="mb-1 flex items-center gap-2 text-lg font-bold">
-        <Swords size={20} /> Desafio livre
-      </h2>
-      <p className="mb-4 text-xs text-muted">5 itens variados sobre o que você escolher. Usa suas anotações quando existem.</p>
-      <div className="space-y-2">
-        <select id="free-subject" value={subjectId} onChange={(e) => (setSubjectId(e.target.value), setTopicId(''))} className="w-full rounded-xl border border-line bg-[#f8f9fb] px-3 py-2.5 text-sm outline-none">
-          <option value="">Escolha a matéria…</option>
-          {AREAS.map((a) => (
-            <optgroup key={a.id} label={a.name}>
-              {list
-                .filter((s) => s.areaId === a.id)
-                .map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-            </optgroup>
-          ))}
-        </select>
-        <select id="free-topic" value={topicId} onChange={(e) => setTopicId(e.target.value)} disabled={!subjectId} className="w-full rounded-xl border border-line bg-[#f8f9fb] px-3 py-2.5 text-sm outline-none disabled:opacity-50">
-          <option value="">Matéria inteira</option>
-          {topics
-            .filter((t) => t.subjectId === subjectId)
-            .map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-        </select>
-        <button
-          onClick={() => onStart(subjectId, topicId || undefined)}
-          disabled={!subjectId}
-          className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white disabled:opacity-40"
-          style={{ background: sel?.color ?? '#3e63f2' }}
-        >
-          <Sparkles size={16} /> Desafie-me
-        </button>
+    <button onClick={() => navigate('/desafio')} className="group relative w-full overflow-hidden rounded-[22px] bg-gradient-to-br from-[#3e63f2] to-[#7b5cff] p-6 text-left text-white shadow-[0_18px_40px_-20px_rgba(62,99,242,0.9)] transition hover:-translate-y-0.5">
+      <span className="absolute -top-10 -right-8 h-36 w-36 rounded-full bg-white/10" />
+      <div className="relative flex items-center gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-white/75 uppercase">
+            <Swords size={14} /> Desafio livre
+          </div>
+          <div className="mt-1 font-display text-2xl font-bold">Monte seu desafio</div>
+          <p className="mt-1 text-sm text-white/80">Escolha matéria, tópico, quantidade, dificuldade e tipos de questão.</p>
+          <span className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-bold text-[#3e63f2] transition group-hover:translate-x-0.5">
+            <Sparkles size={15} /> Começar
+          </span>
+        </div>
+        <Capybara pose="focado" size={110} />
       </div>
-    </Card>
+    </button>
   )
 }
 

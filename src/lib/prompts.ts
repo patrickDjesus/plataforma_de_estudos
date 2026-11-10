@@ -48,21 +48,43 @@ Escreva uma explicação introdutória do tópico para o estudante ler e depois 
 - Termine com "Para fixar:" e 3 perguntas curtas para o estudante tentar responder sozinho.`
 }
 
-export function challengePrompt(c: StudyContext, count: number) {
+export type ChallengeType = 'multipla' | 'vf' | 'aberta' | 'explique' | 'lacunas'
+export type Difficulty = 'facil' | 'medio' | 'dificil'
+export interface ChallengeOptions {
+  types?: ChallengeType[]
+  difficulty?: Difficulty
+}
+
+const TYPE_SPEC: Record<ChallengeType, string> = {
+  multipla: '- "multipla": múltipla escolha com 4 opções plausíveis e só uma correta. Campos: question, options (4 textos), correct (índice 0 a 3), explanation (1 frase).',
+  vf: '- "vf": afirmação para julgar como verdadeira ou falsa. Campos: statement, answer (true/false), explanation (1 frase).',
+  aberta: '- "aberta": pergunta de resposta curta (1 a 3 frases). Campos: question, expected (a resposta esperada).',
+  explique: '- "explique": pede para explicar um conceito com as próprias palavras, como se ensinasse um colega. Campos: prompt, keyPoints (2 a 4 pontos que uma boa explicação deve ter).',
+  lacunas: '- "lacunas": copie 1 ou 2 frases importantes das anotações trocando termos-chave por ___ (três sublinhados). Campos: text, answers (os termos na ordem das lacunas; mesmo número de ___).',
+}
+const DIFFICULTY_TEXT: Record<Difficulty, string> = {
+  facil: 'Nível FÁCIL: conceitos básicos e definições, perguntas diretas.',
+  medio: 'Nível MÉDIO: aplicar o conceito em situações simples e relacionar ideias.',
+  dificil: 'Nível DIFÍCIL: aplicação em situações novas, comparação de conceitos e pegadinhas comuns de prova.',
+}
+
+export function challengePrompt(c: StudyContext, count: number, opts: ChallengeOptions = {}) {
   const { text, fromNotes } = contextBlock(c)
+  let types = opts.types?.length ? opts.types : (['multipla', 'vf', 'aberta', 'explique', 'lacunas'] as ChallengeType[])
+  if (!fromNotes) types = types.filter((t) => t !== 'lacunas')
+  if (!types.length) types = ['multipla']
+  const repeat = types.length === 1 ? 'Use só esse tipo.' : `Misture os tipos; nenhum tipo mais de ${Math.max(2, Math.ceil(count / types.length) + 1)} vezes.`
   return `Você cria desafios de recuperação (testar a memória) em português do Brasil. As perguntas devem ser corretas, claras e checar entendimento, não decoreba trivial.
 
 ${text}
 
-Crie exatamente ${count} itens, misturando estes tipos (use tipos diferentes; não repita o mesmo tipo mais de 2 vezes):
-- "multipla": múltipla escolha com 4 opções plausíveis e só uma correta. Campos: question, options (4 textos), correct (índice 0 a 3), explanation (1 frase).
-- "vf": afirmação para julgar como verdadeira ou falsa. Campos: statement, answer (true/false), explanation (1 frase).
-- "aberta": pergunta de resposta curta (1 a 3 frases). Campos: question, expected (a resposta esperada).
-- "explique": pede para explicar um conceito com as próprias palavras, como se ensinasse um colega. Campos: prompt, keyPoints (2 a 4 pontos que uma boa explicação deve ter).
-${fromNotes ? '- "lacunas": copie 1 ou 2 frases importantes das anotações trocando termos-chave por ___ (três sublinhados). Campos: text, answers (os termos na ordem das lacunas; mesmo número de ___).' : ''}
+${DIFFICULTY_TEXT[opts.difficulty ?? 'medio']}
+
+Crie exatamente ${count} itens usando estes tipos. ${repeat}
+${types.map((t) => TYPE_SPEC[t]).join('\n')}
 
 Responda apenas com JSON neste formato:
-{"items": [{"type": "multipla", "question": "…", "options": ["…","…","…","…"], "correct": 0, "explanation": "…"}]}`
+{"items": [{"type": "${types[0]}", ...campos do tipo}]}`
 }
 
 export interface GradeEntry {

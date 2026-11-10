@@ -21,6 +21,7 @@ const POSE_TITLE: Record<CapiPose, string> = {
   relaxando: 'De boa',
   focado: 'Foco total',
   formado: 'Subiu de nível!',
+  chorando: 'Buáá…',
 }
 const POSE_TEXT: Record<CapiPose, string> = {
   acenando: 'É assim que eu te recebo quando você abre o site.',
@@ -31,6 +32,7 @@ const POSE_TEXT: Record<CapiPose, string> = {
   relaxando: 'Dia livre? Laranja na cabeça e tranquilidade.',
   focado: 'Durante as sessões de foco.',
   formado: 'Quando você sobe de nível.',
+  chorando: 'Quando o desafio dá ruim. Mas a gente revisa e volta mais forte!',
 }
 
 const NUMBER_FIELDS: { key: keyof Settings; label: string; min: number; max: number; def?: number; scale?: number }[] = [
@@ -116,7 +118,7 @@ export function SettingsPage() {
               Boas-vindas ao abrir o site
             </label>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-9">
             {CAPI_POSES.map((p) => (
               <button
                 key={p}

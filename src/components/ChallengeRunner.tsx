@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, Check, Flag, Loader2, RotateCcw, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, CircleSlash, Flag, Loader2, RotateCcw, X, XCircle } from 'lucide-react'
 import { uid } from '../db/db'
 import { saveChallenge } from '../db/repo'
 import type { Challenge, ChallengeItem, ChallengeResult } from '../db/types'
 import { AIError, getAI } from '../lib/ai'
 import { ITEM_LABEL, finalScore, gradeLocal, needsAIGrading, sanitizeItems } from '../lib/challenge'
-import { challengePrompt, contextBlock, gradePrompt, type GradeEntry, type StudyContext } from '../lib/prompts'
+import { challengePrompt, contextBlock, gradePrompt, type ChallengeOptions, type GradeEntry, type StudyContext } from '../lib/prompts'
 import { tint } from '../lib/colors'
-import { Capybara } from './Capybara'
+import { Capybara, type CapiPose } from './Capybara'
 
 type Answer = Challenge['answers'][number]
 type Stage = 'gerando' | 'respondendo' | 'corrigindo' | 'resultado' | 'erro'
@@ -22,10 +22,11 @@ export interface RunnerProps {
   /** Chamado ao concluir, com o desafio salvo (nota em `score`). */
   onFinish: (c: Challenge) => void
   onCancel?: () => void
+  options?: ChallengeOptions
 }
 
 /** Gera, aplica e corrige um desafio de recuperação. */
-export function ChallengeRunner({ ctx, subjectId, topicId, origin, count, color, onFinish, onCancel }: RunnerProps) {
+export function ChallengeRunner({ ctx, subjectId, topicId, origin, count, color, onFinish, onCancel, options }: RunnerProps) {
   const [stage, setStage] = useState<Stage>('gerando')
   const [error, setError] = useState('')
   const [items, setItems] = useState<ChallengeItem[]>([])
@@ -51,8 +52,8 @@ export function ChallengeRunner({ ctx, subjectId, topicId, origin, count, color,
         return
       }
       try {
-        const raw = await ai.json<unknown>(challengePrompt(ctx, count), { tier: count <= 3 ? 'quick' : 'default', fresh: true, signal: ctl.current!.signal })
-        const list = sanitizeItems(raw, fromNotes).slice(0, count)
+        const raw = await ai.json<unknown>(challengePrompt(ctx, count, options), { tier: count <= 3 ? 'quick' : 'default', fresh: true, signal: ctl.current!.signal })
+        const list = sanitizeItems(raw, fromNotes && (!options?.types?.length || options.types.includes('lacunas'))).slice(0, count)
         if (!alive) return
         if (list.length < 2) {
           setError('O desafio veio incompleto. Tente gerar de novo.')
@@ -171,77 +172,19 @@ export function ChallengeRunner({ ctx, subjectId, topicId, origin, count, color,
       </div>
     )
 
-  if (stage === 'resultado') {
-    const ready = results.every(Boolean)
-    const score = finalScore(results.filter(Boolean) as ChallengeResult[])
-    const pct = Math.round(score * 100)
+  if (stage === 'resultado')
     return (
-      <div>
-        <div className="mb-5 flex flex-wrap items-center gap-4 rounded-2xl p-4" style={{ background: tint(color, 0.08) }}>
-          <Capybara pose={score >= 0.85 ? 'comemorando' : score >= 0.5 ? 'formado' : 'pensando'} size={90} />
-          <div className="flex-1">
-            <div className="font-display text-4xl font-extrabold" style={{ color }}>
-              {ready ? `${pct}%` : '…'}
-            </div>
-            <div className="text-sm font-semibold">{score >= 0.85 ? 'Mandou muito bem!' : score >= 0.5 ? 'Bom caminho, revise os pontos abaixo.' : 'Vale reforçar esse tópico.'}</div>
-            {!fromNotes && <div className="mt-1 text-xs text-muted">Desafio feito com conhecimento geral (sua nota estava vazia).</div>}
-          </div>
-        </div>
-        <div className="space-y-3">
-          {items.map((it, k) => {
-            const r = results[k]
-            return (
-              <div key={k} className={`rounded-2xl border p-4 ${r?.contested ? 'border-dashed border-slate-300 opacity-70' : 'border-line'}`}>
-                <div className="mb-1 flex items-start justify-between gap-3">
-                  <span className="text-[11px] font-bold tracking-wide text-muted uppercase">
-                    {k + 1}. {ITEM_LABEL[it.type]}
-                  </span>
-                  {r && (
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${r.contested ? 'bg-slate-100 text-slate-500' : r.score >= 0.75 ? 'bg-emerald-50 text-emerald-700' : r.score > 0 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'}`}>
-                      {r.contested ? 'contestado' : r.score >= 0.75 ? 'certo' : r.score > 0 ? 'parcial' : 'errado'}
-                    </span>
-                  )}
-                </div>
-                <div className="text-sm font-semibold">{promptOf(it)}</div>
-                <div className="mt-1.5 rounded-xl bg-[#f6f7f9] px-3 py-2 text-sm">
-                  <span className="text-xs text-muted">Sua resposta: </span>
-                  {showAnswer(it, answers[k]) || <em className="text-muted">em branco</em>}
-                </div>
-                {r?.feedback && <p className="mt-2 text-sm text-slate-700">{r.feedback}</p>}
-                {r?.missing && r.missing.length > 0 && <p className="mt-1 text-xs text-muted">Faltou: {r.missing.join('; ')}</p>}
-                {!r && (
-                  <div className="mt-2 flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                    Não consegui corrigir este item. Compare com a referência e avalie você mesmo:
-                    <span className="font-semibold">{it.type === 'aberta' ? it.expected : it.type === 'explique' ? it.keyPoints.join('; ') : ''}</span>
-                    <button onClick={() => selfGrade(k, true)} className="rounded-lg bg-white px-2 py-1 font-bold text-emerald-700">
-                      Acertei
-                    </button>
-                    <button onClick={() => selfGrade(k, false)} className="rounded-lg bg-white px-2 py-1 font-bold text-rose-700">
-                      Errei
-                    </button>
-                  </div>
-                )}
-                {r && (
-                  <button onClick={() => contest(k)} className="mt-2 flex items-center gap-1 text-xs font-semibold text-muted hover:text-ink" title="Se a correção estiver errada, este item sai da nota">
-                    <Flag size={12} /> {r.contested ? 'Desfazer contestação' : 'Contestar correção'}
-                  </button>
-                )}
-              </div>
-            )
-          })}
-        </div>
-        <p className="mt-3 text-xs text-muted">As correções são sugestões do Claude e podem errar. Itens contestados não contam na nota.</p>
-        <button
-          onClick={finish}
-          disabled={!ready}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 font-bold text-white disabled:opacity-50"
-          style={{ background: color }}
-        >
-          <Check size={18} /> Concluir
-        </button>
-      </div>
+      <ResultView
+        items={items}
+        answers={answers}
+        results={results}
+        fromNotes={fromNotes}
+        color={color}
+        onSelfGrade={selfGrade}
+        onContest={contest}
+        onFinish={finish}
+      />
     )
-  }
 
   // respondendo
   const it = items[i]
@@ -370,4 +313,200 @@ function showAnswer(it: ChallengeItem, a: Answer): string {
   if (it.type === 'vf') return a === true ? 'Verdadeiro' : a === false ? 'Falso' : ''
   if (Array.isArray(a)) return a.join(' · ')
   return String(a)
+}
+
+// ---------- Resultado: reação do Capi + correção questão por questão ----------
+
+function reaction(score: number): { pose: CapiPose; title: string; text: string } {
+  if (score >= 0.85) return { pose: 'comemorando', title: 'Uhuul, mandou muito bem!', text: 'Você domina esse assunto. Bora manter assim!' }
+  if (score >= 0.6) return { pose: 'formado', title: 'Muito bom!', text: 'Quase lá. Vamos ver juntos o que dá pra melhorar.' }
+  if (score >= 0.3) return { pose: 'pensando', title: 'Hmm, deu pra salvar algumas…', text: 'Tem coisa pra reforçar. Vou te mostrar questão por questão.' }
+  return { pose: 'chorando', title: 'Buáá… essa doeu.', text: 'Tudo bem errar: é assim que se aprende. Vamos ver a correção com calma.' }
+}
+
+function useCountUp(target: number, ms = 900) {
+  const [v, setV] = useState(0)
+  useEffect(() => {
+    let raf = 0
+    const t0 = performance.now()
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / ms)
+      setV(Math.round(target * (1 - Math.pow(1 - k, 3))))
+      if (k < 1) raf = requestAnimationFrame(step)
+    }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+  }, [target, ms])
+  return v
+}
+
+function verdict(r: ChallengeResult | null) {
+  if (!r) return { label: 'sem correção', cls: 'bg-slate-100 text-slate-600', icon: <CircleSlash size={16} />, pose: 'pensando' as CapiPose }
+  if (r.contested) return { label: 'contestado', cls: 'bg-slate-100 text-slate-500', icon: <Flag size={15} />, pose: 'pensando' as CapiPose }
+  if (r.score >= 0.75) return { label: 'Acertou', cls: 'bg-emerald-50 text-emerald-700', icon: <CheckCircle2 size={16} />, pose: 'comemorando' as CapiPose }
+  if (r.score > 0) return { label: 'Quase', cls: 'bg-amber-50 text-amber-700', icon: <CheckCircle2 size={16} />, pose: 'formado' as CapiPose }
+  return { label: 'Errou', cls: 'bg-rose-50 text-rose-700', icon: <XCircle size={16} />, pose: 'chorando' as CapiPose }
+}
+
+function correctAnswer(it: ChallengeItem): string {
+  if (it.type === 'multipla') return it.options[it.correct]
+  if (it.type === 'vf') return it.answer ? 'Verdadeiro' : 'Falso'
+  if (it.type === 'aberta') return it.expected
+  if (it.type === 'explique') return it.keyPoints.join(' · ')
+  return it.answers.join(' · ')
+}
+
+function capiComment(it: ChallengeItem, r: ChallengeResult | null): string {
+  if (!r) return 'Não consegui corrigir esta. Compare com a resposta esperada e me diga se acertou.'
+  if (r.feedback) return r.feedback
+  if (r.score >= 0.75) return it.type === 'lacunas' ? 'Completou certinho!' : 'Na mosca! 🎯'
+  return 'Essa escapou. Dá uma olhada na resposta certa ao lado.'
+}
+
+function ResultView({
+  items,
+  answers,
+  results,
+  fromNotes,
+  color,
+  onSelfGrade,
+  onContest,
+  onFinish,
+}: {
+  items: ChallengeItem[]
+  answers: Answer[]
+  results: (ChallengeResult | null)[]
+  fromNotes: boolean
+  color: string
+  onSelfGrade: (k: number, ok: boolean) => void
+  onContest: (k: number) => void
+  onFinish: () => void
+}) {
+  const [view, setView] = useState<'reacao' | number>('reacao')
+  const graded = results.filter(Boolean) as ChallengeResult[]
+  const score = finalScore(graded)
+  const pct = useCountUp(Math.round(score * 100))
+  const hits = graded.filter((r) => !r.contested && r.score >= 0.75).length
+  const ready = results.every(Boolean)
+  const re = reaction(score)
+
+  if (view === 'reacao')
+    return (
+      <div className="flex flex-col items-center text-center">
+        <div className="relative">
+          <span className="absolute inset-x-6 bottom-2 h-10 rounded-full blur-2xl" style={{ background: tint(color, 0.45) }} />
+          <Capybara key={re.pose} pose={re.pose} size={190} className="relative" />
+        </div>
+        <div className="pop-score font-display text-6xl font-extrabold tabular-nums" style={{ color }}>
+          {pct}%
+        </div>
+        <h3 className="mt-1 text-xl font-bold">{re.title}</h3>
+        <p className="mt-1 max-w-sm text-sm text-muted">{re.text}</p>
+        <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+          {items.map((_, k) => {
+            const v = verdict(results[k])
+            return (
+              <button key={k} onClick={() => setView(k)} className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${v.cls}`} title={`Questão ${k + 1}: ${v.label}`}>
+                {v.icon} {k + 1}
+              </button>
+            )
+          })}
+        </div>
+        <p className="mt-2 text-xs text-muted">
+          {hits} de {items.length} certas{!fromNotes ? ' · desafio feito com conhecimento geral' : ''}
+        </p>
+        <button onClick={() => setView(0)} className="mt-6 flex items-center gap-2 rounded-2xl px-6 py-3.5 font-bold text-white transition hover:-translate-y-0.5" style={{ background: color, boxShadow: `0 14px 30px -14px ${color}` }}>
+          Ver a correção <ArrowRight size={18} />
+        </button>
+      </div>
+    )
+
+  const k = view
+  const it = items[k]
+  const r = results[k]
+  const v = verdict(r)
+  const last = k === items.length - 1
+  return (
+    <div>
+      <div className="mb-4 flex items-center gap-2">
+        {items.map((_, j) => {
+          const vj = verdict(results[j])
+          return (
+            <button
+              key={j}
+              onClick={() => setView(j)}
+              className="h-2 flex-1 rounded-full transition"
+              style={{ background: j === k ? color : vj.label === 'Acertou' ? '#34d399' : vj.label === 'Quase' ? '#fbbf24' : vj.label === 'Errou' ? '#fb7185' : '#e6e8ee', opacity: j === k ? 1 : 0.7 }}
+              aria-label={`Questão ${j + 1}`}
+            />
+          )
+        })}
+      </div>
+
+      <div key={k} className="capi-pop">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[11px] font-bold tracking-wide uppercase" style={{ color }}>
+            Questão {k + 1} de {items.length} · {ITEM_LABEL[it.type]}
+          </span>
+          <span className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${v.cls}`}>
+            {v.icon} {v.label}
+          </span>
+        </div>
+        <p className="mb-4 font-display text-lg leading-snug font-bold">{promptOf(it)}</p>
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          <div className={`rounded-2xl p-3.5 ${r && !r.contested && r.score >= 0.75 ? 'bg-emerald-50' : r && !r.contested && r.score === 0 ? 'bg-rose-50' : 'bg-[#f6f7f9]'}`}>
+            <div className="mb-1 text-[11px] font-bold tracking-wide text-muted uppercase">Sua resposta</div>
+            <div className="text-sm font-semibold">{showAnswer(it, answers[k]) || <em className="font-normal text-muted">em branco</em>}</div>
+          </div>
+          <div className="rounded-2xl p-3.5" style={{ background: tint(color, 0.08) }}>
+            <div className="mb-1 text-[11px] font-bold tracking-wide text-muted uppercase">{it.type === 'explique' ? 'O que não podia faltar' : 'Resposta certa'}</div>
+            <div className="text-sm font-semibold">{correctAnswer(it)}</div>
+          </div>
+        </div>
+
+        {/* Comentário do Capi */}
+        <div className="mt-4 flex items-end gap-2">
+          <Capybara key={`${k}-${v.pose}`} pose={v.pose} size={78} />
+          <div className="relative mb-4 flex-1 rounded-2xl border border-line bg-white px-4 py-3 text-sm shadow-sm">
+            <span className="absolute bottom-3 -left-1.5 h-3 w-3 rotate-45 border-b border-l border-line bg-white" />
+            {capiComment(it, r)}
+            {r?.missing && r.missing.length > 0 && <div className="mt-1.5 text-xs text-muted">Faltou: {r.missing.join('; ')}</div>}
+            {'explanation' in it && it.explanation && r && r.score >= 0.75 && <div className="mt-1.5 text-xs text-muted">{it.explanation}</div>}
+          </div>
+        </div>
+
+        {!r ? (
+          <div className="flex gap-2">
+            <button onClick={() => onSelfGrade(k, true)} className="flex-1 rounded-xl bg-emerald-50 py-2.5 text-sm font-bold text-emerald-700">
+              Acertei
+            </button>
+            <button onClick={() => onSelfGrade(k, false)} className="flex-1 rounded-xl bg-rose-50 py-2.5 text-sm font-bold text-rose-700">
+              Errei
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => onContest(k)} className="flex items-center gap-1 text-xs font-semibold text-muted hover:text-ink" title="Se a correção estiver errada, esta questão sai da nota">
+            <Flag size={12} /> {r.contested ? 'Desfazer contestação' : 'Discordo da correção'}
+          </button>
+        )}
+      </div>
+
+      <div className="mt-6 flex items-center justify-between">
+        <button onClick={() => setView(k === 0 ? 'reacao' : k - 1)} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100">
+          <ArrowLeft size={16} /> {k === 0 ? 'Placar' : 'Anterior'}
+        </button>
+        {last ? (
+          <button onClick={onFinish} disabled={!ready} className="flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50" style={{ background: color }}>
+            <Check size={16} /> Concluir
+          </button>
+        ) : (
+          <button onClick={() => setView(k + 1)} className="flex items-center gap-1.5 rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-white hover:bg-black">
+            Próxima <ArrowRight size={16} />
+          </button>
+        )}
+      </div>
+      <p className="mt-3 text-center text-[11px] text-muted">As correções são sugestões do Claude e podem errar.</p>
+    </div>
+  )
 }

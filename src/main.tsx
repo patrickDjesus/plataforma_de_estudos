@@ -15,6 +15,7 @@ import { SettingsPage } from './pages/Settings'
 import { MindMapPage } from './pages/MindMap'
 import { FocusPage } from './pages/Focus'
 import { RecoveryPage } from './pages/Recovery'
+import { ChallengeBuilderPage } from './pages/ChallengeBuilder'
 
 startCloudSync()
 
@@ -36,6 +37,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="caderno/:noteId" element={<NotebookPage />} />
           <Route path="mapa" element={<MindMapPage />} />
           <Route path="recuperacao" element={<RecoveryPage />} />
+          <Route path="desafio" element={<ChallengeBuilderPage />} />
           <Route path="materias" element={<SubjectsPage />} />
           <Route path="config" element={<SettingsPage />} />
         </Route>
