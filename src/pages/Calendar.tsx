@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarRange, Check, Clock3, Flag, LayoutGrid, Plus, RefreshCw, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { CalendarRange, Check, Clock3, Flag, LayoutGrid, Plus, RefreshCw, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { tint } from '../lib/colors'
 import { useSubjectMap, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
 import { currentWeekId, deleteBlock, regeneratePlan, setBlockDone, updateBlock } from '../db/repo'
 import type { Block } from '../db/types'
@@ -54,7 +55,7 @@ export function CalendarPage() {
   const legend = useMemo(() => {
     const acc = new Map<string, { planned: number; done: number }>()
     for (const b of blocks) {
-      if (b.kind !== 'study' || !b.subjectId) continue
+      if ((b.kind !== 'study' && b.kind !== 'revisao') || !b.subjectId || (b.missed && !b.done)) continue
       const e = acc.get(b.subjectId) ?? { planned: 0, done: 0 }
       e.planned += b.end - b.start
       if (b.done) e.done += b.end - b.start
@@ -210,7 +211,8 @@ export function CalendarPage() {
                   const topic = b.topicId ? topicMap.get(b.topicId) : undefined
                   const color = b.kind === 'compromisso' ? '#64748b' : (subject?.color ?? '#6366f1')
                   const h = (pos.end - pos.start) * PPM
-                  const title = b.kind === 'study' ? (topic?.name ?? subject?.name ?? 'Estudo') : (b.title ?? subject?.name ?? 'Evento')
+                  const title = b.kind === 'study' || b.kind === 'revisao' ? (topic?.name ?? subject?.name ?? 'Estudo') : (b.title ?? subject?.name ?? 'Evento')
+                  const isReview = b.kind === 'revisao'
                   return (
                     <div
                       key={b.id}
@@ -218,7 +220,7 @@ export function CalendarPage() {
                       onClick={(e) => e.stopPropagation()}
                       className={`group absolute z-10 cursor-grab touch-none overflow-hidden rounded-xl px-2 py-1.5 text-white shadow-md transition-shadow select-none hover:shadow-lg active:cursor-grabbing ${
                         preview?.id === b.id ? 'z-30 opacity-90 ring-4 ring-white' : ''
-                      } ${b.done ? 'opacity-60' : ''}`}
+                      } ${b.done ? 'opacity-60' : ''} ${b.missed && !b.done ? 'opacity-40 grayscale-[.4]' : ''}`}
                       style={{
                         top: (pos.start - rangeStart) * PPM + 1,
                         height: h - 2,
@@ -227,13 +229,16 @@ export function CalendarPage() {
                         background:
                           b.kind === 'compromisso'
                             ? 'repeating-linear-gradient(135deg,#64748b,#64748b 8px,#718096 8px,#718096 16px)'
-                            : `linear-gradient(160deg, ${color}, ${color}dd)`,
+                            : isReview
+                              ? `repeating-linear-gradient(135deg, ${color}, ${color} 6px, ${color}cc 6px, ${color}cc 12px)`
+                              : `linear-gradient(160deg, ${color}, ${color}dd)`,
                         boxShadow: `0 6px 16px -8px ${color}`,
                       }}
                     >
                       <div className="flex items-start justify-between gap-1">
                         <div className="line-clamp-2 text-xs leading-tight font-bold">
                           {b.kind === 'prova' && <Flag size={11} className="mr-1 inline" />}
+                          {isReview && <RotateCcw size={11} className="mr-1 inline" />}
                           {title}
                         </div>
                         {b.done && <Check size={14} className="shrink-0" />}
@@ -346,7 +351,9 @@ function CardsView({
                 const subject = b.subjectId ? subjects.get(b.subjectId) : undefined
                 const topic = b.topicId ? topicMap.get(b.topicId) : undefined
                 const color = b.kind === 'compromisso' ? '#64748b' : (subject?.color ?? '#3e63f2')
-                const title = b.kind === 'study' ? (topic?.name ?? subject?.name ?? 'Estudo') : (b.title ?? subject?.name ?? 'Evento')
+                const title = b.kind === 'study' || b.kind === 'revisao' ? (topic?.name ?? subject?.name ?? 'Estudo') : (b.title ?? subject?.name ?? 'Evento')
+                const isReview = b.kind === 'revisao'
+                const ink = `color-mix(in srgb, ${color} 75%, #000)`
                 return (
                   <div
                     key={b.id}
@@ -354,27 +361,32 @@ function CardsView({
                     onDragStart={() => setDragId(b.id)}
                     onDragEnd={() => setDragId(null)}
                     onClick={() => onOpen(b)}
-                    className={`group relative flex min-h-[84px] cursor-pointer flex-col justify-between rounded-2xl p-3 text-white transition hover:-translate-y-0.5 ${dragId === b.id ? 'opacity-40' : ''} ${b.done ? 'opacity-55' : ''}`}
+                    className={`group relative flex min-h-[84px] cursor-pointer flex-col justify-between rounded-2xl p-3 transition hover:-translate-y-0.5 ${isReview ? '' : 'text-white'} ${dragId === b.id ? 'opacity-40' : ''} ${b.done ? 'opacity-55' : ''} ${b.missed && !b.done ? 'opacity-45 grayscale-[.4]' : ''}`}
                     style={{
-                      background: b.kind === 'compromisso' ? 'repeating-linear-gradient(135deg,#6b7280,#6b7280 8px,#737a87 8px,#737a87 16px)' : color,
-                      boxShadow: `0 8px 18px -10px ${color}`,
+                      background: b.kind === 'compromisso' ? 'repeating-linear-gradient(135deg,#6b7280,#6b7280 8px,#737a87 8px,#737a87 16px)' : isReview ? tint(color, 0.12) : color,
+                      border: isReview ? `2px dashed ${tint(color, 0.7)}` : undefined,
+                      color: isReview ? ink : undefined,
+                      boxShadow: isReview ? undefined : `0 8px 18px -10px ${color}`,
                     }}
                   >
                     <div className="flex items-start justify-between gap-1.5">
-                      <div className="line-clamp-2 text-[13px] leading-snug font-bold">
+                      <div className={`line-clamp-2 text-[13px] leading-snug font-bold ${b.missed && !b.done ? 'line-through' : ''}`}>
                         {b.kind === 'prova' && <Flag size={12} className="mr-1 inline" />}
+                        {isReview && <RotateCcw size={12} className="mr-1 inline" />}
                         {title}
                       </div>
-                      <span className="shrink-0 rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-bold">{fmtDuration((b.end - b.start) * 60)}</span>
+                      <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${isReview ? 'bg-white/70' : 'bg-white/25'}`}>{fmtDuration((b.end - b.start) * 60)}</span>
                     </div>
-                    {b.kind === 'study' && topic && <div className="-mt-1 truncate text-[11px] font-semibold text-white/80">{subject?.name}</div>}
-                    {b.kind !== 'study' && <div className="-mt-1 truncate text-[11px] font-semibold text-white/80">{b.kind === 'prova' ? `Prova${subject ? ` · ${subject.name}` : ''}` : 'Compromisso'}</div>}
-                    <div className="mt-2 flex items-end justify-between gap-1 text-[11px] font-medium text-white/85">
+                    {b.missed && !b.done && <div className="-mt-1 truncate text-[11px] font-bold">Perdido · remarcado</div>}
+                    {!b.missed && isReview && <div className="-mt-1 truncate text-[11px] font-semibold opacity-80">Revisão · {subject?.name}</div>}
+                    {!b.missed && b.kind === 'study' && topic && <div className="-mt-1 truncate text-[11px] font-semibold text-white/80">{subject?.name}</div>}
+                    {b.kind !== 'study' && !isReview && <div className="-mt-1 truncate text-[11px] font-semibold text-white/80">{b.kind === 'prova' ? `Prova${subject ? ` · ${subject.name}` : ''}` : 'Compromisso'}</div>}
+                    <div className={`mt-2 flex items-end justify-between gap-1 text-[11px] font-medium ${isReview ? 'opacity-80' : 'text-white/85'}`}>
                       <span className="min-w-0 truncate tabular-nums">
                         {fmtTime(b.start)}–{fmtTime(b.end)}
                       </span>
                       <span className="flex shrink-0 gap-0.5">
-                        {b.kind === 'study' && (
+                        {(b.kind === 'study' || (isReview && b.done)) && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
@@ -391,7 +403,7 @@ function CardsView({
                             e.stopPropagation()
                             deleteBlock(b.id)
                           }}
-                          className="rounded-md p-0.5 opacity-70 hover:bg-white/20 hover:opacity-100"
+                          className="rounded-md p-0.5 opacity-70 hover:bg-black/10 hover:opacity-100"
                           title="Excluir"
                         >
                           <Trash2 size={13} />

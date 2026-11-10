@@ -1,13 +1,15 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowRight, BarChart3, CalendarCheck2, Check, ChevronRight, Clock3, Flame, Globe2, Medal, Play, Target, Trophy, Zap } from 'lucide-react'
+import { ArrowRight, BarChart3, BookOpen, RotateCcw, CalendarCheck2, Check, ChevronRight, Clock3, Flame, Globe2, Medal, Play, Target, Trophy, Zap } from 'lucide-react'
 import { db } from '../db/db'
 import { AREAS, useSessions, useSettings, useSubjectMap, useTimer, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
-import { currentWeekId, startTimer } from '../db/repo'
+import { currentWeekId, rateReview, startTimer } from '../db/repo'
+import { RATING_LABEL } from '../lib/review'
+import type { ReviewRating } from '../db/types'
 import type { Block } from '../db/types'
 import { AREA_COLOR, tint } from '../lib/colors'
-import { DAY_SHORT, addDays, fmtDuration, fmtTime, minutesNow, toISODate, weekDates } from '../lib/dates'
+import { DAY_SHORT, addDays, daysUntil, fmtDuration, fmtTime, minutesNow, toISODate, weekDates } from '../lib/dates'
 import { XP_PER_BLOCK, levelInfo, xpFrom } from '../lib/xp'
 import { LogoMark } from '../components/Logo'
 import { SubjectIcon } from '../components/SubjectIcon'
@@ -28,12 +30,13 @@ export function HomePage() {
   const settings = useSettings()
   const timer = useTimer()
   const doneBlocksAll = useLiveQuery(() => db.blocks.filter((b) => b.done).toArray(), [], [])
+  const reviews = useLiveQuery(() => db.reviews.toArray(), [], [])
   const [section, setSection] = useState<Section>('geral')
   const [scope, setScope] = useState<Scope>('hoje')
 
   const todayIso = toISODate(new Date())
   const topicMap = useMemo(() => new Map(topics.map((t) => [t.id, t])), [topics])
-  const study = blocks.filter((b) => b.kind === 'study')
+  const study = blocks.filter((b) => (b.kind === 'study' || b.kind === 'revisao') && !(b.missed && !b.done))
   const scoped = (scope === 'hoje' ? study.filter((b) => b.date === todayIso) : study).sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start)
   const startOf = (iso: string) => new Date(iso + 'T00:00:00').getTime()
   const scopeStart = scope === 'hoje' ? startOf(todayIso) : startOf(weekId)
@@ -44,13 +47,20 @@ export function HomePage() {
   const totalXp = xpFrom(
     sessions.reduce((a, s) => a + s.seconds, 0),
     doneBlocksAll.length,
+    reviews.reduce((a, r) => a + r.history.length, 0),
   )
   const lvl = levelInfo(totalXp)
   const scopeXp = xpFrom(scopeSeconds, scoped.filter((b) => b.done).length)
   const scopeGoal = scoped.reduce((a, b) => a + (b.end - b.start) + XP_PER_BLOCK, 0)
 
   // Dias estudados e sequência
-  const studyDays = useMemo(() => new Set([...sessions.map((s) => toISODate(new Date(s.startedAt))), ...doneBlocksAll.map((b) => b.date)]), [sessions, doneBlocksAll])
+  const studyDays = useMemo(
+    () =>
+      new Set(
+        [...sessions.map((s) => toISODate(new Date(s.startedAt))), ...doneBlocksAll.map((b) => b.date), ...reviews.flatMap((r) => r.history.map((h) => h.date))].filter((d) => d <= todayIso),
+      ),
+    [sessions, doneBlocksAll, reviews, todayIso],
+  )
   const streak = useMemo(() => {
     let d = studyDays.has(todayIso) ? todayIso : addDays(todayIso, -1)
     let n = 0
@@ -190,7 +200,7 @@ export function HomePage() {
                           <SubjectIcon subject={s} size={46} />
                           <div className="min-w-0 flex-1">
                             <div className="text-[11px] font-semibold" style={{ color: s?.color }}>
-                              {s?.name}
+                              {b.kind === 'revisao' ? `Revisão · ${s?.name}` : s?.name}
                               {scope === 'semana' && <span className="text-muted"> · {DAY_SHORT[weekDates(weekId).indexOf(b.date)].toLowerCase()}</span>}
                             </div>
                             <div className={`truncate text-sm font-bold ${b.done ? 'text-muted line-through' : ''}`}>{t?.name ?? s?.name}</div>
@@ -232,6 +242,13 @@ export function HomePage() {
                 </Panel>
               </div>
             </>
+          )}
+
+          {section === 'geral' && (
+            <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+              <ReviewsPanel />
+              <RecentNotes />
+            </div>
           )}
 
           {section === 'resultados' && <Results weekId={weekId} />}
@@ -365,6 +382,7 @@ function Results({ weekId }: { weekId: string }) {
           ))}
         </div>
       </div>
+      <YearHeatmap />
     </div>
   )
 }
@@ -422,6 +440,155 @@ function WeekGoals({ weekId }: { weekId: string }) {
             )
           })}
         </div>
+      </div>
+    </div>
+  )
+}
+
+/** Revisões vencidas (ou de hoje), com avaliação rápida. */
+function ReviewsPanel() {
+  const navigate = useNavigate()
+  const today = toISODate(new Date())
+  const reviews = useLiveQuery(() => db.reviews.orderBy('due').toArray(), [], [])
+  const topics = useTopics()
+  const subjects = useSubjectMap()
+  const due = reviews.filter((r) => r.due <= today)
+  const upcoming = reviews.filter((r) => r.due > today).slice(0, 3)
+  const topicName = (id: string) => topics.find((t) => t.id === id)?.name ?? 'Tópico'
+  return (
+    <div className="rounded-[18px] border border-line p-5">
+      <h3 className="mb-1 flex items-center gap-2 font-sans text-sm font-semibold">
+        <RotateCcw size={18} /> Revisões pendentes
+        {due.length > 0 && <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-bold text-white">{due.length}</span>}
+      </h3>
+      <p className="mb-3 text-xs text-muted">Revise o tópico e diga como foi. Difícil volta logo; fácil espaça mais.</p>
+      {reviews.length === 0 && (
+        <div className="flex items-center gap-3 rounded-2xl bg-[#f6f7f9] p-4 text-sm text-muted">
+          <Capybara pose="estudando" size={64} />
+          Quando você concluir um tópico, as revisões aparecem aqui (amanhã, em 7 dias e em 30 dias).
+        </div>
+      )}
+      {reviews.length > 0 && due.length === 0 && <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">Tudo revisado por hoje! ✨</p>}
+      <div className="divide-y divide-line">
+        {due.map((r) => {
+          const s = subjects.get(r.subjectId)
+          const late = -daysUntil(r.due)
+          return (
+            <div key={r.topicId} className="flex flex-wrap items-center gap-3 py-2.5">
+              <SubjectIcon subject={s} size={40} />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-bold">{topicName(r.topicId)}</div>
+                <div className={`text-xs ${late > 0 ? 'font-semibold text-rose-600' : 'text-muted'}`}>
+                  {s?.name} · {late > 0 ? `atrasada ${late} ${late === 1 ? 'dia' : 'dias'}` : 'vence hoje'} · {r.count}ª revisão feita
+                </div>
+              </div>
+              <div className="flex gap-1.5">
+                {(['dificil', 'ok', 'facil'] as ReviewRating[]).map((k) => (
+                  <button
+                    key={k}
+                    onClick={() => rateReview(r.topicId, k)}
+                    className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition ${k === 'ok' ? 'bg-brand-soft text-brand' : 'bg-[#f1f2f5] text-ink'} hover:brightness-95`}
+                    title={RATING_LABEL[k].label}
+                  >
+                    {RATING_LABEL[k].emoji} {RATING_LABEL[k].label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      {upcoming.length > 0 && (
+        <div className="mt-3 border-t border-line pt-3">
+          <div className="mb-1.5 text-xs font-semibold text-muted">Próximas</div>
+          <div className="flex flex-wrap gap-2">
+            {upcoming.map((r) => (
+              <button key={r.topicId} onClick={() => navigate('/calendario')} className="rounded-full bg-[#f6f7f9] px-3 py-1 text-xs font-semibold text-slate-600">
+                {topicName(r.topicId)} · em {daysUntil(r.due)}d
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RecentNotes() {
+  const navigate = useNavigate()
+  const notes = useLiveQuery(() => db.notes.orderBy('updatedAt').reverse().limit(5).toArray(), [], [])
+  const subjects = useSubjectMap()
+  return (
+    <div className="rounded-[18px] border border-line p-5">
+      <h3 className="mb-3 flex items-center gap-2 font-sans text-sm font-semibold">
+        <BookOpen size={18} /> Notas recentes
+      </h3>
+      {notes.length === 0 && <p className="rounded-2xl bg-[#f6f7f9] px-4 py-3 text-sm text-muted">Nenhuma nota ainda. Anote o que aprendeu depois de cada bloco.</p>}
+      <div className="space-y-1">
+        {notes.map((n) => {
+          const s = subjects.get(n.subjectId)
+          const text = n.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+          return (
+            <button key={n.id} onClick={() => navigate(`/caderno/${n.id}`)} className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-slate-50">
+              <SubjectIcon subject={s} size={32} />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-bold">{n.title}</div>
+                <div className="truncate text-xs text-muted">{text || 'Nota vazia'}</div>
+              </div>
+              <span className="shrink-0 text-[11px] text-muted">{new Date(n.updatedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/** Mapa de calor do último ano (um quadradinho por dia). */
+function YearHeatmap() {
+  const sessions = useSessions()
+  const today = new Date()
+  const perDay = new Map<string, number>()
+  for (const s of sessions) {
+    const d = toISODate(new Date(s.startedAt))
+    perDay.set(d, (perDay.get(d) ?? 0) + s.seconds)
+  }
+  const end = toISODate(today)
+  const firstMonday = addDays(weekDates(currentWeekId())[0], -52 * 7)
+  const weeks = Array.from({ length: 53 }, (_, w) => Array.from({ length: 7 }, (_, d) => addDays(firstMonday, w * 7 + d)))
+  const level = (secs: number) => (secs === 0 ? 0 : secs < 30 * 60 ? 1 : secs < 60 * 60 ? 2 : secs < 2 * 3600 ? 3 : 4)
+  const COLORS = ['#eef0f4', '#c7d3ff', '#8ea6ff', '#5b7cff', '#3e63f2']
+  const totalDays = [...perDay.keys()].filter((d) => d >= firstMonday).length
+  const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+  return (
+    <div className="rounded-[18px] border border-line p-5 lg:col-span-2">
+      <h3 className="mb-1 flex items-center gap-2 font-sans text-sm font-semibold">
+        <Flame size={18} /> Seu ano de estudos
+      </h3>
+      <p className="mb-4 text-xs text-muted">{totalDays} dias com estudo nos últimos 12 meses</p>
+      <div className="thin-scroll overflow-x-auto pb-1">
+        <div className="flex min-w-max gap-[3px]">
+          {weeks.map((days, w) => (
+            <div key={w} className="flex flex-col gap-[3px]">
+              <div className="h-3 text-[9px] leading-3 text-muted">{days[0].slice(8) <= '07' ? months[Number(days[0].slice(5, 7)) - 1] : ''}</div>
+              {days.map((d) => (
+                <div
+                  key={d}
+                  className="h-3 w-3 rounded-[3px]"
+                  style={{ background: d > end ? 'transparent' : COLORS[level(perDay.get(d) ?? 0)] }}
+                  title={d > end ? '' : `${d.split('-').reverse().join('/')}: ${fmtDuration(perDay.get(d) ?? 0)}`}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="mt-3 flex items-center justify-end gap-1 text-[10px] text-muted">
+        menos
+        {COLORS.map((c) => (
+          <span key={c} className="h-3 w-3 rounded-[3px]" style={{ background: c }} />
+        ))}
+        mais
       </div>
     </div>
   )

@@ -12,6 +12,9 @@ export function levelInfo(xp: number) {
   return { level, xp, inLevel: xp - base, needed: next - base, progress: (xp - base) / (next - base) }
 }
 
-export function xpFrom(sessionsSeconds: number, doneBlocks: number) {
-  return Math.floor(sessionsSeconds / 60) + doneBlocks * XP_PER_BLOCK
+/** Bônus por revisão registrada (revisar vale mais). */
+export const XP_PER_REVIEW = 15
+
+export function xpFrom(sessionsSeconds: number, doneBlocks: number, reviewsDone = 0) {
+  return Math.floor(sessionsSeconds / 60) + doneBlocks * XP_PER_BLOCK + reviewsDone * XP_PER_REVIEW
 }

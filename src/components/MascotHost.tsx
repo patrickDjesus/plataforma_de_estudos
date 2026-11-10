@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { X } from 'lucide-react'
 import { db } from '../db/db'
-import { currentWeekId, setBlockDone, startTimer } from '../db/repo'
+import { currentWeekId, replanMissed, setBlockDone, startTimer } from '../db/repo'
 import { addDays, minutesNow, toISODate } from '../lib/dates'
 import { capiQuestion, capiWelcome, type CapiContext } from '../lib/capiTalk'
 import { onMascot, showMascot, type MascotMessage } from '../lib/mascotBus'
@@ -26,7 +26,8 @@ export function MascotHost() {
   const data = useLiveQuery(async () => {
     const weekId = currentWeekId()
     const todayIso = toISODate(new Date())
-    const [settings, subjectsCount, week, todayBlocks, notesCount, timer, sessions, doneBlocks, topics, subjects] = await Promise.all([
+    const [reviews, settings, subjectsCount, week, todayBlocks, notesCount, timer, sessions, doneBlocks, topics, subjects] = await Promise.all([
+      db.reviews.toArray(),
       db.settings.get('main'),
       db.subjects.count(),
       db.weeks.get(weekId),
@@ -38,7 +39,7 @@ export function MascotHost() {
       db.topics.toArray(),
       db.subjects.toArray(),
     ])
-    return { settings, subjectsCount, week, todayBlocks, notesCount, timer, sessions, doneBlocks, topics, subjects, todayIso }
+    return { reviews, settings, subjectsCount, week, todayBlocks, notesCount, timer, sessions, doneBlocks, topics, subjects, todayIso }
   }, [])
 
   const say = useCallback((m: MascotMessage) => {
@@ -50,14 +51,42 @@ export function MascotHost() {
 
   useEffect(() => onMascot(say), [say])
 
+  // Replanejamento automático de blocos perdidos: ao abrir, a cada 5 min e ao voltar para a aba
+  useEffect(() => {
+    let first = true
+    const run = async () => {
+      const n = await replanMissed()
+      if (!n) return
+      const m: MascotMessage = {
+        pose: 'pensando',
+        title: 'Reorganizei sua semana',
+        text: `${n === 1 ? '1 bloco ficou' : `${n} blocos ficaram`} pra trás, então remarquei o conteúdo nos próximos horários livres. Se você estudou mesmo assim, é só marcar como feito.`,
+        actions: [{ label: 'Ver semana', primary: true, to: '/calendario' }, { label: 'Ok!' }],
+      }
+      // Na abertura, espera as boas-vindas passarem
+      if (first) window.setTimeout(() => showMascot(m), 9000)
+      else showMascot(m)
+    }
+    run().finally(() => (first = false))
+    const i = window.setInterval(run, 5 * 60 * 1000)
+    const onFocus = () => run()
+    window.addEventListener('focus', onFocus)
+    return () => {
+      window.clearInterval(i)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [])
+
   const ctx = useMemo<CapiContext | null>(() => {
     if (!data) return null
     const now = new Date()
     const nm = minutesNow(now)
     const label = (topicId?: string, subjectId?: string) => data.topics.find((t) => t.id === topicId)?.name ?? data.subjects.find((s) => s.id === subjectId)?.name ?? 'estudo'
-    const study = data.todayBlocks.filter((b) => b.kind === 'study' && !b.done).sort((a, b) => a.start - b.start)
+    const study = data.todayBlocks.filter((b) => (b.kind === 'study' || b.kind === 'revisao') && !b.done).sort((a, b) => a.start - b.start)
     const toCapi = (b: (typeof study)[number]) => ({ id: b.id, label: label(b.topicId, b.subjectId), start: b.start, end: b.end })
-    const days = new Set([...data.sessions.map((s) => toISODate(new Date(s.startedAt))), ...data.doneBlocks.map((b) => b.date)])
+    const days = new Set(
+      [...data.sessions.map((s) => toISODate(new Date(s.startedAt))), ...data.doneBlocks.map((b) => b.date), ...data.reviews.flatMap((r) => r.history.map((h) => h.date))].filter((x) => x <= data.todayIso),
+    )
     let d = days.has(data.todayIso) ? data.todayIso : addDays(data.todayIso, -1)
     let streak = 0
     while (days.has(d)) {
@@ -72,6 +101,7 @@ export function MascotHost() {
       nextToday: study.filter((b) => b.end > nm).map(toCapi)[0],
       missedToday: study.filter((b) => b.end <= nm && b.studiedSeconds === 0).map(toCapi),
       notesCount: data.notesCount,
+      reviewsDue: data.reviews.filter((r) => r.due <= data.todayIso).map((r) => data.topics.find((t) => t.id === r.topicId)?.name).filter((x): x is string => !!x),
       streak,
       timerRunning: !!data.timer,
       startBlock: (id: string) => {
@@ -94,7 +124,7 @@ export function MascotHost() {
   // Subiu de nível
   useEffect(() => {
     if (!data) return
-    const lvl = levelInfo(xpFrom(data.sessions.reduce((a, s) => a + s.seconds, 0), data.doneBlocks.length)).level
+    const lvl = levelInfo(xpFrom(data.sessions.reduce((a, s) => a + s.seconds, 0), data.doneBlocks.length, data.reviews.reduce((a, r) => a + r.history.length, 0))).level
     if (lastLevel.current !== null && lvl > lastLevel.current) {
       window.setTimeout(
         () => showMascot({ pose: 'formado', title: `Nível ${lvl}! 🎓`, text: 'Você subiu de nível. Cada minuto estudado está valendo a pena!', autoHideMs: 8000 }),

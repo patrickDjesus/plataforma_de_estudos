@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Check, Play, RotateCcw, Trash2 } from 'lucide-react'
 import { useSubjects, useTopics } from '../db/hooks'
-import { addBlock, deleteBlock, setBlockDone, startTimer, updateBlock } from '../db/repo'
+import { addBlock, deleteBlock, rateReview, setBlockDone, startTimer, updateBlock } from '../db/repo'
+import { RATING_LABEL } from '../lib/review'
+import type { ReviewRating } from '../db/types'
 import type { Block, BlockKind } from '../db/types'
 import { DAY_NAMES, fmtDayMonth, fmtDuration, fmtTime, parseTime, weekDates } from '../lib/dates'
 import { Btn, Field, Modal, inputCls } from './ui'
 
 const KIND_LABEL: Record<BlockKind, string> = {
   study: 'Estudo',
+  revisao: 'Revisão (agendada pela revisão espaçada)',
   compromisso: 'Compromisso (bloqueia o horário)',
   prova: 'Prova / entrega (vira prazo da matéria)',
 }
@@ -53,7 +56,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
   if (!open) return null
   const subjectTopics = topics.filter((t) => t.subjectId === subjectId)
   const needsSubject = kind !== 'compromisso'
-  const valid = parseTime(end) > parseTime(start) && (!needsSubject || subjectId) && (kind === 'study' || title.trim() || subjectId)
+  const valid = parseTime(end) > parseTime(start) && (!needsSubject || subjectId) && (kind === 'study' || kind === 'revisao' || title.trim() || subjectId)
 
   const save = async () => {
     const data = {
@@ -63,7 +66,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
       end: parseTime(end),
       kind,
       subjectId: needsSubject ? subjectId || undefined : undefined,
-      topicId: kind === 'study' ? topicId || undefined : undefined,
+      topicId: (kind === 'study' || kind === 'revisao') ? topicId || undefined : undefined,
       title: title.trim() || undefined,
     }
     if (block) await updateBlock(block.id, data)
@@ -77,7 +80,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
   return (
     <Modal open onClose={onClose} title={block ? 'Detalhes do bloco' : 'Novo bloco'}>
       <div className="space-y-4">
-        {block && block.kind === 'study' && (
+        {block && (block.kind === 'study' || block.kind === 'revisao') && (
           <div className="flex flex-wrap gap-2 rounded-2xl p-3" style={{ background: subject ? `${subject.color}14` : '#f8fafc' }}>
             <Btn
               variant="primary"
@@ -88,9 +91,20 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
             >
               <Play size={16} /> Começar
             </Btn>
-            <Btn variant={block.done ? 'ghost' : 'soft'} onClick={() => setBlockDone(block.id, !block.done).then(onClose)}>
-              {block.done ? <RotateCcw size={16} /> : <Check size={16} />} {block.done ? 'Desfazer' : 'Marcar como feito'}
-            </Btn>
+            {block.kind === 'revisao' && !block.done && block.topicId ? (
+              <div className="flex w-full flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold text-muted">Já revisou? Como foi:</span>
+                {(['dificil', 'ok', 'facil'] as ReviewRating[]).map((r) => (
+                  <Btn key={r} variant={r === 'ok' ? 'soft' : 'ghost'} onClick={() => rateReview(block.topicId!, r, block.id).then(onClose)}>
+                    {RATING_LABEL[r].emoji} {RATING_LABEL[r].label}
+                  </Btn>
+                ))}
+              </div>
+            ) : (
+              <Btn variant={block.done ? 'ghost' : 'soft'} onClick={() => setBlockDone(block.id, !block.done).then(onClose)}>
+                {block.done ? <RotateCcw size={16} /> : <Check size={16} />} {block.done ? 'Desfazer' : 'Marcar como feito'}
+              </Btn>
+            )}
             {block.studiedSeconds > 0 && <span className="self-center text-sm text-muted">Estudado: {fmtDuration(block.studiedSeconds)}</span>}
           </div>
         )}
@@ -118,7 +132,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
           </Field>
         )}
 
-        {kind === 'study' && subjectTopics.length > 0 && (
+        {(kind === 'study' || kind === 'revisao') && subjectTopics.length > 0 && (
           <Field label="Tópico">
             <select className={inputCls} value={topicId} onChange={(e) => setTopicId(e.target.value)}>
               <option value="">— Livre —</option>

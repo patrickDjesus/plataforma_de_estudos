@@ -32,11 +32,13 @@ const POSE_TEXT: Record<CapiPose, string> = {
   formado: 'Quando você sobe de nível.',
 }
 
-const NUMBER_FIELDS: { key: keyof Settings; label: string; min: number; max: number }[] = [
+const NUMBER_FIELDS: { key: keyof Settings; label: string; min: number; max: number; def?: number; scale?: number }[] = [
   { key: 'blockMinutes', label: 'Duração padrão do bloco (min)', min: 15, max: 180 },
   { key: 'minBlockMinutes', label: 'Bloco mínimo (min)', min: 10, max: 120 },
   { key: 'breakMinutes', label: 'Pausa entre blocos (min)', min: 0, max: 60 },
   { key: 'maxSameSubjectInRow', label: 'Máx. blocos seguidos da mesma matéria', min: 1, max: 6 },
+  { key: 'reviewMinutes', label: 'Duração da revisão (min)', min: 10, max: 60, def: 20 },
+  { key: 'maxReviewShare', label: 'Máx. da semana para revisões (%)', min: 5, max: 50, def: 20, scale: 100 },
 ]
 
 export function SettingsPage() {
@@ -132,10 +134,10 @@ export function SettingsPage() {
                   min={f.min}
                   max={f.max}
                   className={inputCls}
-                  value={settings[f.key] as number}
+                  value={Math.round(((settings[f.key] as number | undefined) ?? (f.def ?? 0) / (f.scale ?? 1)) * (f.scale ?? 1))}
                   onChange={(e) => {
                     const v = Math.max(f.min, Math.min(f.max, Number(e.target.value) || f.min))
-                    updateSettings({ [f.key]: v })
+                    updateSettings({ [f.key]: v / (f.scale ?? 1) })
                   }}
                 />
               </Field>

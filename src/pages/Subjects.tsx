@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { GripVertical, Layers, Plus, Trash2 } from 'lucide-react'
 import { AREAS, useSubjects, useTopics } from '../db/hooks'
-import { addSubject, addTopic, deleteSubject, deleteTopic, reorderTopics, updateSubject, updateTopic } from '../db/repo'
+import { addSubject, addTopic, deleteSubject, deleteTopic, reorderTopics, setTopicDone, updateSubject, updateTopic } from '../db/repo'
 import type { AreaId, Subject, Topic } from '../db/types'
 import { AREA_COLOR, tint } from '../lib/colors'
 import { daysUntil, fmtDuration } from '../lib/dates'
@@ -235,7 +235,7 @@ function SubjectModal({ subject: s, topics, onClose }: { subject: Subject; topic
                 className={`group flex items-center gap-2 rounded-xl bg-white px-2 py-2 shadow-[0_1px_2px_rgba(16,24,40,0.05)] ${dragId === t.id ? 'opacity-40' : ''}`}
               >
                 <GripVertical size={14} className="cursor-grab text-slate-300" />
-                <input id={`topic-done-${t.id}`} type="checkbox" checked={t.done} onChange={(e) => updateTopic(t.id, { done: e.target.checked })} style={{ accentColor: s.color }} className="h-4 w-4" />
+                <input id={`topic-done-${t.id}`} type="checkbox" checked={t.done} onChange={(e) => setTopicDone(t.id, e.target.checked)} style={{ accentColor: s.color }} className="h-4 w-4" />
                 <input
                   id={`topic-name-${t.id}`}
                   className={`min-w-0 flex-1 bg-transparent text-sm font-medium outline-none ${t.done ? 'text-muted line-through' : ''}`}

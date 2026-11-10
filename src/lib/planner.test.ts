@@ -88,6 +88,35 @@ describe('planWeek', () => {
     expect(calc[1].topicId).toBe('t2')
   })
 
+  it('encaixa revisões a partir do vencimento, até 20% da semana', () => {
+    const reviews = [
+      { topicId: 'r1', subjectId: 'calc', due: '2026-11-11' },
+      { topicId: 'r2', subjectId: 'hist', due: '2026-11-01' },
+    ]
+    const plan = planWeek(base({ reviews, settings: { ...base().settings, reviewMinutes: 20, maxReviewShare: 0.2 } }))
+    const rev = plan.filter((b) => b.kind === 'revisao')
+    expect(rev).toHaveLength(2)
+    expect(rev.find((b) => b.topicId === 'r1')!.date >= '2026-11-11').toBe(true)
+    expect(rev.find((b) => b.topicId === 'r2')!.date).toBe('2026-11-09') // atrasada: primeiro horário
+    // estudo não sobrepõe a revisão
+    const r1 = rev.find((b) => b.topicId === 'r1')!
+    expect(plan.some((b) => b.kind === 'study' && b.date === r1.date && b.start < r1.end && b.end > r1.start)).toBe(false)
+  })
+
+  it('respeita o teto de revisões', () => {
+    const reviews = Array.from({ length: 40 }, (_, i) => ({ topicId: `r${i}`, subjectId: 'calc', due: '2026-11-09' }))
+    const plan = planWeek(base({ reviews, settings: { ...base().settings, reviewMinutes: 20, maxReviewShare: 0.2 } }))
+    const revMin = plan.filter((b) => b.kind === 'revisao').reduce((a, b) => a + b.end - b.start, 0)
+    const allMin = plan.reduce((a, b) => a + b.end - b.start, 0)
+    expect(revMin / allMin).toBeLessThanOrEqual(0.21)
+  })
+
+  it('conteúdo perdido ganha prioridade', () => {
+    const normal = planWeek(base()).filter((b) => b.subjectId === 'ing').length
+    const carried = planWeek(base({ carryOver: { ing: 100 } })).filter((b) => b.subjectId === 'ing').length
+    expect(carried).toBeGreaterThan(normal)
+  })
+
   it('sem matérias, não gera nada', () => {
     expect(planWeek(base({ subjects: [] }))).toEqual([])
   })

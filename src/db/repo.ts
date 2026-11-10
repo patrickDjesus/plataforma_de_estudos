@@ -1,7 +1,8 @@
 import { db, uid } from './db'
-import type { AreaId, AreaPercents, Availability, Block, Note, Settings, Subject, TimerState, Topic, Week } from './types'
+import type { AreaId, AreaPercents, Availability, Block, Note, ReviewRating, Settings, Subject, TimerState, Topic, Week } from './types'
 import { autoColor } from '../lib/colors'
-import { minutesNow, toISODate, weekIdOf } from '../lib/dates'
+import { addDays, minutesNow, toISODate, weekIdOf } from '../lib/dates'
+import { applyRating, newReview, RATING_LABEL } from '../lib/review'
 import { planWeek } from '../lib/planner'
 import { showMascot } from '../lib/mascotBus'
 import { XP_PER_BLOCK } from '../lib/xp'
@@ -16,6 +17,8 @@ export const DEFAULT_SETTINGS: Settings = {
   maxBlockMinutes: 120,
   breakMinutes: 10,
   maxSameSubjectInRow: 2,
+  reviewMinutes: 20,
+  maxReviewShare: 0.2,
   defaultAvailability: [eve, eve, eve, eve, eve, [{ start: 9 * 60, end: 12 * 60 }], []],
   lastPercents: { faculdade: 70, ensino: 20, idiomas: 10 },
 }
@@ -52,8 +55,9 @@ export async function addSubject(areaId: AreaId, name: string): Promise<string> 
 export const updateSubject = (id: string, patch: Partial<Subject>) => db.subjects.update(id, patch)
 
 export async function deleteSubject(id: string) {
-  await db.transaction('rw', [db.subjects, db.topics, db.notes, db.blocks], async () => {
+  await db.transaction('rw', [db.subjects, db.topics, db.notes, db.blocks, db.reviews], async () => {
     await db.subjects.delete(id)
+    await db.reviews.where('subjectId').equals(id).delete()
     await db.topics.where('subjectId').equals(id).delete()
     await db.notes.where('subjectId').equals(id).delete()
     // Mantém o histórico (blocos concluídos); remove só o que ainda não aconteceu
@@ -72,9 +76,84 @@ export async function addTopic(subjectId: string, name: string): Promise<string>
 
 export const updateTopic = (id: string, patch: Partial<Topic>) => db.topics.update(id, patch)
 
+/** Concluir um tópico inicia a revisão espaçada (1ª revisão amanhã). */
+export async function setTopicDone(id: string, done: boolean) {
+  const t = await db.topics.get(id)
+  if (!t) return
+  await db.topics.update(id, { done, doneAt: done ? (t.doneAt ?? Date.now()) : undefined })
+  if (done && !(await db.reviews.get(id))) await db.reviews.put(newReview(id, t.subjectId, toISODate(new Date())))
+}
+
+// ---------- Revisões ----------
+
+/** Registra como foi a revisão e agenda a próxima. */
+export async function rateReview(topicId: string, rating: ReviewRating, blockId?: string) {
+  const r = await db.reviews.get(topicId)
+  if (!r) return
+  const today = toISODate(new Date())
+  const next = applyRating(r, rating, today)
+  await db.reviews.put(next)
+  const weekId = weekIdOf(new Date())
+  // O bloco usado para revisar fica concluído; outros blocos pendentes dessa revisão
+  // (por exemplo, agendados para outro dia) são liberados e o horário volta para o plano
+  if (blockId) await db.blocks.update(blockId, { done: true })
+  const others = await db.blocks
+    .where('topicId')
+    .equals(topicId)
+    .filter((b) => b.kind === 'revisao' && !b.done && b.weekId === weekId && b.id !== blockId)
+    .toArray()
+  if (others.length) {
+    await db.blocks.bulkDelete(others.map((b) => b.id))
+    await regeneratePlan(weekId)
+  }
+  const topic = await db.topics.get(topicId)
+  const when = next.intervalDays === 1 ? 'amanhã' : `daqui a ${next.intervalDays} dias`
+  showMascot({
+    pose: rating === 'dificil' ? 'pensando' : rating === 'facil' ? 'formado' : 'comemorando',
+    title: `${RATING_LABEL[rating].emoji} Revisão registrada`,
+    text: `${topic?.name ?? 'Tópico'}: próxima revisão ${when}.${rating === 'dificil' ? ' Vamos reforçar isso logo!' : ''}`,
+    autoHideMs: 6000,
+  })
+}
+
+export async function dueReviews(until = toISODate(new Date())) {
+  return db.reviews.where('due').belowOrEqual(until).toArray()
+}
+
+// ---------- Blocos perdidos ----------
+
+/**
+ * Marca como perdidos os blocos que passaram do horário sem estudo
+ * e replaneja o resto da semana para encaixar o conteúdo de novo.
+ */
+export async function replanMissed(now = new Date()): Promise<number> {
+  const weekId = weekIdOf(now)
+  const today = toISODate(now)
+  const nm = minutesNow(now)
+  const timer = await db.timer.get('timer')
+  const missed = await db.blocks
+    .where('weekId')
+    .equals(weekId)
+    .filter(
+      (b) =>
+        (b.kind === 'study' || b.kind === 'revisao') &&
+        !b.done &&
+        !b.missed &&
+        b.studiedSeconds === 0 &&
+        b.id !== timer?.blockId &&
+        (b.date < today || (b.date === today && b.end <= nm)),
+    )
+    .toArray()
+  if (!missed.length) return 0
+  await Promise.all(missed.map((b) => db.blocks.update(b.id, { missed: true })))
+  await regeneratePlan(weekId, now)
+  return missed.length
+}
+
 export async function deleteTopic(id: string) {
-  await db.transaction('rw', [db.topics, db.notes, db.blocks], async () => {
+  await db.transaction('rw', [db.topics, db.notes, db.blocks, db.reviews], async () => {
     await db.topics.delete(id)
+    await db.reviews.delete(id)
     await db.notes.where('topicId').equals(id).modify({ topicId: undefined })
     await db.blocks.where('topicId').equals(id).modify({ topicId: undefined })
   })
@@ -130,7 +209,16 @@ export async function regeneratePlan(weekId: string, now = new Date()) {
   ])
   const toRemove = blocks.filter((b) => isRegenerable(b, now))
   const keep = blocks.filter((b) => !isRegenerable(b, now))
+  // Revisões que vencem até o fim da semana e ainda não têm bloco fixo pendente
+  const weekEnd = addDays(weekId, 6)
+  const pinned = new Set(keep.filter((b) => b.kind === 'revisao' && !b.done && !b.missed && b.topicId).map((b) => b.topicId!))
+  const reviews = (await db.reviews.where('due').belowOrEqual(weekEnd).toArray()).filter((r) => !pinned.has(r.topicId) && topics.some((t) => t.id === r.topicId))
+  // Minutos perdidos por matéria ganham prioridade
+  const carryOver: Record<string, number> = {}
+  for (const b of keep) if (b.missed && !b.done && b.kind === 'study' && b.subjectId) carryOver[b.subjectId] = (carryOver[b.subjectId] ?? 0) + (b.end - b.start)
   const planned = planWeek({
+    reviews,
+    carryOver,
     weekId,
     availability: week.availability,
     percents: week.percents,
@@ -176,21 +264,54 @@ export const deleteBlock = (id: string) => db.blocks.delete(id)
 export async function setBlockDone(id: string, done: boolean) {
   const b = await db.blocks.get(id)
   await db.blocks.update(id, { done })
-  if (done && b && !b.done) celebrateBlock(b.topicId, b.subjectId, 0)
+  if (done && b && !b.done) celebrateBlock(b, 0)
+  // Um bloco perdido que na verdade foi feito libera o horário remarcado
+  if (b?.missed) await regeneratePlan(b.weekId)
 }
 
 const CHEERS = ['Mandou bem!', 'Isso aí!', 'Mais um pra conta!', 'Que orgulho!', 'Arrasou!', 'Capivarístico!']
 
-async function celebrateBlock(topicId: string | undefined, subjectId: string | undefined, seconds: number) {
-  const [topic, subject] = await Promise.all([topicId ? db.topics.get(topicId) : undefined, subjectId ? db.subjects.get(subjectId) : undefined])
+async function celebrateBlock(b: Pick<Block, 'id' | 'kind' | 'topicId' | 'subjectId'>, seconds: number) {
+  const [topic, subject] = await Promise.all([b.topicId ? db.topics.get(b.topicId) : undefined, b.subjectId ? db.subjects.get(b.subjectId) : undefined])
   const what = topic?.name ?? subject?.name ?? 'o bloco'
   const xp = Math.floor(seconds / 60) + XP_PER_BLOCK
-  showMascot({
-    pose: 'comemorando',
-    title: CHEERS[Math.floor(Math.random() * CHEERS.length)],
-    text: `Você concluiu ${what}. +${xp} XP pra você! 🎉`,
-    autoHideMs: 6000,
-  })
+  const title = CHEERS[Math.floor(Math.random() * CHEERS.length)]
+
+  // Revisão: o Capi pergunta como foi
+  if (b.kind === 'revisao' && topic && (await db.reviews.get(topic.id))) {
+    showMascot({
+      pose: 'pensando',
+      title: `Revisão feita! +${xp} XP`,
+      text: `Como foi revisar ${topic.name}?`,
+      actions: (['dificil', 'ok', 'facil'] as ReviewRating[]).map((r) => ({
+        label: `${RATING_LABEL[r].emoji} ${RATING_LABEL[r].label}`,
+        primary: r === 'ok',
+        run: () => rateReview(topic.id, r, b.id),
+      })),
+    })
+    return
+  }
+  // Estudo de um tópico: pergunta se terminou
+  if (b.kind === 'study' && topic && !topic.done) {
+    showMascot({
+      pose: 'comemorando',
+      title,
+      text: `+${xp} XP! Você terminou o tópico ${topic.name}?`,
+      actions: [
+        {
+          label: 'Sim, concluí',
+          primary: true,
+          run: async () => {
+            await setTopicDone(topic.id, true)
+            showMascot({ pose: 'estudando', title: 'Tópico concluído ✅', text: `Agendei a primeira revisão de ${topic.name} para amanhã. Revisar é o que faz ficar na cabeça!`, autoHideMs: 7000 })
+          },
+        },
+        { label: 'Ainda falta' },
+      ],
+    })
+    return
+  }
+  showMascot({ pose: 'comemorando', title, text: `Você concluiu ${what}. +${xp} XP pra você! 🎉`, autoHideMs: 6000 })
 }
 
 // ---------- Cronômetro ----------
@@ -247,14 +368,15 @@ export async function stopTimer(markDone = false) {
       if (b) await db.blocks.update(t.blockId, { studiedSeconds: b.studiedSeconds + seconds, done: b.done || markDone })
     }
   })
-  if (markDone && t.blockId) celebrateBlock(t.topicId, t.subjectId, seconds)
+  const finished = markDone && t.blockId ? await db.blocks.get(t.blockId) : undefined
+  if (finished) celebrateBlock(finished, seconds)
   else if (seconds >= 60)
     showMascot({ pose: 'focado', title: 'Sessão salva', text: `Foram ${Math.round(seconds / 60)} minutos de foco. +${Math.floor(seconds / 60)} XP!`, autoHideMs: 5000 })
 }
 
 // ---------- Backup ----------
 
-const TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings'] as const
+const TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews'] as const
 
 export async function exportBackup(): Promise<string> {
   const data: Record<string, unknown[]> = {}

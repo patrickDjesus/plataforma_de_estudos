@@ -6,6 +6,14 @@ export interface PlannerSettings {
   minBlockMinutes: number
   breakMinutes: number
   maxSameSubjectInRow: number
+  reviewMinutes?: number
+  maxReviewShare?: number
+}
+
+export interface PlanReview {
+  topicId: string
+  subjectId: string
+  due: string
 }
 
 export interface PlanInput {
@@ -19,6 +27,10 @@ export interface PlanInput {
   settings: PlannerSettings
   /** Planeja só a partir deste momento (para check-in no meio da semana). */
   now: Date
+  /** Revisões vencidas ou que vencem nesta semana. */
+  reviews?: PlanReview[]
+  /** Minutos perdidos por matéria, que ganham prioridade no replanejamento. */
+  carryOver?: Record<string, number>
 }
 
 export interface Slot {
@@ -101,11 +113,52 @@ export function subjectTargets(input: PlanInput, totalMinutes: number): Map<stri
   return targets
 }
 
+/**
+ * Encaixa as revisões no início dos horários livres, a partir da data de vencimento,
+ * gastando no máximo `maxReviewShare` da semana. Devolve os blocos de revisão
+ * e os horários que sobraram para estudo.
+ */
+export function placeReviews(input: PlanInput, slots: Slot[]): { reviewBlocks: PlannedBlock[]; rest: Slot[] } {
+  const reviews = [...(input.reviews ?? [])].sort((a, b) => a.due.localeCompare(b.due))
+  const len = input.settings.reviewMinutes ?? 20
+  const total = slots.reduce((acc, s) => acc + (s.end - s.start), 0)
+  let budget = total * (input.settings.maxReviewShare ?? 0.2)
+  const cursor = slots.map((s) => s.start)
+  const reviewBlocks: PlannedBlock[] = []
+  for (const r of reviews) {
+    if (budget < len) break
+    const i = slots.findIndex((s, k) => s.date >= r.due && s.end - cursor[k] >= len)
+    const j = i >= 0 ? i : slots.findIndex((s, k) => r.due < s.date && s.end - cursor[k] >= len)
+    const k = i >= 0 ? i : j
+    if (k < 0) continue
+    reviewBlocks.push({
+      weekId: input.weekId,
+      date: slots[k].date,
+      start: cursor[k],
+      end: cursor[k] + len,
+      kind: 'revisao',
+      subjectId: r.subjectId,
+      topicId: r.topicId,
+      done: false,
+      studiedSeconds: 0,
+      auto: true,
+    })
+    cursor[k] += len
+    budget -= len
+  }
+  const rest = slots
+    .map((s, k) => ({ ...s, start: cursor[k] }))
+    .filter((s) => s.end - s.start >= input.settings.minBlockMinutes)
+  return { reviewBlocks, rest }
+}
+
 export function planWeek(input: PlanInput): PlannedBlock[] {
-  const slots = buildSlots(input)
+  const { reviewBlocks, rest: slots } = placeReviews(input, buildSlots(input))
   const total = slots.reduce((acc, s) => acc + (s.end - s.start), 0)
   const targets = subjectTargets(input, total)
-  if (targets.size === 0) return []
+  if (targets.size === 0) return reviewBlocks
+  // Conteúdo perdido ganha prioridade (soma ao alvo da matéria)
+  for (const [id, min] of Object.entries(input.carryOver ?? {})) if (targets.has(id)) targets.set(id, targets.get(id)! + min)
 
   const assigned = new Map<string, number>([...targets.keys()].map((k) => [k, 0]))
   const topicsBySubject = new Map<string, Topic[]>()
@@ -155,5 +208,5 @@ export function planWeek(input: PlanInput): PlannedBlock[] {
       auto: true,
     })
   })
-  return result
+  return [...reviewBlocks, ...result]
 }

@@ -18,6 +18,8 @@ export interface CapiContext {
   /** Blocos de hoje que já passaram sem serem feitos nem iniciados. */
   missedToday: CapiBlock[]
   notesCount: number
+  /** Revisões vencidas até hoje (nomes dos tópicos). */
+  reviewsDue: string[]
   streak: number
   timerRunning: boolean
   startBlock: (id: string) => void
@@ -66,13 +68,18 @@ export function capiWelcome(ctx: CapiContext): MascotMessage {
     return { pose: 'pensando', title, text: 'Semana nova chegando! Me conta onde você quer focar e eu monto o plano.', actions: [{ label: 'Montar a semana', primary: true, to: '/checkin' }, close] }
   if (late) return { pose, title, text: 'Estudando até tarde? Faz um bloco leve e vai descansar. É dormindo que a memória se fixa. 🌙', actions: [close] }
 
+  const reviewLine = ctx.reviewsDue.length
+    ? ` E tem ${ctx.reviewsDue.length === 1 ? `1 revisão pendente (${ctx.reviewsDue[0]})` : `${ctx.reviewsDue.length} revisões pendentes`} te esperando.`
+    : ''
   const next = ctx.nextToday
   if (next && next.start <= nowMin(ctx.now))
-    return { pose: 'focado', title, text: `Agora é hora de ${next.label}. Vamos nessa?`, actions: [{ label: 'Começar agora', primary: true, run: () => ctx.startBlock(next.id) }, close] }
+    return { pose: 'focado', title, text: `Agora é hora de ${next.label}. Vamos nessa?${reviewLine}`, actions: [{ label: 'Começar agora', primary: true, run: () => ctx.startBlock(next.id) }, close] }
   if (next) {
     const streakLine = ctx.streak > 1 ? ` Você está há ${ctx.streak} dias seguidos estudando, não quebra a sequência!` : ''
-    return { pose, title, text: `Seu próximo bloco é ${next.label}, às ${hhmm(next.start)}.${streakLine}`, actions: [{ label: 'Começar já', primary: true, run: () => ctx.startBlock(next.id) }, close] }
+    return { pose, title, text: `Seu próximo bloco é ${next.label}, às ${hhmm(next.start)}.${streakLine}${reviewLine}`, actions: [{ label: 'Começar já', primary: true, run: () => ctx.startBlock(next.id) }, close] }
   }
+  if (ctx.reviewsDue.length)
+    return { pose: 'estudando', title, text: `Nada de bloco novo agora, mas${reviewLine.replace(' E tem', '')} Revisar rapidinho faz toda a diferença.`, actions: [{ label: 'Ver revisões', primary: true, to: '/' }, close] }
   if (ctx.streak > 1) return { pose: 'formado', title, text: `${ctx.streak} dias seguidos de estudo! Hoje está livre no plano, mas uma revisão rápida mantém a sequência.`, actions: [close] }
   return { pose: 'relaxando', title, text: 'Hoje não tem nada no plano. Aproveita para descansar ou revisar algo no caderno.', actions: [{ label: 'Abrir caderno', to: '/caderno' }, close] }
 }
@@ -110,6 +117,14 @@ export function capiQuestion(ctx: CapiContext, n: number): MascotMessage {
       title: 'Bora estudar?',
       text: next.start <= nowMin(ctx.now) ? `Já está na hora de ${next.label}. Quer começar?` : `Seu próximo bloco é ${next.label}, às ${hhmm(next.start)}. Quer adiantar?`,
       actions: [{ label: 'Começar', primary: true, run: () => ctx.startBlock(next.id) }, close],
+    })
+
+  if (ctx.reviewsDue.length)
+    contextual.push({
+      pose: 'estudando',
+      title: 'Hora de revisar',
+      text: `${ctx.reviewsDue.length === 1 ? `A revisão de ${ctx.reviewsDue[0]} venceu` : `${ctx.reviewsDue.length} revisões venceram`}. Uma revisada rápida e isso fica na memória de vez.`,
+      actions: [{ label: 'Ver revisões', primary: true, to: '/' }, close],
     })
 
   if (ctx.notesCount === 0 && ctx.hasSubjects)

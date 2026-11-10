@@ -25,6 +25,8 @@ export interface Topic {
   order: number
   done: boolean
   studiedSeconds: number
+  /** Quando o tópico foi concluído (inicia as revisões). */
+  doneAt?: number
 }
 
 export interface Note {
@@ -55,7 +57,7 @@ export interface Week {
   createdAt: number
 }
 
-export type BlockKind = 'study' | 'compromisso' | 'prova'
+export type BlockKind = 'study' | 'revisao' | 'compromisso' | 'prova'
 
 export interface Block {
   id: string
@@ -71,6 +73,21 @@ export interface Block {
   studiedSeconds: number
   /** true quando foi gerado pelo planejador (pode ser regerado). */
   auto: boolean
+  /** Passou do horário sem ser feito; o conteúdo foi remarcado. */
+  missed?: boolean
+}
+
+export type ReviewRating = 'dificil' | 'ok' | 'facil'
+
+/** Estado da revisão espaçada de um tópico concluído. */
+export interface Review {
+  topicId: string
+  subjectId: string
+  due: string // YYYY-MM-DD
+  intervalDays: number
+  count: number // revisões feitas
+  history: { date: string; rating: ReviewRating }[]
+  createdAt: number
 }
 
 export interface Session {
@@ -92,6 +109,10 @@ export interface Settings {
   defaultAvailability: Availability
   lastPercents: AreaPercents
   userName?: string
+  /** Duração de um bloco de revisão (min). */
+  reviewMinutes?: number
+  /** Fatia máxima da semana para revisões (0–1). */
+  maxReviewShare?: number
   /** Capi dá boas-vindas ao abrir o site (padrão: sim). */
   mascotWelcome?: boolean
 }

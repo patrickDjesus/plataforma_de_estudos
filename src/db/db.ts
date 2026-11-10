@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Block, Note, Session, Settings, Subject, TimerState, Topic, Week } from './types'
+import type { Block, Note, Review, Session, Settings, Subject, TimerState, Topic, Week } from './types'
 
 /**
  * Banco local (IndexedDB). Toda leitura/escrita passa por `src/db/*`,
@@ -14,6 +14,7 @@ export class MendoncaDB extends Dexie {
   sessions!: EntityTable<Session, 'id'>
   settings!: EntityTable<Settings, 'id'>
   timer!: EntityTable<TimerState, 'id'>
+  reviews!: EntityTable<Review, 'topicId'>
 
   constructor() {
     super('mendonca')
@@ -27,6 +28,8 @@ export class MendoncaDB extends Dexie {
       settings: 'id',
       timer: 'id',
     })
+    // V2: revisões espaçadas
+    this.version(2).stores({ reviews: 'topicId, due, subjectId' })
   }
 }
 
