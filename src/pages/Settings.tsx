@@ -54,6 +54,21 @@ export function SettingsPage() {
     <>
       <PageHeader icon={<Settings2 size={22} />} title="Ajustes" subtitle="Regras do planejador e backup dos seus dados." />
       <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="lg:col-span-2">
+          <h2 className="mb-4 text-lg font-bold">Perfil</h2>
+          <div className="max-w-sm">
+            <Field label="Como quer ser chamado?">
+              <input
+                id="user-name"
+                className={inputCls}
+                placeholder="Seu nome"
+                defaultValue={settings.userName ?? ''}
+                key={settings.userName ?? ''}
+                onBlur={(e) => updateSettings({ userName: e.target.value.trim() || undefined })}
+              />
+            </Field>
+          </div>
+        </Card>
         <Card>
           <h2 className="mb-4 text-lg font-bold">Planejador</h2>
           <div className="grid gap-4 sm:grid-cols-2">

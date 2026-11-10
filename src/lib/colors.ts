@@ -8,7 +8,7 @@ const AREA_HUES: Record<AreaId, number[]> = {
 }
 
 export const AREA_COLOR: Record<AreaId, string> = {
-  faculdade: '#4f46e5',
+  faculdade: '#3e63f2',
   ensino: '#f97316',
   idiomas: '#10b981',
 }

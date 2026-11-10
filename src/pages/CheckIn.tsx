@@ -9,6 +9,7 @@ import type { AreaId, AreaPercents, Availability } from '../db/types'
 import { AREA_COLOR } from '../lib/colors'
 import { DAY_NAMES, dayIndex, fmtTime, fmtWeekRange, parseTime } from '../lib/dates'
 import { Btn, Card, Chip } from '../components/ui'
+import { LogoMark } from '../components/Logo'
 
 const FAC_FLOOR = 66
 
@@ -88,9 +89,10 @@ export function CheckInPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="mb-8 text-center">
-        <p className="mb-2 text-sm font-bold tracking-widest text-indigo-600 uppercase">{fmtWeekRange(weekId)}</p>
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+      <div className="mb-8 flex flex-col items-center text-center">
+        <LogoMark size={56} />
+        <p className="mt-4 mb-2 rounded-full bg-brand-soft px-3 py-1 text-xs font-bold tracking-wider text-brand uppercase">{fmtWeekRange(weekId)}</p>
+        <h1 className="text-3xl font-extrabold sm:text-4xl">
           {existing ? 'Reajustar a semana' : 'Nova semana, novo foco 🚀'}
         </h1>
         <p className="mt-2 text-muted">Defina onde quer colocar sua energia. O Mendonça monta a rota de estudos.</p>
@@ -121,8 +123,16 @@ export function CheckInPage() {
         <div className="space-y-6">
           {AREAS.map((a) => (
             <div key={a.id}>
-              <div className="mb-2 flex items-baseline justify-between">
-                <span className="font-semibold">{a.name}</span>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="flex items-center gap-3 font-semibold">
+                  <span
+                    className="subject-icon h-9 w-9 rounded-xl font-display text-sm font-extrabold"
+                    style={{ background: `linear-gradient(145deg, ${AREA_COLOR[a.id]}, color-mix(in srgb, ${AREA_COLOR[a.id]} 72%, #000))` }}
+                  >
+                    <span className="relative z-10">{a.name[0]}</span>
+                  </span>
+                  {a.name}
+                </span>
                 <span className="text-sm">
                   <b style={{ color: AREA_COLOR[a.id] }}>{percents[a.id]}%</b>
                   <span className="text-muted"> = {((minutes * percents[a.id]) / 6000).toFixed(1).replace('.0', '')}h</span>
@@ -140,7 +150,7 @@ export function CheckInPage() {
                 className="h-3 w-full cursor-pointer appearance-none rounded-full"
                 style={{
                   accentColor: AREA_COLOR[a.id],
-                  background: `linear-gradient(to right, ${AREA_COLOR[a.id]} ${percents[a.id]}%, #e8ebf3 ${percents[a.id]}%)`,
+                  background: `linear-gradient(to right, ${AREA_COLOR[a.id]} ${percents[a.id]}%, #eef0f4 ${percents[a.id]}%)`,
                 }}
               />
             </div>
@@ -180,7 +190,7 @@ export function CheckInPage() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => addWin(day)} className="rounded-lg p-1.5 text-indigo-600 hover:bg-indigo-50" aria-label={`Adicionar horário na ${name}`}>
+              <button onClick={() => addWin(day)} className="rounded-lg p-1.5 text-brand hover:bg-brand-soft" aria-label={`Adicionar horário na ${name}`}>
                 <Plus size={16} />
               </button>
             </div>

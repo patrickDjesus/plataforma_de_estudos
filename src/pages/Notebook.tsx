@@ -8,6 +8,7 @@ import type { Note } from '../db/types'
 import { AREA_COLOR, tint } from '../lib/colors'
 import { linkedTitles, renameLinks } from '../lib/wikilink'
 import { NoteEditor } from '../components/NoteEditor'
+import { SubjectIcon } from '../components/SubjectIcon'
 import { askConfirm } from '../components/confirm'
 import { Btn, Card, inputCls } from '../components/ui'
 
@@ -65,7 +66,7 @@ export function NotebookPage() {
   const NoteItem = ({ n }: { n: Note }) => (
     <Link
       to={`/caderno/${n.id}`}
-      className={`flex items-center gap-2 truncate rounded-lg px-2 py-1 text-sm ${n.id === noteId ? 'bg-indigo-50 font-semibold text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}
+      className={`flex items-center gap-2 truncate rounded-lg px-2 py-1 text-sm ${n.id === noteId ? 'bg-brand-soft font-semibold text-brand' : 'text-slate-600 hover:bg-slate-50'}`}
     >
       <FileText size={14} className="shrink-0 opacity-60" />
       <span className="truncate">{n.title}</span>
@@ -86,7 +87,7 @@ export function NotebookPage() {
           ) : subjects.length === 0 ? (
             <p className="px-2 text-sm text-muted">
               Cadastre matérias em{' '}
-              <Link to="/materias" className="font-semibold text-indigo-600">
+              <Link to="/materias" className="font-semibold text-brand">
                 Matérias
               </Link>{' '}
               para começar o caderno.
@@ -107,10 +108,11 @@ export function NotebookPage() {
                     const open = !collapsed.has(s.id)
                     return (
                       <div key={s.id} className="mb-1">
-                        <div className="group flex items-center gap-1 rounded-lg px-1 py-1" style={{ background: tint(s.color, 0.08) }}>
-                          <button onClick={() => toggle(s.id)} className="flex flex-1 items-center gap-1 text-sm font-bold" style={{ color: s.color }}>
-                            {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-                            {s.name}
+                        <div className="group flex items-center gap-1 rounded-xl px-1.5 py-1.5" style={{ background: tint(s.color, 0.08) }}>
+                          <button onClick={() => toggle(s.id)} className="flex min-w-0 flex-1 items-center gap-2 text-sm font-bold" style={{ color: `color-mix(in srgb, ${s.color} 85%, #000)` }}>
+                            <SubjectIcon subject={s} size={24} />
+                            <span className="truncate">{s.name}</span>
+                            {open ? <ChevronDown size={14} className="ml-auto opacity-60" /> : <ChevronRight size={14} className="ml-auto opacity-60" />}
                           </button>
                           <button onClick={() => newNote(s.id)} className="rounded p-1 opacity-0 group-hover:opacity-100" style={{ color: s.color }} title="Nova nota na matéria">
                             <FilePlus2 size={15} />
@@ -138,7 +140,7 @@ export function NotebookPage() {
                               <NoteItem key={n.id} n={n} />
                             ))}
                             {sTopics.length === 0 && loose.length === 0 && (
-                              <button onClick={() => newNote(s.id)} className="px-2 py-1 text-xs text-muted hover:text-indigo-600">
+                              <button onClick={() => newNote(s.id)} className="px-2 py-1 text-xs text-muted hover:text-brand">
                                 + primeira nota
                               </button>
                             )}
@@ -158,8 +160,8 @@ export function NotebookPage() {
       {note ? (
         <div className="min-w-0">
           <Card className="relative overflow-hidden px-6 py-6 sm:px-10">
-            <div className="absolute inset-x-0 top-0 h-1.5" style={{ background: subject?.color }} />
             <div className="mb-2 flex flex-wrap items-center gap-2">
+              <SubjectIcon subject={subject} size={28} />
               <select
                 className="rounded-lg border border-line bg-white px-2 py-1 text-xs font-semibold"
                 style={{ color: subject?.color }}
@@ -223,7 +225,7 @@ export function NotebookPage() {
         </div>
       ) : (
         <Card className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-500 to-pink-500 text-white shadow-lg">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-brand text-white shadow-lg">
             <BookOpen size={28} />
           </div>
           <h2 className="text-xl font-bold">Seu caderno</h2>
@@ -248,7 +250,7 @@ function ConnList({ title, notes, subjects }: { title: string; notes: Note[]; su
         {notes.map((n) => {
           const s = subjects.find((x) => x.id === n.subjectId)
           return (
-            <Link key={n.id} to={`/caderno/${n.id}`} className="rounded-full px-3 py-1 text-xs font-semibold" style={{ background: tint(s?.color ?? '#4f46e5'), color: s?.color }}>
+            <Link key={n.id} to={`/caderno/${n.id}`} className="rounded-full px-3 py-1 text-xs font-semibold" style={{ background: tint(s?.color ?? '#3e63f2'), color: s?.color }}>
               {n.title}
             </Link>
           )

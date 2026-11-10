@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, Check, Flag, Plus, RefreshCw, SlidersHorizontal } from 'lucide-react'
+import { CalendarRange, Check, Clock3, Flag, LayoutGrid, Plus, RefreshCw, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { useSubjectMap, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
-import { currentWeekId, regeneratePlan, updateBlock } from '../db/repo'
+import { currentWeekId, deleteBlock, regeneratePlan, setBlockDone, updateBlock } from '../db/repo'
 import type { Block } from '../db/types'
 import { DAY_SHORT, fmtDayMonth, fmtDuration, fmtTime, fmtWeekRange, minutesNow, toISODate, weekDates } from '../lib/dates'
 import { BlockDialog, type Draft } from '../components/BlockDialog'
-import { Btn, Card, Chip, PageHeader } from '../components/ui'
+import { Btn, Card, Chip, PageHeader, Tabs } from '../components/ui'
+import type { Subject, Topic } from '../db/types'
 
 const PPM = 0.85 // pixels por minuto
 const SNAP = 15
@@ -24,6 +25,7 @@ export function CalendarPage() {
   const dates = weekDates(weekId)
   const todayIso = toISODate(new Date())
 
+  const [view, setView] = useState<'cartoes' | 'horario'>('cartoes')
   const [selected, setSelected] = useState<Block | undefined>()
   const [draft, setDraft] = useState<Draft | undefined>()
   const [preview, setPreview] = useState<Pick<Block, 'id' | 'date' | 'start' | 'end'> | null>(null)
@@ -111,27 +113,45 @@ export function CalendarPage() {
 
   return (
     <>
-      <PageHeader
-        icon={<CalendarDays size={22} />}
-        title="Minha semana"
-        subtitle={fmtWeekRange(weekId)}
-        actions={
-          <>
-            <Btn onClick={() => navigate('/checkin')}>
+      <PageHeader icon={<CalendarRange size={24} />} title="Mapa da semana" subtitle="Veja seu progresso e organize sua rotina de estudos." />
+
+      <Card className="overflow-hidden p-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 pb-4">
+          <h2 className="text-xl font-bold">{fmtWeekRange(weekId)}</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <Tabs
+              value={view}
+              onChange={setView}
+              items={[
+                { id: 'cartoes', label: 'Cartões', icon: <LayoutGrid size={15} /> },
+                { id: 'horario', label: 'Horário', icon: <Clock3 size={15} /> },
+              ]}
+            />
+            <span className="mx-1 hidden h-6 w-px bg-line sm:block" />
+            <Btn onClick={() => navigate('/checkin')} title="Mudar o foco e os horários da semana">
               <SlidersHorizontal size={16} /> Reajustar foco
             </Btn>
             <Btn onClick={() => regeneratePlan(weekId)} title="Refaz só os blocos automáticos ainda não iniciados">
-              <RefreshCw size={16} /> Regerar plano
+              <RefreshCw size={16} /> Regerar
             </Btn>
             <Btn variant="primary" onClick={() => setDraft({ date: todayIso >= dates[0] && todayIso <= dates[6] ? todayIso : dates[0], start: 19 * 60 })}>
               <Plus size={16} /> Novo bloco
             </Btn>
-          </>
-        }
-      />
+          </div>
+        </div>
 
-      <Card className="overflow-hidden p-0">
-        <div className="thin-scroll overflow-x-auto">
+        {view === 'cartoes' ? (
+          <CardsView
+            dates={dates}
+            todayIso={todayIso}
+            blocks={blocks}
+            subjects={subjects}
+            topicMap={topicMap}
+            onOpen={setSelected}
+            onCreate={(date, start) => setDraft({ date, start })}
+          />
+        ) : (
+        <div className="thin-scroll overflow-x-auto border-t border-line">
           <div className="min-w-[760px]">
             {/* Cabeçalho dos dias */}
             <div className="grid grid-cols-[56px_1fr] border-b border-line">
@@ -141,8 +161,8 @@ export function CalendarPage() {
                   const isToday = d === todayIso
                   return (
                     <div key={d} className="py-3 text-center">
-                      <div className={`text-xs font-bold tracking-wider ${isToday ? 'text-indigo-600' : 'text-muted'}`}>{DAY_SHORT[i]}</div>
-                      <div className={`mx-auto mt-1 w-fit rounded-full px-2.5 py-0.5 text-sm font-bold ${isToday ? 'bg-indigo-600 text-white' : ''}`}>{fmtDayMonth(d)}</div>
+                      <div className={`text-xs font-bold tracking-wider ${isToday ? 'text-brand' : 'text-muted'}`}>{DAY_SHORT[i]}</div>
+                      <div className={`mx-auto mt-1 w-fit rounded-full px-2.5 py-0.5 text-sm font-bold ${isToday ? 'bg-brand text-white' : ''}`}>{fmtDayMonth(d)}</div>
                     </div>
                   )
                 })}
@@ -169,7 +189,7 @@ export function CalendarPage() {
                     {week?.availability[di]?.map((w, i) => (
                       <div
                         key={i}
-                        className="pointer-events-none absolute inset-x-1 rounded-xl bg-indigo-50/60"
+                        className="pointer-events-none absolute inset-x-1 rounded-xl bg-brand-soft/70"
                         style={{ top: (w.start - rangeStart) * PPM, height: (w.end - w.start) * PPM }}
                       />
                     ))}
@@ -236,20 +256,23 @@ export function CalendarPage() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Legenda */}
-        <div className="flex flex-wrap items-center gap-2 border-t border-line p-4">
+        <div className="flex flex-wrap items-center gap-2 border-t border-line px-5 py-4">
           {legend.length === 0 && <span className="text-sm text-muted">Nenhum bloco de estudo ainda. Cadastre matérias e regere o plano.</span>}
           {legend.map(([id, v]) => {
             const s = subjects.get(id)
             if (!s) return null
             return (
               <Chip key={id} color={s.color}>
-                {s.name} <span className="opacity-70">{fmtDuration(v.done * 60)} / {fmtDuration(v.planned * 60)}</span>
+                {s.name} <span className="font-medium opacity-70">{fmtDuration(v.done * 60)} / {fmtDuration(v.planned * 60)}</span>
               </Chip>
             )
           })}
-          <span className="ml-auto text-xs text-muted">Arraste para mover · puxe a borda inferior para redimensionar · clique num espaço vazio para criar</span>
+          <span className="ml-auto text-xs text-muted">
+            {view === 'cartoes' ? 'Arraste um cartão para outro dia · clique num espaço vazio para criar' : 'Arraste para mover · puxe a borda inferior para redimensionar · clique num espaço vazio para criar'}
+          </span>
         </div>
       </Card>
 
@@ -263,5 +286,135 @@ export function CalendarPage() {
         }}
       />
     </>
+  )
+}
+
+/** Visão em colunas de cartões, um por bloco, em ordem de horário. */
+function CardsView({
+  dates,
+  todayIso,
+  blocks,
+  subjects,
+  topicMap,
+  onOpen,
+  onCreate,
+}: {
+  dates: string[]
+  todayIso: string
+  blocks: Block[]
+  subjects: Map<string, Subject>
+  topicMap: Map<string, Topic>
+  onOpen: (b: Block) => void
+  onCreate: (date: string, start: number) => void
+}) {
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [overDate, setOverDate] = useState<string | null>(null)
+  const byDay = dates.map((d) => blocks.filter((b) => b.date === d).sort((a, b) => a.start - b.start))
+  const rows = Math.max(4, ...byDay.map((l) => l.length)) + 1
+
+  const drop = async (date: string) => {
+    setOverDate(null)
+    if (!dragId) return
+    const b = blocks.find((x) => x.id === dragId)
+    setDragId(null)
+    if (b && b.date !== date) await updateBlock(b.id, { date })
+  }
+
+  return (
+    <div className="thin-scroll overflow-x-auto px-5 pb-5">
+      <div className="grid min-w-[880px] grid-cols-7 gap-3">
+        {dates.map((date, i) => {
+          const isToday = date === todayIso
+          const list = byDay[i]
+          const nextStart = list.length ? list[list.length - 1].end + 10 : 19 * 60
+          return (
+            <div
+              key={date}
+              onDragOver={(e) => {
+                e.preventDefault()
+                setOverDate(date)
+              }}
+              onDragLeave={() => setOverDate((d) => (d === date ? null : d))}
+              onDrop={() => drop(date)}
+              className={`flex flex-col gap-2.5 rounded-2xl p-1 transition ${overDate === date ? 'bg-brand-soft' : ''}`}
+            >
+              <div className="pt-1 pb-1.5 text-center">
+                <div className={`text-[11px] font-bold tracking-wider ${isToday ? 'text-brand' : 'text-muted'}`}>{['SEGUNDA', 'TERÇA', 'QUARTA', 'QUINTA', 'SEXTA', 'SÁBADO', 'DOMINGO'][i]}</div>
+                <div className={`mx-auto mt-1 w-fit rounded-full px-2.5 py-0.5 text-sm font-bold tabular-nums ${isToday ? 'bg-brand text-white' : ''}`}>{fmtDayMonth(date)}</div>
+              </div>
+              {list.map((b) => {
+                const subject = b.subjectId ? subjects.get(b.subjectId) : undefined
+                const topic = b.topicId ? topicMap.get(b.topicId) : undefined
+                const color = b.kind === 'compromisso' ? '#64748b' : (subject?.color ?? '#3e63f2')
+                const title = b.kind === 'study' ? (topic?.name ?? subject?.name ?? 'Estudo') : (b.title ?? subject?.name ?? 'Evento')
+                return (
+                  <div
+                    key={b.id}
+                    draggable
+                    onDragStart={() => setDragId(b.id)}
+                    onDragEnd={() => setDragId(null)}
+                    onClick={() => onOpen(b)}
+                    className={`group relative flex min-h-[84px] cursor-pointer flex-col justify-between rounded-2xl p-3 text-white transition hover:-translate-y-0.5 ${dragId === b.id ? 'opacity-40' : ''} ${b.done ? 'opacity-55' : ''}`}
+                    style={{
+                      background: b.kind === 'compromisso' ? 'repeating-linear-gradient(135deg,#6b7280,#6b7280 8px,#737a87 8px,#737a87 16px)' : color,
+                      boxShadow: `0 8px 18px -10px ${color}`,
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-1.5">
+                      <div className="line-clamp-2 text-[13px] leading-snug font-bold">
+                        {b.kind === 'prova' && <Flag size={12} className="mr-1 inline" />}
+                        {title}
+                      </div>
+                      <span className="shrink-0 rounded-full bg-white/25 px-1.5 py-0.5 text-[10px] font-bold">{fmtDuration((b.end - b.start) * 60)}</span>
+                    </div>
+                    {b.kind === 'study' && topic && <div className="-mt-1 truncate text-[11px] font-semibold text-white/80">{subject?.name}</div>}
+                    {b.kind !== 'study' && <div className="-mt-1 truncate text-[11px] font-semibold text-white/80">{b.kind === 'prova' ? `Prova${subject ? ` · ${subject.name}` : ''}` : 'Compromisso'}</div>}
+                    <div className="mt-2 flex items-end justify-between gap-1 text-[11px] font-medium text-white/85">
+                      <span className="min-w-0 truncate tabular-nums">
+                        {fmtTime(b.start)}–{fmtTime(b.end)}
+                      </span>
+                      <span className="flex shrink-0 gap-0.5">
+                        {b.kind === 'study' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setBlockDone(b.id, !b.done)
+                            }}
+                            className={`rounded-md p-0.5 hover:bg-white/20 ${b.done ? '' : 'opacity-0 group-hover:opacity-100'}`}
+                            title={b.done ? 'Desfazer' : 'Marcar como feito'}
+                          >
+                            <Check size={14} />
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            deleteBlock(b.id)
+                          }}
+                          className="rounded-md p-0.5 opacity-70 hover:bg-white/20 hover:opacity-100"
+                          title="Excluir"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+              {Array.from({ length: rows - list.length }, (_, k) => (
+                <button
+                  key={k}
+                  onClick={() => onCreate(date, Math.min(nextStart, 23 * 60))}
+                  className="group grid min-h-[84px] place-items-center rounded-2xl bg-[#f4f5f8] text-transparent transition hover:bg-brand-soft hover:text-brand"
+                  aria-label={`Criar bloco em ${fmtDayMonth(date)}`}
+                >
+                  <Plus size={18} />
+                </button>
+              ))}
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }

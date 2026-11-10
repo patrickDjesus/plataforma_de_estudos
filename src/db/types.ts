@@ -11,6 +11,7 @@ export interface Subject {
   areaId: AreaId
   name: string
   color: string // hex
+  icon?: string // chave em SUBJECT_ICONS
   weight: number // 1–5
   mandatory: boolean
   deadline?: string // YYYY-MM-DD
@@ -90,6 +91,7 @@ export interface Settings {
   maxSameSubjectInRow: number
   defaultAvailability: Availability
   lastPercents: AreaPercents
+  userName?: string
 }
 
 export interface TimerState {

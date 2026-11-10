@@ -1,14 +1,15 @@
 import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { BookOpen, CalendarDays, Home, Layers, Settings } from 'lucide-react'
+import { BookOpen, CalendarRange, House, Layers, Settings } from 'lucide-react'
 import { db } from '../db/db'
 import { currentWeekId } from '../db/repo'
 import { TimerPill } from './TimerPill'
+import { Logo } from './Logo'
 
 const NAV = [
-  { to: '/', label: 'Início', icon: Home },
-  { to: '/calendario', label: 'Semana', icon: CalendarDays },
+  { to: '/', label: 'Início', icon: House },
+  { to: '/calendario', label: 'Semana', icon: CalendarRange },
   { to: '/caderno', label: 'Caderno', icon: BookOpen },
   { to: '/materias', label: 'Matérias', icon: Layers },
   { to: '/config', label: 'Ajustes', icon: Settings },
@@ -29,33 +30,34 @@ export function Layout() {
 
   return (
     <div className="min-h-full">
-      <header className="sticky top-0 z-40 border-b border-line bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">
-          <NavLink to="/" className="flex shrink-0 items-center gap-2">
-            <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" className="h-9 w-9" />
-            <span className="hidden text-lg font-extrabold tracking-tight lg:inline">Mendonça</span>
+      <header className="sticky top-0 z-40 border-b border-line bg-white">
+        <div className="mx-auto flex h-[68px] max-w-[1240px] items-stretch gap-4 px-4">
+          <NavLink to="/" className="flex shrink-0 items-center" aria-label="Mendonça, início">
+            <Logo />
           </NavLink>
-          <nav className="flex flex-1 items-center justify-center gap-1 overflow-x-auto">
+          <nav className="thin-scroll flex flex-1 items-stretch justify-center gap-1 overflow-x-auto">
             {NAV.map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
                 end={to === '/'}
                 className={({ isActive }) =>
-                  `relative flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold whitespace-nowrap transition ${
-                    isActive ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'
+                  `relative flex items-center gap-2 px-3 text-sm font-semibold whitespace-nowrap transition after:absolute after:inset-x-2 after:bottom-0 after:h-[3px] after:rounded-t-full ${
+                    isActive ? 'text-brand after:bg-brand' : 'text-slate-700 after:bg-transparent hover:text-ink'
                   }`
                 }
               >
-                <Icon size={18} />
+                <Icon size={19} strokeWidth={2} />
                 <span className="hidden sm:inline">{label}</span>
               </NavLink>
             ))}
           </nav>
-          <TimerPill />
+          <div className="flex items-center">
+            <TimerPill />
+          </div>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-6">
+      <main className="mx-auto max-w-[1240px] px-4 py-6">
         <Outlet />
       </main>
     </div>

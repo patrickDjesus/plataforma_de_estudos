@@ -86,7 +86,7 @@ export function NoteEditor({ note, subject, allTitles }: { note: Note; subject?:
   }
 
   if (!editor) return null
-  const color = subject?.color ?? '#4f46e5'
+  const color = subject?.color ?? '#3e63f2'
   const btn = (active: boolean | undefined) =>
     `rounded-lg p-2 transition ${active ? 'text-white' : 'text-slate-600 hover:bg-slate-100'}`
   const activeStyle = (active: boolean | undefined) => (active ? { background: color } : undefined)
