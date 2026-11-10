@@ -8,6 +8,7 @@ import type { Note } from '../db/types'
 import { AREA_COLOR, tint } from '../lib/colors'
 import { linkedTitles, renameLinks } from '../lib/wikilink'
 import { NoteEditor } from '../components/NoteEditor'
+import { askConfirm } from '../components/confirm'
 import { Btn, Card, inputCls } from '../components/ui'
 
 export function NotebookPage() {
@@ -188,7 +189,7 @@ export function NotebookPage() {
               <span className="ml-auto text-xs text-muted">Salvo automaticamente</span>
               <button
                 onClick={async () => {
-                  if (!confirm(`Excluir a nota "${note.title}"?`)) return
+                  if (!(await askConfirm(`Excluir a nota "${note.title}"?`))) return
                   await deleteNote(note.id)
                   navigate('/caderno')
                 }}

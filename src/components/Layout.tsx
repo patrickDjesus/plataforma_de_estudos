@@ -32,7 +32,7 @@ export function Layout() {
       <header className="sticky top-0 z-40 border-b border-line bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">
           <NavLink to="/" className="flex shrink-0 items-center gap-2">
-            <img src="/icon.svg" alt="" className="h-9 w-9" />
+            <img src={`${import.meta.env.BASE_URL}icon.svg`} alt="" className="h-9 w-9" />
             <span className="hidden text-lg font-extrabold tracking-tight lg:inline">Mendonça</span>
           </NavLink>
           <nav className="flex flex-1 items-center justify-center gap-1 overflow-x-auto">

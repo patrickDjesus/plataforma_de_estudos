@@ -5,6 +5,7 @@ import { addSubject, addTopic, deleteSubject, deleteTopic, reorderTopics, update
 import type { AreaId, Subject, Topic } from '../db/types'
 import { AREA_COLOR, tint } from '../lib/colors'
 import { fmtDuration } from '../lib/dates'
+import { askConfirm } from '../components/confirm'
 import { Btn, Card, PageHeader, inputCls } from '../components/ui'
 
 export function SubjectsPage() {
@@ -109,7 +110,7 @@ function SubjectCard({ subject: s, topics }: { subject: Subject; topics: Topic[]
           </div>
         </div>
         <button
-          onClick={() => confirm(`Excluir "${s.name}" com seus tópicos e notas? O histórico de estudo é mantido.`) && deleteSubject(s.id)}
+          onClick={async () => (await askConfirm(`Excluir "${s.name}" com seus tópicos e notas? O histórico de estudo é mantido.`)) && deleteSubject(s.id)}
           className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
           title="Excluir matéria"
         >

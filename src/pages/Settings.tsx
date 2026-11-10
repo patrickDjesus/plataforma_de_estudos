@@ -5,6 +5,9 @@ import { exportBackup, importBackup, updateSettings } from '../db/repo'
 import type { Settings } from '../db/types'
 import { toISODate } from '../lib/dates'
 import { Btn, Card, Field, PageHeader, inputCls } from '../components/ui'
+import { askConfirm } from '../components/confirm'
+
+const IS_ARTIFACT = !!import.meta.env.VITE_ARTIFACT
 
 const NUMBER_FIELDS: { key: keyof Settings; label: string; min: number; max: number }[] = [
   { key: 'blockMinutes', label: 'Duração padrão do bloco (min)', min: 15, max: 180 },
@@ -17,8 +20,15 @@ export function SettingsPage() {
   const settings = useSettings()
   const fileRef = useRef<HTMLInputElement>(null)
   const [msg, setMsg] = useState('')
+  const [backupText, setBackupText] = useState('')
+  const [pasted, setPasted] = useState('')
 
   const doExport = async () => {
+    if (IS_ARTIFACT) {
+      // Downloads são bloqueados na página publicada: mostra o texto para copiar
+      setBackupText(await exportBackup())
+      return
+    }
     const blob = new Blob([await exportBackup()], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
@@ -28,11 +38,12 @@ export function SettingsPage() {
     setMsg('Backup baixado ✔')
   }
 
-  const doImport = async (file?: File) => {
-    if (!file) return
-    if (!confirm('Importar substitui TODOS os dados atuais pelos do arquivo. Continuar?')) return
+  const doImport = async (text?: string) => {
+    if (!text) return
+    if (!(await askConfirm('Importar substitui TODOS os dados atuais pelos do backup. Continuar?'))) return
     try {
-      await importBackup(await file.text())
+      await importBackup(text)
+      setPasted('')
       setMsg('Backup importado ✔')
     } catch (e) {
       setMsg(`Erro: ${(e as Error).message}`)
@@ -77,7 +88,34 @@ export function SettingsPage() {
             <Btn onClick={() => fileRef.current?.click()}>
               <Upload size={16} /> Importar backup
             </Btn>
-            <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={(e) => doImport(e.target.files?.[0])} />
+            <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={async (e) => doImport(await e.target.files?.[0]?.text())} />
+          </div>
+          {backupText && (
+            <div className="mt-4 space-y-2">
+              <p className="text-sm text-muted">Copie este texto e guarde num arquivo .json (por exemplo, no Bloco de Notas).</p>
+              <textarea id="backup-out" readOnly value={backupText} className={`${inputCls} h-32 font-mono text-xs`} onFocus={(e) => e.target.select()} />
+              <Btn
+                variant="soft"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(backupText)
+                    setMsg('Backup copiado ✔')
+                  } catch {
+                    ;(document.getElementById('backup-out') as HTMLTextAreaElement | null)?.select()
+                    setMsg('Texto selecionado. Use Ctrl+C para copiar.')
+                  }
+                }}
+              >
+                Copiar backup
+              </Btn>
+            </div>
+          )}
+          <div className="mt-4 space-y-2">
+            <p className="text-sm text-muted">Ou cole aqui o texto de um backup para restaurar:</p>
+            <textarea id="backup-in" value={pasted} onChange={(e) => setPasted(e.target.value)} className={`${inputCls} h-20 font-mono text-xs`} placeholder='{"app": "mendonca", ...}' />
+            <Btn onClick={() => doImport(pasted)} disabled={!pasted.trim()}>
+              Restaurar do texto colado
+            </Btn>
           </div>
           {msg && <p className="mt-3 text-sm font-semibold">{msg}</p>}
         </Card>
