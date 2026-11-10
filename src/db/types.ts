@@ -173,3 +173,37 @@ export interface Flashcard {
   count: number
   history: { date: string; rating: ReviewRating }[]
 }
+
+// ---------- Desafios ----------
+
+export type ChallengeItem =
+  | { type: 'multipla'; question: string; options: string[]; correct: number; explanation?: string }
+  | { type: 'vf'; statement: string; answer: boolean; explanation?: string }
+  | { type: 'aberta'; question: string; expected: string }
+  | { type: 'explique'; prompt: string; keyPoints: string[] }
+  | { type: 'lacunas'; text: string; answers: string[] }
+
+export interface ChallengeResult {
+  /** 0–1 */
+  score: number
+  correct: boolean
+  feedback?: string
+  missing?: string[]
+  /** Você contestou a correção (sai da nota). */
+  contested?: boolean
+}
+
+export interface Challenge {
+  id: string
+  subjectId: string
+  topicId?: string
+  origin: 'bloco' | 'revisao' | 'demanda'
+  fromNotes: boolean
+  createdAt: number
+  items: ChallengeItem[]
+  /** Resposta do estudante por item (texto, índice, V/F ou lista de lacunas). */
+  answers: (string | number | boolean | string[] | null)[]
+  results: ChallengeResult[]
+  /** Nota final 0–1 (sem os itens contestados). */
+  score: number
+}

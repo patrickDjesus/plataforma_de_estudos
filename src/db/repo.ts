@@ -1,5 +1,5 @@
 import { db, uid } from './db'
-import type { AreaId, AreaPercents, Availability, Block, Flashcard, Note, ReviewRating, Session, Settings, Subject, TimerState, Topic, Week } from './types'
+import type { AreaId, AreaPercents, Availability, Block, Challenge, Flashcard, Note, ReviewRating, Session, Settings, Subject, TimerState, Topic, Week } from './types'
 import { autoColor } from '../lib/colors'
 import { addDays, minutesNow, toISODate, weekIdOf } from '../lib/dates'
 import { applyRating, newReview, nextInterval, RATING_LABEL } from '../lib/review'
@@ -393,6 +393,10 @@ export async function addSession(s: Omit<Session, 'id'>) {
   return id
 }
 
+// ---------- Desafios ----------
+
+export const saveChallenge = (c: Challenge) => db.challenges.put(c)
+
 // ---------- Flashcards ----------
 
 export async function addCards(cards: Pick<Flashcard, 'subjectId' | 'topicId' | 'noteId' | 'front' | 'back' | 'source'>[]) {
@@ -414,7 +418,7 @@ export async function rateCard(id: string, rating: ReviewRating) {
 
 // ---------- Backup ----------
 
-const TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews', 'mapPositions', 'mapLinks', 'achievements', 'cards'] as const
+const TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews', 'mapPositions', 'mapLinks', 'achievements', 'cards', 'challenges'] as const
 
 export async function exportBackup(): Promise<string> {
   const data: Record<string, unknown[]> = {}

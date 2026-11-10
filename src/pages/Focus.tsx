@@ -12,6 +12,9 @@ import { fmtDuration } from '../lib/dates'
 import { noteText } from '../lib/ai'
 import { showMascot } from '../lib/mascotBus'
 import { buildPhases } from '../lib/focus'
+import { ratingFromScore } from '../lib/challenge'
+import { ChallengeRunner } from '../components/ChallengeRunner'
+import { useStudyContext } from '../components/ChallengeModal'
 import { Capybara } from '../components/Capybara'
 import { NoteEditor } from '../components/NoteEditor'
 import { SubjectIcon } from '../components/SubjectIcon'
@@ -72,6 +75,9 @@ export function FocusPage() {
   const [topicDone, setTopicDoneState] = useState(false)
   const [rating, setRating] = useState<ReviewRating | null>(null)
   const [saving, setSaving] = useState(false)
+  const [quiz, setQuiz] = useState<'fechado' | 'aberto' | 'feito'>('fechado')
+  const [quizScore, setQuizScore] = useState<number | null>(null)
+  const studyCtx = useStudyContext(data?.block?.subjectId, data?.block?.topicId)
   const resumedOnce = useRef(false)
 
   const block = data?.block
@@ -322,6 +328,42 @@ export function FocusPage() {
             <div className="text-sm text-muted">
               {title} · {studied} min de foco{goal ? ` · objetivo: ${goal}` : ''}
             </div>
+
+            <section className="rounded-2xl p-4" style={{ background: tint(color, 0.06), boxShadow: `inset 0 0 0 1.5px ${tint(color, 0.25)}` }}>
+              {quiz === 'aberto' && studyCtx ? (
+                <ChallengeRunner
+                  ctx={studyCtx.ctx}
+                  subjectId={block.subjectId!}
+                  topicId={block.topicId}
+                  origin="bloco"
+                  count={3}
+                  color={color}
+                  onCancel={() => setQuiz('fechado')}
+                  onFinish={(c) => {
+                    setQuizScore(c.score)
+                    setQuiz('feito')
+                    if (isReview) setRating(ratingFromScore(c.score))
+                  }}
+                />
+              ) : quiz === 'feito' ? (
+                <div className="flex items-center gap-3 text-sm font-semibold">
+                  <span className="font-display text-2xl font-extrabold" style={{ color }}>
+                    {Math.round((quizScore ?? 0) * 100)}%
+                  </span>
+                  no desafio rápido{isReview ? ` · revisão marcada como "${RATING_LABEL[ratingFromScore(quizScore ?? 0)].label}"` : ''}
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-sans text-sm font-bold">⚡ Desafio rápido (3 itens)</h3>
+                    <p className="text-xs text-muted">{isReview ? 'Teste sua memória: o resultado define a próxima revisão.' : 'Teste agora o que ficou do bloco. Leva uns 2 minutos.'}</p>
+                  </div>
+                  <button onClick={() => setQuiz('aberto')} disabled={!block.subjectId} className="rounded-xl px-4 py-2 text-sm font-bold text-white disabled:opacity-50" style={{ background: color }}>
+                    Fazer desafio
+                  </button>
+                </div>
+              )}
+            </section>
 
             <section>
               <h3 className="mb-2 font-sans text-sm font-bold">1. Quanto você confia no que estudou?</h3>

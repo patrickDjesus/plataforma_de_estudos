@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Block, Flashcard, MapLink, MapPosition, Note, Review, Session, Settings, Subject, TimerState, Topic, UnlockedAchievement, Week } from './types'
+import type { Block, Challenge, Flashcard, MapLink, MapPosition, Note, Review, Session, Settings, Subject, TimerState, Topic, UnlockedAchievement, Week } from './types'
 
 /**
  * Banco local (IndexedDB). Toda leitura/escrita passa por `src/db/*`,
@@ -19,6 +19,7 @@ export class MendoncaDB extends Dexie {
   mapLinks!: EntityTable<MapLink, 'id'>
   achievements!: EntityTable<UnlockedAchievement, 'id'>
   cards!: EntityTable<Flashcard, 'id'>
+  challenges!: EntityTable<Challenge, 'id'>
 
   constructor() {
     super('mendonca')
@@ -38,6 +39,7 @@ export class MendoncaDB extends Dexie {
     this.version(3).stores({ mapPositions: 'id', mapLinks: 'id, source, target', achievements: 'id' })
     // Estudo eficaz: flashcards
     this.version(4).stores({ cards: 'id, subjectId, topicId, noteId, due' })
+    this.version(5).stores({ challenges: 'id, subjectId, topicId, createdAt' })
   }
 }
 

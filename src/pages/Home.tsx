@@ -15,6 +15,8 @@ import { LogoMark } from '../components/Logo'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
 import { AchievementsSection } from '../components/Achievements'
+import { ChallengeModal } from '../components/ChallengeModal'
+import { ratingFromScore } from '../lib/challenge'
 import { Card, Ring, Tabs } from '../components/ui'
 
 type Section = 'geral' | 'resultados' | 'metas' | 'conquistas'
@@ -462,6 +464,7 @@ function ReviewsPanel() {
   const subjects = useSubjectMap()
   const due = reviews.filter((r) => r.due <= today)
   const upcoming = reviews.filter((r) => r.due > today).slice(0, 3)
+  const [challenge, setChallenge] = useState<(typeof reviews)[number] | null>(null)
   const topicName = (id: string) => topics.find((t) => t.id === id)?.name ?? 'Tópico'
   return (
     <div className="rounded-[18px] border border-line p-5">
@@ -497,6 +500,9 @@ function ReviewsPanel() {
                 </div>
               </div>
               <div className="flex gap-1.5">
+                <button onClick={() => setChallenge(r)} className="rounded-xl px-2.5 py-1.5 text-xs font-bold text-white" style={{ background: s?.color ?? '#3e63f2' }} title="Teste sua memória: a nota define a próxima revisão">
+                  ⚔️ Desafio
+                </button>
                 {(['dificil', 'ok', 'facil'] as ReviewRating[]).map((k) => (
                   <button
                     key={k}
@@ -523,6 +529,15 @@ function ReviewsPanel() {
             ))}
           </div>
         </div>
+      )}
+      {challenge && (
+        <ChallengeModal
+          subjectId={challenge.subjectId}
+          topicId={challenge.topicId}
+          origin="revisao"
+          onClose={() => setChallenge(null)}
+          onFinish={(c) => rateReview(challenge.topicId, ratingFromScore(c.score))}
+        />
       )}
     </div>
   )

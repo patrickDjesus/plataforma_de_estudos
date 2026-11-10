@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Waypoints, ChevronDown, ChevronRight, FilePlus2, FileText, Link2, Search, Trash2 } from 'lucide-react'
+import { Sparkles, Swords, Waypoints, ChevronDown, ChevronRight, FilePlus2, FileText, Link2, Search, Trash2 } from 'lucide-react'
 import { AREAS, useNote, useNotes, useSubjects, useTopics } from '../db/hooks'
 import { createNote, deleteNote, updateNote } from '../db/repo'
 import { db } from '../db/db'
@@ -9,6 +9,7 @@ import { AREA_COLOR, tint } from '../lib/colors'
 import { linkedTitles, renameLinks } from '../lib/wikilink'
 import { NoteEditor } from '../components/NoteEditor'
 import { CardsPanel } from '../components/CardsPanel'
+import { ChallengeModal, ExplainModal } from '../components/ChallengeModal'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
 import { askConfirm } from '../components/confirm'
@@ -22,6 +23,8 @@ export function NotebookPage() {
   const notes = useNotes()
   const note = useNote(noteId)
   const [query, setQuery] = useState('')
+  const [modal, setModal] = useState<'desafio' | 'explicar' | null>(null)
+  const [editorVersion, setEditorVersion] = useState(0)
   // Matérias começam fechadas (são muitas); a da nota aberta abre sozinha
   const [toggled, setToggled] = useState<Set<string>>(new Set())
 
@@ -195,6 +198,12 @@ export function NotebookPage() {
                   ))}
               </select>
               <span className="ml-auto text-xs text-muted">Salvo automaticamente</span>
+              <button onClick={() => setModal('desafio')} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-brand hover:bg-brand-soft" title="Teste o que você sabe sobre este tópico">
+                <Swords size={14} /> Desafie-me
+              </button>
+              <button onClick={() => setModal('explicar')} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-brand hover:bg-brand-soft" title="O Claude explica o tópico para você começar a anotar">
+                <Sparkles size={14} /> Explicar
+              </button>
               <button onClick={() => navigate(`/mapa?nota=${note.id}`)} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-brand hover:bg-brand-soft" title="Ver as conexões desta nota no mapa">
                 <Waypoints size={14} /> Ver no mapa
               </button>
@@ -217,9 +226,13 @@ export function NotebookPage() {
               onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
               className="mb-4 w-full bg-transparent text-3xl font-extrabold tracking-tight outline-none"
             />
-            <NoteEditor key={note.id} note={note} subject={subject} allTitles={allTitles} />
+            <NoteEditor key={note.id} note={note} subject={subject} allTitles={allTitles} reloadToken={editorVersion} />
           </Card>
 
+          {modal === 'desafio' && <ChallengeModal subjectId={note.subjectId} topicId={note.topicId} origin="demanda" onClose={() => setModal(null)} />}
+          {modal === 'explicar' && (
+            <ExplainModal subjectId={note.subjectId} topicId={note.topicId} noteId={note.id} onClose={() => setModal(null)} onInserted={() => setEditorVersion((v) => v + 1)} />
+          )}
           <CardsPanel key={`cards-${note.id}`} note={note} subject={subject} topic={topics.find((t) => t.id === note.topicId)} />
 
           {(backlinks.length > 0 || outgoing.length > 0) && (

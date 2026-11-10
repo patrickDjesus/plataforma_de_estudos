@@ -6,13 +6,14 @@ import Highlight from '@tiptap/extension-highlight'
 import { Placeholder } from '@tiptap/extensions'
 import { Bold, Heading1, Heading2, Highlighter, Italic, List, ListOrdered, Quote, Strikethrough } from 'lucide-react'
 import { createNote, findNoteByTitle, updateNote } from '../db/repo'
+import { db } from '../db/db'
 import type { Note, Subject } from '../db/types'
 import { WikiLink } from '../lib/wikilink'
 import { tint } from '../lib/colors'
 
 const HIGHLIGHTS = ['#fde047', '#86efac', '#93c5fd', '#f9a8d4', '#fdba74', '#c4b5fd']
 
-export function NoteEditor({ note, subject, allTitles }: { note: Note; subject?: Subject; allTitles: Set<string> }) {
+export function NoteEditor({ note, subject, allTitles, reloadToken = 0 }: { note: Note; subject?: Subject; allTitles: Set<string>; reloadToken?: number }) {
   const navigate = useNavigate()
   const saveTimer = useRef<number | undefined>(undefined)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -29,7 +30,10 @@ export function NoteEditor({ note, subject, allTitles }: { note: Note; subject?:
     onUpdate: ({ editor }) => {
       window.clearTimeout(saveTimer.current)
       const html = editor.getHTML()
-      saveTimer.current = window.setTimeout(() => updateNote(note.id, { content: html }), 400)
+      saveTimer.current = window.setTimeout(() => {
+        saveTimer.current = undefined // salvo: nada pendente
+        updateNote(note.id, { content: html })
+      }, 400)
     },
   })
 
@@ -42,6 +46,14 @@ export function NoteEditor({ note, subject, allTitles }: { note: Note; subject?:
       }
     }
   }, [editor, note.id])
+
+  // Conteúdo alterado por fora (ex.: explicação inserida): recarrega do banco
+  useEffect(() => {
+    if (!reloadToken || !editor) return
+    window.clearTimeout(saveTimer.current)
+    saveTimer.current = undefined
+    db.notes.get(note.id).then((n) => n && editor.commands.setContent(n.content, { emitUpdate: false }))
+  }, [reloadToken, editor, note.id])
 
   const state = useEditorState({
     editor,
