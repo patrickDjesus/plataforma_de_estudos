@@ -60,8 +60,9 @@ export async function addSubject(areaId: AreaId, name: string): Promise<string> 
 export const updateSubject = (id: string, patch: Partial<Subject>) => db.subjects.update(id, patch)
 
 export async function deleteSubject(id: string) {
-  await db.transaction('rw', [db.subjects, db.topics, db.notes, db.blocks, db.reviews, db.cards], async () => {
+  await db.transaction('rw', [db.subjects, db.topics, db.notes, db.blocks, db.reviews, db.cards, db.errors], async () => {
     await db.subjects.delete(id)
+    await db.errors.where('subjectId').equals(id).delete()
     await db.cards.where('subjectId').equals(id).delete()
     await db.reviews.where('subjectId').equals(id).delete()
     await db.topics.where('subjectId').equals(id).delete()
@@ -157,8 +158,9 @@ export async function replanMissed(now = new Date()): Promise<number> {
 }
 
 export async function deleteTopic(id: string) {
-  await db.transaction('rw', [db.topics, db.notes, db.blocks, db.reviews, db.cards], async () => {
+  await db.transaction('rw', [db.topics, db.notes, db.blocks, db.reviews, db.cards, db.errors], async () => {
     await db.topics.delete(id)
+    await db.errors.where('topicId').equals(id).delete()
     await db.cards.where('topicId').equals(id).delete()
     await db.reviews.delete(id)
     await db.notes.where('topicId').equals(id).modify({ topicId: undefined })
@@ -199,23 +201,47 @@ export async function saveCheckin(weekId: string, percents: AreaPercents, availa
 }
 
 /** Um bloco "intocado" é automático, não iniciado e ainda no futuro: pode ser regerado. */
-function isRegenerable(b: Block, now: Date) {
-  if (!b.auto || b.done || b.studiedSeconds > 0) return false
+function isRegenerable(b: Block, now: Date, timerBlockId?: string) {
+  if (!b.auto || b.done || b.studiedSeconds > 0 || b.id === timerBlockId) return false
   const today = toISODate(now)
   return b.date > today || (b.date === today && b.start >= minutesNow(now))
 }
 
-export async function regeneratePlan(weekId: string, now = new Date()) {
+/**
+ * Um replanejamento por vez: dois rodando juntos (ex.: ao voltar para a aba e no
+ * intervalo de 5 min, ou em duas abas) apagariam os mesmos blocos e criariam dois planos.
+ */
+let planChain: Promise<unknown> = Promise.resolve()
+function exclusive<T>(fn: () => Promise<T>): Promise<T> {
+  const locks = (navigator as Navigator & { locks?: { request<R>(name: string, cb: () => Promise<R>): Promise<R> } }).locks
+  let ran = false
+  const once = () => {
+    ran = true
+    return fn()
+  }
+  // Se o navegador recusar o cadeado (ex.: página isolada), roda sem ele
+  const run = (): Promise<T> => (locks ? locks.request<T>('mendonca-plan', once).catch((e) => (ran ? Promise.reject(e) : fn())) : fn())
+  const next = planChain.then(run, run)
+  planChain = next.catch(() => undefined)
+  return next
+}
+
+export function regeneratePlan(weekId: string, now = new Date()) {
+  return exclusive(() => regeneratePlanNow(weekId, now))
+}
+
+async function regeneratePlanNow(weekId: string, now: Date) {
   const week = await db.weeks.get(weekId)
   if (!week) return
   const settings = await getSettings()
-  const [allSubjects, topics, blocks] = await Promise.all([
+  const [allSubjects, topics, blocks, timer] = await Promise.all([
     db.subjects.toArray(),
     db.topics.toArray(),
     db.blocks.where('weekId').equals(weekId).toArray(),
+    db.timer.get('timer'),
   ])
-  const toRemove = blocks.filter((b) => isRegenerable(b, now))
-  const keep = blocks.filter((b) => !isRegenerable(b, now))
+  const toRemove = blocks.filter((b) => isRegenerable(b, now, timer?.blockId))
+  const keep = blocks.filter((b) => !isRegenerable(b, now, timer?.blockId))
   // Revisões que vencem até o fim da semana e ainda não têm bloco fixo pendente
   const weekEnd = addDays(weekId, 6)
   const pinned = new Set(keep.filter((b) => b.kind === 'revisao' && !b.done && !b.missed && b.topicId).map((b) => b.topicId!))
@@ -253,6 +279,8 @@ export async function addBlock(b: Omit<Block, 'id' | 'done' | 'studiedSeconds' |
   const id = uid()
   await db.blocks.add({ ...b, id, done: false, studiedSeconds: 0, auto: false })
   if (b.kind === 'prova' && b.subjectId) await applyDeadline(b.subjectId, b.date)
+  // Os blocos automáticos se reorganizam em volta do novo bloco (sem sobreposição)
+  await regeneratePlan(b.weekId)
   return id
 }
 
@@ -268,9 +296,15 @@ export async function updateBlock(id: string, patch: Partial<Block>) {
   await db.blocks.update(id, { ...patch, auto: false })
   const b = await db.blocks.get(id)
   if (b?.kind === 'prova' && b.subjectId) await applyDeadline(b.subjectId, b.date)
+  if (b) await regeneratePlan(b.weekId)
 }
 
-export const deleteBlock = (id: string) => db.blocks.delete(id)
+/** Apagar um bloco libera o horário para o plano automático. */
+export async function deleteBlock(id: string) {
+  const b = await db.blocks.get(id)
+  await db.blocks.delete(id)
+  if (b && !b.auto) await regeneratePlan(b.weekId)
+}
 
 export async function setBlockDone(id: string, done: boolean) {
   const b = await db.blocks.get(id)
@@ -355,10 +389,10 @@ export async function resumeTimer() {
 
 /** Para o cronômetro e grava a sessão. `markDone` também conclui o bloco. */
 /** Para o cronômetro e grava a sessão. Devolve o id da sessão gravada (se houver). `quiet` não chama o Capi. */
-export async function stopTimer(markDone = false, quiet = false): Promise<string | undefined> {
+export async function stopTimer(markDone = false, quiet = false, maxSeconds?: number): Promise<string | undefined> {
   const t = await getTimer()
   if (!t) return
-  const seconds = Math.round(elapsedOf(t))
+  const seconds = Math.round(Math.min(elapsedOf(t), maxSeconds ?? Infinity))
   let sessionId: string | undefined
   await db.transaction('rw', [db.timer, db.sessions, db.blocks, db.topics], async () => {
     await db.timer.delete('timer')

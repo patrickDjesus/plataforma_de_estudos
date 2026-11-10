@@ -79,7 +79,9 @@ export function CheckInPage() {
     getSettings().then((s) => {
       db.weeks.get(weekId).then((w) => {
         setPercents(w?.percents ?? s.lastPercents)
-        setAvailability(w?.availability ?? s.defaultAvailability)
+        // Descarta horários corrompidos (ex.: salvos vazios por versões antigas)
+        const av = w?.availability ?? s.defaultAvailability
+        setAvailability(Array.from({ length: 7 }, (_, d) => (av[d] ?? []).filter((x) => Number.isFinite(x.start) && Number.isFinite(x.end))))
         setPaused(w?.pausedSubjectIds ?? [])
       })
     })
@@ -110,6 +112,8 @@ export function CheckInPage() {
   }
 
   const setWin = (day: number, idx: number, key: 'start' | 'end', value: string) => {
+    // Campo apagado ("--:--") não vira horário: mantém o anterior
+    if (!/^\d{1,2}:\d{2}/.test(value)) return
     const next = availability.map((d) => d.map((w) => ({ ...w })))
     next[day][idx][key] = parseTime(value)
     setAvailability(next)
@@ -191,7 +195,7 @@ export function CheckInPage() {
                 {wins.length > 0 && (
                   <div className="mt-2.5 flex flex-wrap gap-2 sm:pl-[118px]">
                     {wins.map((w, idx) => (
-                      <div key={idx} className="flex items-center gap-1.5 rounded-xl bg-brand-soft py-1 pr-1.5 pl-3 text-brand">
+                      <div key={idx} title={w.end <= w.start ? 'O fim precisa ser depois do início (horários após meia-noite não são aceitos)' : undefined} className={`flex items-center gap-1.5 rounded-xl py-1 pr-1.5 pl-3 ${w.end <= w.start ? 'bg-rose-50 text-rose-600 ring-1 ring-rose-300' : 'bg-brand-soft text-brand'}`}>
                         <input type="time" value={fmtTime(w.start)} onChange={(e) => setWin(day, idx, 'start', e.target.value)} className="bg-transparent text-sm font-bold outline-none" aria-label="Início" />
                         <span className="opacity-60">→</span>
                         <input type="time" value={fmtTime(w.end)} onChange={(e) => setWin(day, idx, 'end', e.target.value)} className="bg-transparent text-sm font-bold outline-none" aria-label="Fim" />
@@ -220,7 +224,8 @@ export function CheckInPage() {
     const i = stepIdx + dir
     setStep(i < 0 ? 'inicio' : STEPS[Math.min(i, STEPS.length - 1)].id)
   }
-  const canContinue = step !== 'foco' || canSave
+  const badWindows = availability.flat().filter((w) => w.end <= w.start).length
+  const canContinue = step === 'foco' ? canSave : step === 'horarios' ? badWindows === 0 : true
   const hours = (m: number) => `${(m / 60).toFixed(1).replace('.0', '')}h`
   const active = subjects.filter((s) => !paused.includes(s.id))
 
@@ -431,6 +436,11 @@ export function CheckInPage() {
                 )}
                 {trimmed && <p className="mt-2 text-xs font-bold text-emerald-700">✓ Horários enxugados. Ajuste à vontade abaixo.</p>}
               </Hints>
+              {badWindows > 0 && (
+                <p className="mb-3 rounded-xl bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
+                  {badWindows === 1 ? 'Um horário termina' : `${badWindows} horários terminam`} antes de começar. Corrija (em vermelho) para continuar.
+                </p>
+              )}
               {availabilityEditor}
             </StepCard>
           )}

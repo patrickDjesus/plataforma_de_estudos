@@ -2,13 +2,15 @@ import type { Challenge, Flashcard, Review, ReviewRating, Session, Topic } from 
 
 /**
  * Domínio de um tópico (0–100):
- * desafios e questões 50% · revisões e flashcards 25% · autoavaliação 15% · tempo estudado 10%.
+ * desafios e questões 50% · revisões e flashcards 25% · autoavaliação 15% · tempo estudado 10%
+ * (partes sem dados ficam de fora e o resto é reescalado; sem desafios, no máximo 70%).
  * Erros não resolvidos descontam; sem revisão o domínio cai devagar (até a metade em ~3 meses).
  */
 export const WEIGHTS = { challenges: 0.5, reviews: 0.25, confidence: 0.15, time: 0.1 }
 export const FULL_TIME_SECONDS = 90 * 60
 export const ERROR_PENALTY = 8
 export const MAX_ERROR_PENALTY = 30
+export const NO_CHALLENGE_CAP = 70
 
 const RATING_VALUE: Record<ReviewRating, number> = { dificil: 0.2, ok: 0.7, facil: 1 }
 const DAY = 86400000
@@ -62,9 +64,18 @@ export function computeMastery(m: MasteryInput): Mastery | null {
     confidence: recentAverage(confPts, m.now),
     time: Math.min(1, seconds / FULL_TIME_SECONDS),
   }
-  let value =
-    100 *
-    (WEIGHTS.challenges * (parts.challenges ?? 0) + WEIGHTS.reviews * (parts.reviews ?? 0) + WEIGHTS.confidence * (parts.confidence ?? 0) + WEIGHTS.time * parts.time)
+  // Só entram as partes com dados: quem não usa flashcards, por exemplo, não é punido.
+  // O peso de cada parte continua o mesmo em relação às outras.
+  let sum = WEIGHTS.time * parts.time
+  let wsum = WEIGHTS.time
+  for (const k of ['challenges', 'reviews', 'confidence'] as const)
+    if (parts[k] !== null) {
+      sum += WEIGHTS[k] * parts[k]!
+      wsum += WEIGHTS[k]
+    }
+  let value = (100 * sum) / wsum
+  // Sem nenhum desafio (prova objetiva), o domínio fica limitado a 70%
+  if (parts.challenges === null) value = Math.min(value, NO_CHALLENGE_CAP)
   value -= Math.min(MAX_ERROR_PENALTY, m.openErrors * ERROR_PENALTY)
   // Esquecimento: sem atividade, cai devagar (no mínimo pela metade)
   const idleDays = lastActivity ? Math.max(0, (m.now - lastActivity) / DAY) : 0

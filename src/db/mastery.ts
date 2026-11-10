@@ -20,7 +20,12 @@ export async function loadMastery(now = Date.now()): Promise<MasteryMap> {
   ])
   const by = <T extends { topicId?: string }>(list: T[]) => {
     const m = new Map<string, T[]>()
-    for (const x of list) if (x.topicId) m.set(x.topicId, [...(m.get(x.topicId) ?? []), x])
+    for (const x of list) {
+      if (!x.topicId) continue
+      const arr = m.get(x.topicId)
+      if (arr) arr.push(x)
+      else m.set(x.topicId, [x])
+    }
     return m
   }
   const ch = by(challenges)

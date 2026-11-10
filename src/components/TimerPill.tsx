@@ -4,7 +4,25 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { useTimer } from '../db/hooks'
 import { elapsedOf, pauseTimer, resumeTimer, stopTimer } from '../db/repo'
-import { fmtClock } from '../lib/dates'
+import { fmtClock, fmtDuration } from '../lib/dates'
+import { askConfirm } from './confirm'
+import type { Block } from '../db/types'
+
+/** Acima disso, o cronômetro provavelmente ficou ligado sem querer. */
+const suspiciousAfter = (block?: Block) => Math.max(3 * 3600, block ? (block.end - block.start) * 60 * 2 : 0)
+
+/** Para o cronômetro; se ele ficou ligado tempo demais, pergunta antes de contar tudo. */
+async function stopChecked(markDone: boolean, elapsed: number, block?: Block) {
+  const limit = suspiciousAfter(block)
+  if (elapsed <= limit) return stopTimer(markDone)
+  const fair = block ? (block.end - block.start) * 60 : 3600
+  const all = await askConfirm(
+    `O cronômetro ficou ligado por ${fmtDuration(elapsed)}. Você estudou esse tempo todo? Se não, eu salvo só ${fmtDuration(fair)}.`,
+    false,
+    { title: 'Cronômetro esquecido?', yes: `Sim, salvar ${fmtDuration(elapsed)}`, no: `Salvar só ${fmtDuration(fair)}` },
+  )
+  return stopTimer(markDone, false, all ? undefined : fair)
+}
 
 /** Pílula escura do cronômetro, com anel mostrando o progresso do bloco. */
 export function TimerPill() {
@@ -44,11 +62,11 @@ export function TimerPill() {
           <button onClick={() => (running ? pauseTimer() : resumeTimer())} className="rounded-full p-1.5 hover:bg-white/10" title={running ? 'Pausar' : 'Continuar'}>
             {running ? <Pause size={15} /> : <Play size={15} />}
           </button>
-          <button onClick={() => stopTimer(false)} className="rounded-full p-1.5 hover:bg-white/10" title="Parar e salvar">
+          <button onClick={() => stopChecked(false, elapsed, block)} className="rounded-full p-1.5 hover:bg-white/10" title="Parar e salvar">
             <Square size={14} />
           </button>
           {timer.blockId && (
-            <button onClick={() => stopTimer(true)} className="rounded-full bg-emerald-500 p-1.5 hover:bg-emerald-400" title="Concluir bloco">
+            <button onClick={() => stopChecked(true, elapsed, block)} className="rounded-full bg-emerald-500 p-1.5 hover:bg-emerald-400" title="Concluir bloco">
               <Check size={15} />
             </button>
           )}

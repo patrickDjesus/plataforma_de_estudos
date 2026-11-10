@@ -22,8 +22,16 @@ describe('domínio por tópico', () => {
     })
     expect(m?.value).toBe(100)
   })
-  it('desafios valem metade: só desafio perfeito dá 50', () => {
-    expect(computeMastery({ ...base, challenges: [ch(1)] })?.value).toBe(50)
+  it('partes sem dados não puxam para baixo: só desafio perfeito com pouco tempo já é alto', () => {
+    // 0,5×1 / (0,5 + 0,1) ≈ 83
+    expect(computeMastery({ ...base, challenges: [ch(1)] })?.value).toBe(83)
+  })
+  it('desafio ruim pesa mais que o tempo estudado', () => {
+    expect(computeMastery({ ...base, topic: { ...topic, studiedSeconds: 2 * 3600 }, challenges: [ch(0)] })!.value).toBe(17)
+  })
+  it('sem desafios, o domínio fica limitado a 70', () => {
+    const m = computeMastery({ ...base, sessions: [{ id: 's', topicId: 't', startedAt: NOW, seconds: 7200, confidence: 5 }] })
+    expect(m?.value).toBe(70)
   })
   it('o desafio mais recente pesa mais', () => {
     const recentGood = computeMastery({ ...base, challenges: [ch(0, 60), ch(1, 0)] })!.value

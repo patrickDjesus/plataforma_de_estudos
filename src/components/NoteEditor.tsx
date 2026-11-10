@@ -37,13 +37,22 @@ export function NoteEditor({ note, subject, allTitles, reloadToken = 0 }: { note
     },
   })
 
-  // Salva o que estiver pendente ao trocar de nota
+  // Salva o que estiver pendente ao trocar de nota, ao trocar de aba ou ao fechar a página
   useEffect(() => {
-    return () => {
+    const flush = () => {
       if (saveTimer.current && editor) {
         window.clearTimeout(saveTimer.current)
+        saveTimer.current = undefined
         updateNote(note.id, { content: editor.getHTML() })
       }
+    }
+    const onHide = () => document.visibilityState === 'hidden' && flush()
+    document.addEventListener('visibilitychange', onHide)
+    window.addEventListener('pagehide', flush)
+    return () => {
+      document.removeEventListener('visibilitychange', onHide)
+      window.removeEventListener('pagehide', flush)
+      flush()
     }
   }, [editor, note.id])
 

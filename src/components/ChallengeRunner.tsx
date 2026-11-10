@@ -136,7 +136,11 @@ export function ChallengeRunner({ ctx, subjectId, topicId, origin, count, color,
     if (next.every(Boolean)) await persist(next)
   }
 
+  const finishing = useRef(false)
   const finish = async () => {
+    // Clique duplo não pode registrar a revisão duas vezes
+    if (finishing.current) return
+    finishing.current = true
     const c = await persist(results)
     await logChallengeErrors(c) // erros vão para o caderno de erros
     onFinish(c)

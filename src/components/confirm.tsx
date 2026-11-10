@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Btn, Modal } from './ui'
 
-type Pending = { message: string; danger: boolean; resolve: (ok: boolean) => void }
+type Labels = { title?: string; yes?: string; no?: string }
+type Pending = { message: string; danger: boolean; labels?: Labels; resolve: (ok: boolean) => void }
 let push: ((p: Pending) => void) | null = null
 
 /** Confirmação dentro da página (o confirm() do navegador nem sempre funciona). */
-export function askConfirm(message: string, danger = true): Promise<boolean> {
+export function askConfirm(message: string, danger = true, labels?: Labels): Promise<boolean> {
   return new Promise((resolve) => {
     if (!push) return resolve(false)
-    push({ message, danger, resolve })
+    push({ message, danger, labels, resolve })
   })
 }
 
@@ -25,12 +26,12 @@ export function ConfirmHost() {
     setPending(null)
   }
   return (
-    <Modal open={!!pending} onClose={() => close(false)} title="Tem certeza?">
+    <Modal open={!!pending} onClose={() => close(false)} title={pending?.labels?.title ?? 'Tem certeza?'}>
       <p className="mb-6 text-sm text-slate-600">{pending?.message}</p>
       <div className="flex justify-end gap-2">
-        <Btn onClick={() => close(false)}>Cancelar</Btn>
+        <Btn onClick={() => close(false)}>{pending?.labels?.no ?? 'Cancelar'}</Btn>
         <Btn variant={pending?.danger ? 'danger' : 'primary'} onClick={() => close(true)}>
-          Confirmar
+          {pending?.labels?.yes ?? 'Confirmar'}
         </Btn>
       </div>
     </Modal>

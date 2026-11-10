@@ -67,8 +67,17 @@ export function FocusPage() {
   const [step, setStep] = useState<Step>('antes')
   const [goal, setGoal] = useState('')
   const [phaseIdx, setPhaseIdx] = useState(0)
-  const [remaining, setRemaining] = useState(0) // segundos da fase atual
+  // Fim da fase pelo relógio (e não contando segundos): navegadores atrasam
+  // os intervalos de abas em segundo plano, e a contagem ficaria lenta.
+  const [endsAt, setEndsAt] = useState(0)
+  const [pausedLeft, setPausedLeft] = useState(0) // segundos restantes enquanto pausado
+  const [now, setNow] = useState(() => Date.now())
+  const startPhase = (seconds: number, from = Date.now()) => {
+    setEndsAt(from + seconds * 1000)
+    setNow(Date.now())
+  }
   const [paused, setPaused] = useState(false)
+  const remaining = paused ? pausedLeft : Math.max(0, Math.ceil((endsAt - now) / 1000))
   const [showNote, setShowNote] = useState(true)
   const [confidence, setConfidence] = useState<number | null>(null)
   const [recall, setRecall] = useState('')
@@ -98,15 +107,20 @@ export function FocusPage() {
     resumedOnce.current = true
     if (data.timer?.blockId === data.block.id) {
       setStep('durante')
-      setRemaining(phases[0].minutes * 60)
+      startPhase(phases[0].minutes * 60)
     }
   }, [data, phases])
 
   // Contagem regressiva da fase
   useEffect(() => {
     if (step !== 'durante' || paused) return
-    const i = window.setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000)
-    return () => window.clearInterval(i)
+    const tick = () => setNow(Date.now())
+    const i = window.setInterval(tick, 1000)
+    document.addEventListener('visibilitychange', tick)
+    return () => {
+      window.clearInterval(i)
+      document.removeEventListener('visibilitychange', tick)
+    }
   }, [step, paused])
 
   // Fim da fase: foco → pausa → foco… → depois
@@ -120,7 +134,9 @@ export function FocusPage() {
       return
     }
     setPhaseIdx(next)
-    setRemaining(phases[next].minutes * 60)
+    setPaused(false)
+    // A próxima fase conta a partir do fim real da anterior (se a aba ficou parada, recupera o atraso)
+    startPhase(phases[next].minutes * 60, Math.max(endsAt, Date.now() - phases[next].minutes * 60 * 1000 + 1000))
     if (phases[next].kind === 'pausa') pauseTimer()
     else resumeTimer()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -144,14 +160,18 @@ export function FocusPage() {
     if (t?.blockId === block.id) await resumeTimer()
     else await startTimer({ blockId: block.id, subjectId: block.subjectId, topicId: block.topicId, label: topic?.name ?? subject?.name ?? 'Estudo' })
     setPhaseIdx(0)
-    setRemaining(phases[0].minutes * 60)
+    startPhase(phases[0].minutes * 60)
     setStep('durante')
   }
 
   const togglePause = async () => {
     if (paused) {
       if (phase.kind === 'foco') await resumeTimer()
-    } else await pauseTimer()
+      startPhase(pausedLeft)
+    } else {
+      await pauseTimer()
+      setPausedLeft(remaining)
+    }
     setPaused(!paused)
   }
 
@@ -279,7 +299,7 @@ export function FocusPage() {
                 {paused ? <Play size={16} /> : <Pause size={16} />} {paused ? 'Continuar' : 'Pausar'}
               </button>
               {phase.kind === 'pausa' && (
-                <button onClick={() => setRemaining(0)} className="flex items-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-bold shadow-sm hover:bg-slate-50">
+                <button onClick={() => { setPaused(false); setPausedLeft(0); setEndsAt(Date.now()); setNow(Date.now()) }} className="flex items-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-sm font-bold shadow-sm hover:bg-slate-50">
                   <SkipForward size={16} /> Pular pausa
                 </button>
               )}
