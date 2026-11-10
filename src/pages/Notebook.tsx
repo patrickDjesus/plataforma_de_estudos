@@ -21,7 +21,8 @@ export function NotebookPage() {
   const notes = useNotes()
   const note = useNote(noteId)
   const [query, setQuery] = useState('')
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  // Matérias começam fechadas (são muitas); a da nota aberta abre sozinha
+  const [toggled, setToggled] = useState<Set<string>>(new Set())
 
   const allTitles = useMemo(() => new Set(notes.map((n) => n.title.trim().toLowerCase())), [notes])
   const backlinks = useMemo(() => {
@@ -45,10 +46,10 @@ export function NotebookPage() {
   }
 
   const toggle = (id: string) => {
-    const next = new Set(collapsed)
+    const next = new Set(toggled)
     if (next.has(id)) next.delete(id)
     else next.add(id)
-    setCollapsed(next)
+    setToggled(next)
   }
 
   const rename = async (n: Note, title: string) => {
@@ -106,7 +107,8 @@ export function NotebookPage() {
                   {list.map((s) => {
                     const sTopics = topics.filter((t) => t.subjectId === s.id)
                     const loose = notes.filter((n) => n.subjectId === s.id && !n.topicId)
-                    const open = !collapsed.has(s.id)
+                    const startsOpen = s.id === note?.subjectId
+                    const open = toggled.has(s.id) ? !startsOpen : startsOpen
                     return (
                       <div key={s.id} className="mb-1">
                         <div className="group flex items-center gap-1 rounded-xl px-1.5 py-1.5" style={{ background: tint(s.color, 0.08) }}>
@@ -123,6 +125,8 @@ export function NotebookPage() {
                           <div className="mt-1 ml-3 space-y-0.5 border-l-2 pl-2" style={{ borderColor: tint(s.color, 0.3) }}>
                             {sTopics.map((t) => {
                               const tNotes = notes.filter((n) => n.topicId === t.id)
+                              // Tópico com um único documento de mesmo nome: mostra só o documento
+                              if (tNotes.length === 1 && tNotes[0].title.startsWith(t.name)) return <NoteItem key={t.id} n={tNotes[0]} />
                               return (
                                 <div key={t.id}>
                                   <div className="group flex items-center justify-between px-2 py-0.5 text-xs font-semibold text-slate-500">

@@ -13,6 +13,7 @@ const base = {
   notes: [n('a', 'calc', link('B'), 'lim'), n('b', 'fis'), n('c', 'ing')],
   links: [],
   positions: new Map(),
+  hideEmptyNotes: false,
 }
 
 describe('buildGraph', () => {
@@ -38,6 +39,14 @@ describe('buildGraph', () => {
     expect(ids).toContain('n:a')
     expect(ids).not.toContain('n:c')
     expect(g.nodes.find((x) => x.id === 'n:b')?.focus).toBe(true)
+  })
+
+  it('esconde notas vazias e sem ligações por padrão', () => {
+    const g = buildGraph({ ...base, hideEmptyNotes: undefined })
+    const ids = g.nodes.map((x) => x.id)
+    expect(ids).toContain('n:a') // tem texto
+    expect(ids).toContain('n:b') // é citada
+    expect(ids).not.toContain('n:c') // vazia e solta
   })
 
   it('usa posição salva quando existe', () => {

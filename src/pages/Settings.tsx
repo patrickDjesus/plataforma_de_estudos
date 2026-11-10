@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Download, RotateCcw, Settings2, Upload } from 'lucide-react'
 import { useSettings } from '../db/hooks'
-import { exportBackup, importBackup, resetAllData, updateSettings } from '../db/repo'
+import { applySeed, ensureSeed, exportBackup, importBackup, resetAllData, updateSettings } from '../db/repo'
 import { useNavigate } from 'react-router-dom'
 import type { Settings } from '../db/types'
 import { toISODate } from '../lib/dates'
@@ -193,6 +193,26 @@ export function SettingsPage() {
           {msg && <p className="mt-3 text-sm font-semibold">{msg}</p>}
         </Card>
 
+        <Card className="lg:col-span-2">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="max-w-xl">
+              <h2 className="text-lg font-bold">Conteúdos padrão</h2>
+              <p className="text-sm text-muted">
+                O Mendonça já vem com as matérias do Ensino Médio e o Inglês, com todos os tópicos e um documento pronto no caderno para cada um. Se você apagou algum e quer de volta, restaure aqui. Só o que estiver faltando é recriado; o que você editou fica como está.
+              </p>
+            </div>
+            <Btn
+              variant="soft"
+              onClick={async () => {
+                const n = await applySeed()
+                showMascot({ pose: 'estudando', title: n ? 'Conteúdos restaurados' : 'Tudo no lugar', text: n ? `Recriei ${n} itens que estavam faltando.` : 'Todos os conteúdos padrão já estavam aqui.', autoHideMs: 6000 })
+              }}
+            >
+              <RotateCcw size={16} /> Restaurar conteúdos padrão
+            </Btn>
+          </div>
+        </Card>
+
         <Card className="border-rose-100 lg:col-span-2">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="max-w-xl">
@@ -208,9 +228,10 @@ export function SettingsPage() {
                 if (!(await askConfirm('Apagar TODOS os dados do Mendonça, aqui e na nuvem? Isso não pode ser desfeito.'))) return
                 setResetting(true)
                 await resetAllData()
+                await ensureSeed()
                 setResetting(false)
                 navigate('/materias')
-                showMascot({ pose: 'acenando', title: 'Tudo novo!', text: 'Os dados foram apagados. Vamos começar do zero: cadastre suas matérias e eu monto a próxima semana.', autoHideMs: 9000 })
+                showMascot({ pose: 'acenando', title: 'Tudo novo!', text: 'Os dados foram apagados e os conteúdos padrão de Ensino Médio e Inglês voltaram. Cadastre as matérias da Faculdade e eu monto a próxima semana.', autoHideMs: 9000 })
               }}
             >
               <RotateCcw size={16} /> {resetting ? 'Apagando…' : 'Reiniciar tudo'}

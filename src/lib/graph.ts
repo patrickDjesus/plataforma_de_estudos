@@ -36,30 +36,49 @@ export interface GraphInput {
   areas?: AreaId[] // filtro (vazio = todas)
   subjectIds?: string[] // filtro (vazio = todas)
   focusNoteId?: string // visão local
+  /** Esconde notas ainda vazias e sem ligações (padrão: sim). */
+  hideEmptyNotes?: boolean
 }
 
 export const sid = (id: string) => `s:${id}`
 export const tid = (id: string) => `t:${id}`
 export const nid = (id: string) => `n:${id}`
 
-/** Posição radial padrão: matérias num círculo, tópicos ao redor da matéria, notas ao redor do tópico. */
+/** Anéis ovais (mais largos que altos, pois os nomes são compridos), com mais vagas nos de fora. */
+const RING_R = (k: number) => 210 + k * 115
+const RING_CAP = (k: number) => Math.floor((2 * Math.PI * RING_R(k)) / 92)
+const OVAL = 1.9
+function ringSlots(n: number) {
+  const slots: { ring: number; idx: number; size: number }[] = []
+  let k = 0
+  while (slots.length < n) {
+    const size = Math.min(RING_CAP(k), n - slots.length)
+    for (let i = 0; i < size; i++) slots.push({ ring: k, idx: i, size })
+    k++
+  }
+  return { slots, rings: Math.max(1, k) }
+}
+
+/** Posição radial padrão: matérias num círculo; tópicos e notas soltas em anéis ao redor; notas perto do tópico. */
 function radialLayout(subjects: Subject[], topics: Topic[], notes: Note[]) {
   const pos = new Map<string, { x: number; y: number }>()
-  const R = Math.max(300, subjects.length * 75)
+  const ringsOf = subjects.map((s) => ringSlots(topics.filter((t) => t.subjectId === s.id).length + notes.filter((x) => x.subjectId === s.id && !x.topicId).length).rings)
+  const outer = RING_R(Math.max(1, ...ringsOf) - 1) * OVAL + 160
+  const R = subjects.length <= 1 ? 0 : Math.max(320, (2 * outer + 120) / (2 * Math.sin(Math.PI / subjects.length)))
   subjects.forEach((s, i) => {
     const a = (2 * Math.PI * i) / Math.max(1, subjects.length) - Math.PI / 2
-    const sx = subjects.length === 1 ? 0 : Math.cos(a) * R
-    const sy = subjects.length === 1 ? 0 : Math.sin(a) * R
+    const sx = Math.cos(a) * R
+    const sy = Math.sin(a) * R
     pos.set(sid(s.id), { x: sx, y: sy })
     const ts = topics.filter((t) => t.subjectId === s.id).sort((x, y) => x.order - y.order)
     const loose = notes.filter((n) => n.subjectId === s.id && !n.topicId)
     const ring = [...ts.map((t) => tid(t.id)), ...loose.map((n) => nid(n.id))]
+    const { slots } = ringSlots(ring.length)
     ring.forEach((id, k) => {
-      // espalha num leque voltado para fora do centro
-      const spread = Math.min(Math.PI * 1.6, 0.55 * ring.length)
-      const b = a + (ring.length === 1 ? 0 : -spread / 2 + (spread * k) / (ring.length - 1))
-      const r = id.startsWith('n:') ? 250 : 190
-      pos.set(id, { x: sx + Math.cos(b) * r, y: sy + Math.sin(b) * r })
+      const { ring: r, idx, size } = slots[k]
+      const b = -Math.PI / 2 + (2 * Math.PI * idx) / size + (r % 2) * (Math.PI / size)
+      const rad = RING_R(r)
+      pos.set(id, { x: sx + Math.cos(b) * rad * OVAL, y: sy + Math.sin(b) * rad })
     })
     ts.forEach((t) => {
       const tp = pos.get(tid(t.id))!
@@ -67,7 +86,7 @@ function radialLayout(subjects: Subject[], topics: Topic[], notes: Note[]) {
       const base = Math.atan2(tp.y - sy, tp.x - sx)
       tn.forEach((n, k) => {
         const b = base + (tn.length === 1 ? 0 : -0.7 + (1.4 * k) / (tn.length - 1))
-        pos.set(nid(n.id), { x: tp.x + Math.cos(b) * 130, y: tp.y + Math.sin(b) * 130 })
+        pos.set(nid(n.id), { x: tp.x + Math.cos(b) * 120, y: tp.y + Math.sin(b) * 120 })
       })
     })
   })
@@ -89,6 +108,13 @@ export function buildGraph(input: GraphInput): { nodes: GNode[]; edges: GEdge[] 
       const target = byTitle.get(title.trim().toLowerCase())
       if (target && target.id !== n.id) citations.push([nid(n.id), nid(target.id)])
     }
+
+  // Notas vazias e sem ligações só poluem o mapa (ex.: documentos prontos ainda não escritos)
+  if (input.hideEmptyNotes !== false) {
+    const linked = new Set<string>([...citations.flat(), ...input.links.flatMap((l) => [l.source, l.target])])
+    const hasText = (n: Note) => n.content.replace(/<[^>]+>/g, '').trim().length > 0
+    notes = notes.filter((n) => hasText(n) || linked.has(nid(n.id)) || n.id === input.focusNoteId)
+  }
 
   // Visão local: a nota em foco, quem ela cita, quem a cita e ligações manuais
   if (input.focusNoteId) {

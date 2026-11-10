@@ -113,6 +113,8 @@ export interface Settings {
   reviewMinutes?: number
   /** Fatia máxima da semana para revisões (0–1). */
   maxReviewShare?: number
+  /** Versão dos conteúdos padrão já aplicada. */
+  seedVersion?: number
   /** Capi dá boas-vindas ao abrir o site (padrão: sim). */
   mascotWelcome?: boolean
 }

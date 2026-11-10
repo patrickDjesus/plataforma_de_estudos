@@ -147,7 +147,7 @@ function MindMap() {
   // Enquadra ao trocar de visão ou filtro
   const fitKey = `${focus}|${areas.join()}|${subjectFilter.join()}|${graph.nodes.length > 0}`
   useEffect(() => {
-    const t = window.setTimeout(() => fitView({ padding: 0.15, duration: 400, maxZoom: 1.1 }), 60)
+    const t = window.setTimeout(() => fitView({ padding: 0.08, duration: 400, maxZoom: 1.1, minZoom: 0.04 }), 60)
     return () => window.clearTimeout(t)
   }, [fitKey, fitView])
 
@@ -280,7 +280,7 @@ function MindMap() {
                 if (linkId && (await askConfirm('Remover esta ligação manual?'))) await db.mapLinks.delete(linkId)
               }}
               deleteKeyCode={null}
-              minZoom={0.15}
+              minZoom={0.04}
               maxZoom={2}
               proOptions={{ hideAttribution: true }}
             >

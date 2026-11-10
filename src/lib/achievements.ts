@@ -74,7 +74,7 @@ export function computeStats({ sessions, blocks, reviews, notes, subjects }: Sta
     reviewsDone: reviews.reduce((a, r) => a + r.history.length, 0),
     longestSession: Math.max(0, ...sessions.map((s) => s.seconds)),
     longestStreak,
-    notesCount: notes.length,
+    notesCount: notes.filter((n) => n.content.replace(/<[^>]+>/g, '').trim().length >= 20).length,
     citations,
     earlyBird: sessions.some((s) => new Date(s.startedAt).getHours() < 8 && s.seconds >= 15 * 60),
     nightOwl: sessions.some((s) => new Date(s.startedAt).getHours() >= 22 && s.seconds >= 15 * 60),
@@ -113,7 +113,7 @@ export function achievements(s: Stats): Achievement[] {
     { id: 'poliglota', title: 'Poliglota', description: 'Some 5 horas de Idiomas.', icon: 'languages', color: '#10b981', value: Math.floor(s.secondsByArea.idiomas / H), target: 5 },
     { id: 'memoria-capivara', title: 'Memória de capivara', description: 'Registre 10 revisões.', icon: 'brain', color: '#ec4899', value: s.reviewsDone, target: 10 },
     { id: 'cartografo', title: 'Cartógrafo', description: 'Crie 10 ligações [[…]] entre notas.', icon: 'link', color: '#f59e0b', value: s.citations, target: 10 },
-    { id: 'escritor', title: 'Escritor', description: 'Escreva 20 notas no caderno.', icon: 'pen', color: '#14b8a6', value: s.notesCount, target: 20 },
+    { id: 'escritor', title: 'Escritor', description: 'Escreva em 20 notas do caderno.', icon: 'pen', color: '#14b8a6', value: s.notesCount, target: 20 },
     { id: 'madrugador', title: 'Madrugador', description: 'Estude 15 min antes das 8h.', icon: 'sunrise', color: '#f59e0b', value: s.earlyBird ? 1 : 0, target: 1 },
     { id: 'coruja', title: 'Coruja', description: 'Estude 15 min depois das 22h.', icon: 'moon', color: '#6366f1', value: s.nightOwl ? 1 : 0, target: 1 },
   ]

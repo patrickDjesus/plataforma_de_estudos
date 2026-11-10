@@ -6,6 +6,7 @@ import { applyRating, newReview, RATING_LABEL } from '../lib/review'
 import { planWeek } from '../lib/planner'
 import { showMascot } from '../lib/mascotBus'
 import { XP_PER_BLOCK } from '../lib/xp'
+import { SEED_SUBJECTS, SEED_VERSION } from '../data/seedContent'
 
 // ---------- Configurações ----------
 
@@ -407,4 +408,55 @@ export async function resetAllData() {
     for (const t of TABLES) await wipeTable(t)
     await db.timer.clear()
   })
+}
+
+// ---------- Conteúdos padrão ----------
+
+/**
+ * Cria as matérias padrão (Ensino Médio e Inglês) com seus tópicos e um documento
+ * vazio por tópico. Usa ids fixos: rodar de novo, ou em dois dispositivos, nunca duplica.
+ * Só adiciona o que estiver faltando; não mexe no que você já editou.
+ */
+export async function applySeed(): Promise<number> {
+  const base = Date.now()
+  const pad = (n: number) => String(n + 1).padStart(3, '0')
+  const subjects: Subject[] = []
+  const topics: Topic[] = []
+  const notes: Note[] = []
+  const usedTitles = new Set((await db.notes.toArray()).map((n) => n.title.trim().toLowerCase()))
+  SEED_SUBJECTS.forEach((s, i) => {
+    const sid = `seed-${s.slug}`
+    subjects.push({ id: sid, areaId: s.areaId, name: s.name, color: s.color, icon: s.icon, weight: 3, mandatory: false, createdAt: base + i })
+    s.topics.forEach((name, k) => {
+      const tid = `${sid}-t${pad(k)}`
+      topics.push({ id: tid, subjectId: sid, name, order: k, done: false, studiedSeconds: 0 })
+      // Títulos únicos para as ligações [[…]] do caderno
+      let title = name
+      if (usedTitles.has(title.toLowerCase())) title = `${name} (${s.name})`
+      usedTitles.add(title.toLowerCase())
+      notes.push({ id: `${sid}-n${pad(k)}`, subjectId: sid, topicId: tid, title, content: '', updatedAt: base })
+    })
+  })
+  let added = 0
+  await db.transaction('rw', [db.subjects, db.topics, db.notes], async () => {
+    for (const [table, list] of [
+      [db.subjects, subjects],
+      [db.topics, topics],
+      [db.notes, notes],
+    ] as const) {
+      const existing = await (table as typeof db.subjects).bulkGet(list.map((x) => x.id))
+      const missing = list.filter((_, i) => !existing[i])
+      if (missing.length) await (table as typeof db.subjects).bulkAdd(missing as never[])
+      added += missing.length
+    }
+  })
+  await updateSettings({ seedVersion: SEED_VERSION })
+  return added
+}
+
+/** Aplica os conteúdos padrão uma vez (primeiro uso ou depois de reiniciar os dados). */
+export async function ensureSeed() {
+  const s = await getSettings()
+  if ((s.seedVersion ?? 0) >= SEED_VERSION) return 0
+  return applySeed()
 }

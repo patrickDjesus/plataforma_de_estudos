@@ -308,7 +308,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
 
             {hasTopic && subject && (
               <Section n={3} title="Qual tópico?">
-                <div className="flex flex-wrap gap-2">
+                <div className="thin-scroll flex max-h-44 flex-wrap gap-2 overflow-y-auto pr-1">
                   {[{ id: '', name: 'Livre', done: false }, ...subjectTopics].map((t) => {
                     const on = t.id === topicId
                     return (
