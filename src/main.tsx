@@ -22,9 +22,10 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Router>
       <Routes>
+        {/* Check-in: tela cheia, separada do resto do site */}
+        <Route path="checkin" element={<CheckInPage />} />
         <Route element={<Layout />}>
           <Route index element={<HomePage />} />
-          <Route path="checkin" element={<CheckInPage />} />
           <Route path="calendario" element={<CalendarPage />} />
           <Route path="caderno" element={<NotebookPage />} />
           <Route path="caderno/:noteId" element={<NotebookPage />} />

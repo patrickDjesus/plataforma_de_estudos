@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { AlertTriangle, Plus, Repeat, Rocket, Trash2 } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight, CalendarRange, Check, Clock3, Layers, Plus, Repeat, Rocket, Target, Trash2, X } from 'lucide-react'
 import { db } from '../db/db'
 import { AREAS, useSubjects } from '../db/hooks'
-import { currentWeekId, getSettings, saveCheckin } from '../db/repo'
+import { addSubject, currentWeekId, getSettings, saveCheckin, updateSubject } from '../db/repo'
 import type { AreaId, AreaPercents, Availability } from '../db/types'
 import { AREA_COLOR } from '../lib/colors'
-import { DAY_NAMES, dayIndex, fmtTime, fmtWeekRange, parseTime } from '../lib/dates'
-import { Btn, Card } from '../components/ui'
+import { DAY_NAMES, addDays, dayIndex, fmtTime, fmtWeekRange, parseTime } from '../lib/dates'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { tint } from '../lib/colors'
-import { Capybara } from '../components/Capybara'
+import { Capybara, type CapiPose } from '../components/Capybara'
+import { LogoMark } from '../components/Logo'
+import { guessIcon } from '../components/SubjectIcon'
+import { useSettings } from '../db/hooks'
 
 const FAC_FLOOR = 66
 
@@ -35,6 +37,14 @@ function rebalance(p: AreaPercents, changed: AreaId, value: number): AreaPercent
   return next
 }
 
+type Step = 'inicio' | 'foco' | 'horarios' | 'materias' | 'resumo'
+const STEPS: { id: Exclude<Step, 'inicio'>; label: string; icon: typeof Target }[] = [
+  { id: 'foco', label: 'Foco', icon: Target },
+  { id: 'horarios', label: 'Horários', icon: Clock3 },
+  { id: 'materias', label: 'Matérias', icon: Layers },
+  { id: 'resumo', label: 'Resumo', icon: Check },
+]
+
 const totalMinutes = (av: Availability, fromDay = 0) => av.slice(fromDay).flat().reduce((acc, w) => acc + Math.max(0, w.end - w.start), 0)
 
 export function CheckInPage() {
@@ -47,6 +57,11 @@ export function CheckInPage() {
   const [paused, setPaused] = useState<string[]>([])
   const [confirmLow, setConfirmLow] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [step, setStep] = useState<Step>('inicio')
+  const [newSubject, setNewSubject] = useState<Record<string, string>>({})
+  const settings = useSettings()
+  const weekEnd = addDays(weekId, 6)
+  const reviewsThisWeek = useLiveQuery(() => db.reviews.where('due').belowOrEqual(weekEnd).count(), [weekEnd], 0)
   const today = dayIndex()
 
   useEffect(() => {
@@ -69,7 +84,7 @@ export function CheckInPage() {
   const submit = async (p = percents, av = availability, ps = paused) => {
     setSaving(true)
     await saveCheckin(weekId, p, av, ps)
-    navigate('/calendario')
+    navigate('/calendario', { replace: true })
   }
 
   const repeatLast = async () => {
@@ -101,105 +116,8 @@ export function CheckInPage() {
     setAvailability(next)
   }
 
-  return (
-    <div className="mx-auto max-w-4xl">
-      <div className="mb-8 flex flex-col items-center text-center">
-        <div className="flex items-end gap-1">
-          <Capybara pose="pensando" size={110} />
-          <div className="relative mb-12 rounded-2xl border border-line bg-white px-4 py-2.5 text-left text-sm font-semibold shadow-sm">
-            <span className="absolute bottom-3 -left-1.5 h-3 w-3 rotate-45 border-b border-l border-line bg-white" />
-            {existing ? 'Mudou alguma coisa na semana?' : 'Onde vai ser o foco desta semana?'}
-          </div>
-        </div>
-        <p className="mt-2 mb-2 rounded-full bg-brand-soft px-3 py-1 text-xs font-bold tracking-wider text-brand uppercase">{fmtWeekRange(weekId)}</p>
-        <h1 className="text-3xl font-extrabold sm:text-4xl">
-          {existing ? 'Reajustar a semana' : 'Nova semana, novo foco 🚀'}
-        </h1>
-        <p className="mt-2 text-muted">Defina onde quer colocar sua energia. O Mendonça monta a rota de estudos.</p>
-        {!existing && (
-          <Btn variant="soft" className="mt-5" onClick={repeatLast} disabled={saving}>
-            <Repeat size={16} /> Repetir a semana passada
-          </Btn>
-        )}
-      </div>
-
-      {subjects.length === 0 && (
-        <Card className="mb-6 border-amber-200 bg-amber-50/80">
-          <p className="text-sm text-amber-900">
-            Você ainda não cadastrou matérias, então o plano sairá vazio.{' '}
-            <button className="font-bold underline" onClick={() => navigate('/materias')}>
-              Cadastrar matérias primeiro
-            </button>
-          </p>
-        </Card>
-      )}
-
-      <Card className="mb-6">
-        <h2 className="mb-1 text-lg font-bold">1. Foco por área</h2>
-        <p className="mb-5 text-sm text-muted">
-          {today > 0 ? `Planejando de ${DAY_NAMES[today].toLowerCase()} em diante · ` : ''}
-          <b className="text-ink">{(minutes / 60).toFixed(1).replace('.0', '')}h</b> disponíveis
-        </p>
-        <div className="space-y-6">
-          {AREAS.map((a) => (
-            <div key={a.id}>
-              <div className="mb-2 flex items-center justify-between">
-                <span className="flex items-center gap-3 font-semibold">
-                  <span
-                    className="subject-icon h-9 w-9 rounded-xl font-display text-sm font-extrabold"
-                    style={{ background: `linear-gradient(145deg, ${AREA_COLOR[a.id]}, color-mix(in srgb, ${AREA_COLOR[a.id]} 72%, #000))` }}
-                  >
-                    <span className="relative z-10">{a.name[0]}</span>
-                  </span>
-                  {a.name}
-                </span>
-                <span className="text-sm">
-                  <b style={{ color: AREA_COLOR[a.id] }}>{percents[a.id]}%</b>
-                  <span className="text-muted"> = {((minutes * percents[a.id]) / 6000).toFixed(1).replace('.0', '')}h</span>
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={percents[a.id]}
-                onChange={(e) => {
-                  setPercents(rebalance(percents, a.id, Number(e.target.value)))
-                  setConfirmLow(false)
-                }}
-                className="h-3 w-full cursor-pointer appearance-none rounded-full"
-                style={{
-                  accentColor: AREA_COLOR[a.id],
-                  background: `linear-gradient(to right, ${AREA_COLOR[a.id]} ${percents[a.id]}%, #eef0f4 ${percents[a.id]}%)`,
-                }}
-              />
-            </div>
-          ))}
-        </div>
-        {lowFac && (
-          <div className="mt-5 flex items-start gap-3 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
-            <AlertTriangle size={18} className="mt-0.5 shrink-0" />
-            <div>
-              A Faculdade está abaixo de 2/3 do tempo ({FAC_FLOOR}%). Semana atípica?
-              <label className="mt-2 flex cursor-pointer items-center gap-2 font-semibold">
-                <input type="checkbox" checked={confirmLow} onChange={(e) => setConfirmLow(e.target.checked)} />
-                Sim, quero assim esta semana
-              </label>
-            </div>
-          </div>
-        )}
-      </Card>
-
-      <Card className="mb-6">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="mb-1 text-lg font-bold">2. Horários disponíveis</h2>
-            <p className="text-sm text-muted">Pré-preenchido com a semana anterior. Use os atalhos ou ajuste os horários.</p>
-          </div>
-          <button onClick={copyWeekdays} className="rounded-xl bg-[#f1f2f5] px-3 py-2 text-xs font-bold text-ink hover:bg-[#e8e9ee]" title="Usa os horários de segunda em todos os dias úteis">
-            Copiar segunda para seg–sex
-          </button>
-        </div>
+  const availabilityEditor = (
+      <>
         {/* Régua de horas */}
         <div className="mb-1 hidden pl-[118px] sm:block">
           <div className="relative h-4 text-[10px] font-semibold text-muted">
@@ -274,44 +192,334 @@ export function CheckInPage() {
             )
           })}
         </div>
-      </Card>
+      </>
+  )
 
-      {subjects.length > 0 && (
-        <Card className="mb-8">
-          <h2 className="mb-1 text-lg font-bold">3. Matérias desta semana</h2>
-          <p className="mb-4 text-sm text-muted">Desligue as que vão ficar de fora só nesta semana.</p>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2">
-            {subjects.map((s) => {
-              const isPaused = paused.includes(s.id)
+  const name = settings.userName?.trim() || 'estudante'
+  const stepIdx = STEPS.findIndex((x) => x.id === step)
+  const go = (dir: 1 | -1) => {
+    if (step === 'inicio') return setStep('foco')
+    const i = stepIdx + dir
+    setStep(i < 0 ? 'inicio' : STEPS[Math.min(i, STEPS.length - 1)].id)
+  }
+  const canContinue = step !== 'foco' || canSave
+  const hours = (m: number) => `${(m / 60).toFixed(1).replace('.0', '')}h`
+  const active = subjects.filter((s) => !paused.includes(s.id))
+
+  const CAPI: Record<Step, { pose: CapiPose; text: string }> = {
+    inicio: { pose: 'acenando', text: existing ? `Oi, ${name}! Mudou alguma coisa? Bora reajustar a semana.` : `Oi, ${name}! Semana nova chegando. Bora planejar juntos?` },
+    foco: { pose: 'pensando', text: 'Onde você quer colocar sua energia esta semana?' },
+    horarios: { pose: 'focado', text: 'Quando você vai ter tempo livre para estudar?' },
+    materias: { pose: 'relaxando', text: subjects.length ? 'Alguma matéria vai ficar de fora esta semana?' : 'Primeiro me conta: o que você está estudando?' },
+    resumo: { pose: 'comemorando', text: 'Tudo pronto! Confere aí antes de eu montar sua rota.' },
+  }
+  const capi = CAPI[step]
+
+  const quickAdd = async (areaId: AreaId) => {
+    const n = (newSubject[areaId] ?? '').trim()
+    if (!n) return
+    const id = await addSubject(areaId, n)
+    await updateSubject(id, { icon: guessIcon(n) })
+    setNewSubject({ ...newSubject, [areaId]: '' })
+  }
+
+  return (
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#f3f4f7]">
+      {/* fundo decorativo */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-40 -left-40 h-[520px] w-[520px] rounded-full bg-[#3e63f2]/12 blur-3xl" />
+        <div className="absolute top-1/3 -right-40 h-[480px] w-[480px] rounded-full bg-[#ff9a3d]/12 blur-3xl" />
+        <div className="absolute -bottom-40 left-1/3 h-[420px] w-[420px] rounded-full bg-[#2fd89a]/10 blur-3xl" />
+      </div>
+
+      {/* topo */}
+      <header className="relative z-10 flex items-center justify-between gap-4 px-6 py-5">
+        <div className="flex items-center gap-2.5">
+          <LogoMark size={38} />
+          <div className="leading-none">
+            <div className="font-display text-[17px] font-bold">Mendonça</div>
+            <div className="mt-1 text-[10px] font-semibold tracking-[0.18em] text-muted uppercase">Check-in da semana</div>
+          </div>
+        </div>
+        {step !== 'inicio' && (
+          <ol className="hidden items-center gap-2 md:flex">
+            {STEPS.map((x, i) => {
+              const Icon = x.icon
+              const state = i < stepIdx ? 'feito' : i === stepIdx ? 'atual' : 'depois'
               return (
-                <button
-                  key={s.id}
-                  onClick={() => setPaused(isPaused ? paused.filter((p) => p !== s.id) : [...paused, s.id])}
-                  className={`flex items-center gap-3 rounded-2xl border p-2.5 text-left transition ${isPaused ? 'border-line bg-[#fafbfc]' : 'border-transparent'}`}
-                  style={isPaused ? undefined : { background: tint(s.color, 0.08), boxShadow: `inset 0 0 0 1.5px ${tint(s.color, 0.35)}` }}
-                >
-                  <span className={isPaused ? 'opacity-40 grayscale' : ''}>
-                    <SubjectIcon subject={s} size={36} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className={`block truncate text-sm font-bold ${isPaused ? 'text-muted line-through' : ''}`}>{s.name}</span>
-                    <span className="text-[11px] text-muted">{isPaused ? 'Pausada' : `Peso ${s.weight}${s.mandatory ? ' · obrigatória' : ''}`}</span>
-                  </span>
-                  <span className={`relative h-5 w-9 shrink-0 rounded-full transition ${isPaused ? 'bg-slate-300' : ''}`} style={isPaused ? undefined : { background: s.color }}>
-                    <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${isPaused ? 'left-0.5' : 'left-[18px]'}`} />
-                  </span>
-                </button>
+                <li key={x.id} className="flex items-center gap-2">
+                  <button
+                    onClick={() => i <= stepIdx && setStep(x.id)}
+                    className={`flex items-center gap-2 rounded-full py-1.5 pr-3.5 pl-1.5 text-sm font-semibold transition ${
+                      state === 'atual' ? 'bg-white text-ink shadow-sm' : state === 'feito' ? 'text-brand' : 'text-muted'
+                    }`}
+                  >
+                    <span className={`grid h-7 w-7 place-items-center rounded-full ${state === 'depois' ? 'bg-white/70 text-muted' : 'bg-brand text-white'}`}>
+                      {state === 'feito' ? <Check size={15} /> : <Icon size={15} />}
+                    </span>
+                    {x.label}
+                  </button>
+                  {i < STEPS.length - 1 && <span className={`h-0.5 w-6 rounded ${i < stepIdx ? 'bg-brand' : 'bg-slate-300/70'}`} />}
+                </li>
               )
             })}
-          </div>
-        </Card>
-      )}
+          </ol>
+        )}
+        <button
+          onClick={() => navigate(existing ? '/calendario' : '/materias')}
+          className="flex items-center gap-1.5 rounded-full bg-white/70 px-3.5 py-2 text-sm font-semibold text-slate-600 backdrop-blur hover:bg-white"
+          title={existing ? 'Voltar sem mudar nada' : 'Entrar no site sem planejar agora'}
+        >
+          <X size={16} /> {existing ? 'Fechar' : 'Pular por agora'}
+        </button>
+      </header>
 
-      <div className="flex justify-center pb-10">
-        <Btn variant="primary" className="px-8 py-3 text-base" onClick={() => submit()} disabled={!canSave || saving}>
-          <Rocket size={18} /> {existing ? 'Salvar e regerar plano' : 'Gerar minha semana'}
-        </Btn>
+      <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 pb-6 lg:flex-row lg:items-start lg:gap-10">
+        {/* Capi perguntando */}
+        <aside className="flex shrink-0 items-end gap-2 lg:sticky lg:top-8 lg:w-[300px] lg:flex-col lg:items-start">
+          <div key={step} className="capi-pop relative order-2 rounded-[22px] border border-line bg-white px-5 py-4 shadow-[0_18px_40px_-20px_rgba(16,24,40,0.35)] lg:order-1">
+            <p className="font-display text-lg leading-snug font-bold text-ink">{capi.text}</p>
+            <span className="absolute bottom-5 -left-2 h-4 w-4 rotate-45 border-b border-l border-line bg-white lg:-bottom-2 lg:left-14 lg:border-t-0 lg:border-r lg:border-b lg:border-l-0" />
+          </div>
+          <div className="order-1 shrink-0 lg:order-2 lg:pl-4">
+            <Capybara key={capi.pose} pose={capi.pose} size={step === 'inicio' ? 190 : 150} />
+          </div>
+        </aside>
+
+        {/* Conteúdo do passo */}
+        <section key={`s-${step}`} className="capi-pop min-w-0 flex-1">
+          {step === 'inicio' && (
+            <div className="rounded-[28px] border border-line bg-white p-8 shadow-[0_20px_50px_-28px_rgba(16,24,40,0.35)] sm:p-10">
+              <p className="mb-3 inline-flex rounded-full bg-brand-soft px-3 py-1 text-xs font-bold tracking-wider text-brand uppercase">{fmtWeekRange(weekId)}</p>
+              <h1 className="text-4xl font-extrabold sm:text-5xl">{existing ? 'Reajustar a semana' : 'Nova semana, novo foco'}</h1>
+              <p className="mt-3 max-w-lg text-muted">
+                Em 4 passos rápidos você define o foco por área, seus horários e as matérias da semana. Eu monto a rota de estudos com revisões incluídas.
+              </p>
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                <button onClick={() => setStep('foco')} className="group flex items-center gap-4 rounded-2xl bg-brand p-5 text-left text-white shadow-[0_14px_30px_-14px_rgba(62,99,242,0.9)] transition hover:-translate-y-0.5">
+                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/20">
+                    <CalendarRange size={24} />
+                  </span>
+                  <span className="flex-1">
+                    <span className="block font-display text-lg font-bold">Planejar esta semana</span>
+                    <span className="text-sm text-white/80">Responder as perguntas</span>
+                  </span>
+                  <ArrowRight className="transition group-hover:translate-x-1" />
+                </button>
+                {!existing && subjects.length > 0 && (
+                  <button onClick={repeatLast} disabled={saving} className="group flex items-center gap-4 rounded-2xl border border-line bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-brand/40">
+                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand">
+                      <Repeat size={24} />
+                    </span>
+                    <span className="flex-1">
+                      <span className="block font-display text-lg font-bold">Repetir a semana passada</span>
+                      <span className="text-sm text-muted">Mesmo foco e horários, num clique</span>
+                    </span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {step === 'foco' && (
+            <StepCard title="Foco por área" subtitle={`${today > 0 ? `Planejando de ${DAY_NAMES[today].toLowerCase()} em diante · ` : ''}${hours(minutes)} disponíveis`}>
+              <div className="space-y-7">
+                {AREAS.map((a) => (
+                  <div key={a.id}>
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="flex items-center gap-3 font-semibold">
+                        <span className="subject-icon h-11 w-11 rounded-[14px] font-display text-base font-extrabold" style={{ background: `linear-gradient(145deg, ${AREA_COLOR[a.id]}, color-mix(in srgb, ${AREA_COLOR[a.id]} 72%, #000))` }}>
+                          <span className="relative z-10">{a.name[0]}</span>
+                        </span>
+                        <span className="text-lg">{a.name}</span>
+                      </span>
+                      <span className="text-right">
+                        <span className="font-display text-2xl font-extrabold tabular-nums" style={{ color: AREA_COLOR[a.id] }}>
+                          {percents[a.id]}%
+                        </span>
+                        <span className="block text-xs text-muted">{hours((minutes * percents[a.id]) / 100)}</span>
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={percents[a.id]}
+                      aria-label={`Foco em ${a.name}`}
+                      onChange={(e) => {
+                        setPercents(rebalance(percents, a.id, Number(e.target.value)))
+                        setConfirmLow(false)
+                      }}
+                      className="h-3.5 w-full cursor-pointer appearance-none rounded-full"
+                      style={{ accentColor: AREA_COLOR[a.id], background: `linear-gradient(to right, ${AREA_COLOR[a.id]} ${percents[a.id]}%, #eef0f4 ${percents[a.id]}%)` }}
+                    />
+                  </div>
+                ))}
+              </div>
+              {lowFac && (
+                <div className="mt-6 flex items-start gap-3 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
+                  <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+                  <div>
+                    A Faculdade está abaixo de 2/3 do tempo ({FAC_FLOOR}%). Semana atípica?
+                    <label className="mt-2 flex cursor-pointer items-center gap-2 font-semibold">
+                      <input type="checkbox" checked={confirmLow} onChange={(e) => setConfirmLow(e.target.checked)} />
+                      Sim, quero assim esta semana
+                    </label>
+                  </div>
+                </div>
+              )}
+            </StepCard>
+          )}
+
+          {step === 'horarios' && (
+            <StepCard
+              title="Horários disponíveis"
+              subtitle={`Pré-preenchido com a semana anterior · ${hours(minutes)} livres`}
+              action={
+                <button onClick={copyWeekdays} className="rounded-xl bg-[#f1f2f5] px-3 py-2 text-xs font-bold text-ink hover:bg-[#e8e9ee]" title="Usa os horários de segunda em todos os dias úteis">
+                  Copiar segunda para seg–sex
+                </button>
+              }
+            >
+              {availabilityEditor}
+            </StepCard>
+          )}
+
+          {step === 'materias' && (
+            <StepCard title="Matérias desta semana" subtitle={subjects.length ? 'Desligue as que vão ficar de fora só nesta semana.' : 'Cadastre ao menos uma matéria. Depois você detalha os tópicos em Matérias.'}>
+              {subjects.length > 0 && (
+                <div className="mb-6 grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-2">
+                  {subjects.map((s) => {
+                    const isPaused = paused.includes(s.id)
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => setPaused(isPaused ? paused.filter((p) => p !== s.id) : [...paused, s.id])}
+                        className={`flex items-center gap-3 rounded-2xl border p-2.5 text-left transition ${isPaused ? 'border-line bg-[#fafbfc]' : 'border-transparent'}`}
+                        style={isPaused ? undefined : { background: tint(s.color, 0.08), boxShadow: `inset 0 0 0 1.5px ${tint(s.color, 0.35)}` }}
+                      >
+                        <span className={isPaused ? 'opacity-40 grayscale' : ''}>
+                          <SubjectIcon subject={s} size={38} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className={`block truncate text-sm font-bold ${isPaused ? 'text-muted line-through' : ''}`}>{s.name}</span>
+                          <span className="text-[11px] text-muted">{isPaused ? 'Pausada' : `Peso ${s.weight}${s.mandatory ? ' · obrigatória' : ''}`}</span>
+                        </span>
+                        <span className={`relative h-5 w-9 shrink-0 rounded-full transition ${isPaused ? 'bg-slate-300' : ''}`} style={isPaused ? undefined : { background: s.color }}>
+                          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${isPaused ? 'left-0.5' : 'left-[18px]'}`} />
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              <div className="rounded-2xl bg-[#f6f7f9] p-4">
+                <div className="mb-3 text-xs font-semibold tracking-wider text-muted uppercase">Adicionar matéria</div>
+                <div className="grid gap-2 md:grid-cols-3">
+                  {AREAS.map((a) => (
+                    <div key={a.id} className="flex gap-1.5">
+                      <input
+                        id={`checkin-new-${a.id}`}
+                        value={newSubject[a.id] ?? ''}
+                        onChange={(e) => setNewSubject({ ...newSubject, [a.id]: e.target.value })}
+                        onKeyDown={(e) => e.key === 'Enter' && quickAdd(a.id)}
+                        placeholder={a.name}
+                        className="w-full min-w-0 rounded-xl border border-line bg-white px-3 py-2 text-sm outline-none focus:border-brand/50 focus:ring-4 focus:ring-brand/10"
+                        style={{ borderLeft: `4px solid ${AREA_COLOR[a.id]}` }}
+                      />
+                      <button onClick={() => quickAdd(a.id)} className="grid w-10 shrink-0 place-items-center rounded-xl text-white" style={{ background: AREA_COLOR[a.id] }} aria-label={`Adicionar em ${a.name}`}>
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </StepCard>
+          )}
+
+          {step === 'resumo' && (
+            <StepCard title="Sua semana" subtitle={fmtWeekRange(weekId)}>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {AREAS.map((a) => (
+                  <div key={a.id} className="rounded-2xl p-4" style={{ background: tint(AREA_COLOR[a.id], 0.08), boxShadow: `inset 0 0 0 1.5px ${tint(AREA_COLOR[a.id], 0.3)}` }}>
+                    <div className="text-sm font-semibold" style={{ color: AREA_COLOR[a.id] }}>
+                      {a.name}
+                    </div>
+                    {active.some((s) => s.areaId === a.id) ? (
+                      <>
+                        <div className="mt-1 font-display text-3xl font-extrabold">{hours((minutes * percents[a.id]) / 100)}</div>
+                        <div className="text-xs text-muted">
+                          {percents[a.id]}% · {active.filter((s) => s.areaId === a.id).length} matéria(s)
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="mt-1 font-display text-3xl font-extrabold text-muted">—</div>
+                        <div className="text-xs text-muted">Sem matérias: o tempo vai para as outras áreas</div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <Summary label="Tempo total" value={hours(minutes)} />
+                <Summary label="Blocos de estudo" value={`≈ ${Math.max(0, Math.round(minutes / ((settings.blockMinutes ?? 50) + (settings.breakMinutes ?? 10))))}`} />
+                <Summary label="Revisões na semana" value={`${reviewsThisWeek}`} />
+              </div>
+              {active.length === 0 && <p className="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">Nenhuma matéria ativa: o plano sairá vazio. Volte um passo e cadastre ou ligue uma matéria.</p>}
+              <button
+                onClick={() => submit()}
+                disabled={!canSave || saving}
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand py-4 font-display text-lg font-bold text-white shadow-[0_16px_34px_-14px_rgba(62,99,242,0.9)] transition hover:-translate-y-0.5 disabled:opacity-50"
+              >
+                <Rocket size={20} /> {saving ? 'Montando…' : existing ? 'Salvar e regerar plano' : 'Gerar minha semana'}
+              </button>
+            </StepCard>
+          )}
+
+          {step !== 'inicio' && (
+            <div className="mt-5 flex items-center justify-between">
+              <button onClick={() => go(-1)} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-white">
+                <ArrowLeft size={16} /> Voltar
+              </button>
+              {step !== 'resumo' && (
+                <button
+                  onClick={() => go(1)}
+                  disabled={!canContinue}
+                  className="flex items-center gap-2 rounded-xl bg-ink px-5 py-2.5 text-sm font-bold text-white transition hover:bg-black disabled:opacity-40"
+                >
+                  Continuar <ArrowRight size={16} />
+                </button>
+              )}
+            </div>
+          )}
+        </section>
+      </main>
+    </div>
+  )
+
+}
+
+function StepCard({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="rounded-[28px] border border-line bg-white p-6 shadow-[0_20px_50px_-28px_rgba(16,24,40,0.35)] sm:p-8">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold">{title}</h2>
+          {subtitle && <p className="mt-0.5 text-sm text-muted">{subtitle}</p>}
+        </div>
+        {action}
       </div>
+      {children}
+    </div>
+  )
+}
+
+function Summary({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-[#f6f7f9] p-4">
+      <div className="text-xs font-semibold text-muted">{label}</div>
+      <div className="mt-1 font-display text-2xl font-bold">{value}</div>
     </div>
   )
 }
