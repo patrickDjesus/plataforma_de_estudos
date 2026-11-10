@@ -376,7 +376,7 @@ export async function stopTimer(markDone = false) {
 
 // ---------- Backup ----------
 
-const TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews'] as const
+const TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews', 'mapPositions', 'mapLinks', 'achievements'] as const
 
 export async function exportBackup(): Promise<string> {
   const data: Record<string, unknown[]> = {}

@@ -126,3 +126,23 @@ export interface TimerState {
   startedAt: number | null // ms; null = pausado
   accumulated: number // segundos acumulados antes do último start
 }
+
+/** Posição salva de um nó no mapa mental (id do nó: "s:<id>", "t:<id>", "n:<id>"). */
+export interface MapPosition {
+  id: string
+  x: number
+  y: number
+}
+
+/** Ligação criada à mão no mapa mental. */
+export interface MapLink {
+  id: string
+  source: string
+  target: string
+  createdAt: number
+}
+
+export interface UnlockedAchievement {
+  id: string
+  unlockedAt: number
+}

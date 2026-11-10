@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { BookOpen, CalendarRange, House, Layers, Settings } from 'lucide-react'
+import { BookOpen, CalendarRange, House, Layers, Settings, Waypoints } from 'lucide-react'
 import { db } from '../db/db'
 import { currentWeekId } from '../db/repo'
 import { TimerPill } from './TimerPill'
@@ -12,6 +12,7 @@ const NAV = [
   { to: '/', label: 'Início', icon: House },
   { to: '/calendario', label: 'Semana', icon: CalendarRange },
   { to: '/caderno', label: 'Caderno', icon: BookOpen },
+  { to: '/mapa', label: 'Mapa', icon: Waypoints },
   { to: '/materias', label: 'Matérias', icon: Layers },
   { to: '/config', label: 'Ajustes', icon: Settings },
 ]

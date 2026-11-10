@@ -14,9 +14,10 @@ import { XP_PER_BLOCK, levelInfo, xpFrom } from '../lib/xp'
 import { LogoMark } from '../components/Logo'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
+import { AchievementsSection } from '../components/Achievements'
 import { Card, Ring, Tabs } from '../components/ui'
 
-type Section = 'geral' | 'resultados' | 'metas'
+type Section = 'geral' | 'resultados' | 'metas' | 'conquistas'
 type Scope = 'hoje' | 'semana'
 
 export function HomePage() {
@@ -139,6 +140,7 @@ export function HomePage() {
           <SideItem active={section === 'geral'} onClick={() => setSection('geral')} icon={<Globe2 size={22} />} label="Geral" />
           <SideItem active={section === 'resultados'} onClick={() => setSection('resultados')} icon={<BarChart3 size={22} />} label="Resultados" />
           <SideItem active={section === 'metas'} onClick={() => setSection('metas')} icon={<Target size={22} />} label="Metas" />
+          <SideItem active={section === 'conquistas'} onClick={() => setSection('conquistas')} icon={<Trophy size={22} />} label="Conquistas" />
         </aside>
 
         <div className="min-w-0 flex-1 p-5">
@@ -253,6 +255,7 @@ export function HomePage() {
 
           {section === 'resultados' && <Results weekId={weekId} />}
           {section === 'metas' && <WeekGoals weekId={weekId} />}
+          {section === 'conquistas' && <AchievementsSection />}
         </div>
       </div>
     </div>

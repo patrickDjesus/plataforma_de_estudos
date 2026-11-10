@@ -8,6 +8,7 @@ import { addDays, minutesNow, toISODate } from '../lib/dates'
 import { capiQuestion, capiWelcome, type CapiContext } from '../lib/capiTalk'
 import { onMascot, showMascot, type MascotMessage } from '../lib/mascotBus'
 import { levelInfo, xpFrom } from '../lib/xp'
+import { achievements, computeStats } from '../lib/achievements'
 import { Capybara } from './Capybara'
 
 /**
@@ -26,7 +27,10 @@ export function MascotHost() {
   const data = useLiveQuery(async () => {
     const weekId = currentWeekId()
     const todayIso = toISODate(new Date())
-    const [reviews, settings, subjectsCount, week, todayBlocks, notesCount, timer, sessions, doneBlocks, topics, subjects] = await Promise.all([
+    const [unlocked, allBlocks, notes, reviews, settings, subjectsCount, week, todayBlocks, notesCount, timer, sessions, doneBlocks, topics, subjects] = await Promise.all([
+      db.achievements.toArray(),
+      db.blocks.toArray(),
+      db.notes.toArray(),
       db.reviews.toArray(),
       db.settings.get('main'),
       db.subjects.count(),
@@ -39,7 +43,7 @@ export function MascotHost() {
       db.topics.toArray(),
       db.subjects.toArray(),
     ])
-    return { reviews, settings, subjectsCount, week, todayBlocks, notesCount, timer, sessions, doneBlocks, topics, subjects, todayIso }
+    return { unlocked, allBlocks, notes, reviews, settings, subjectsCount, week, todayBlocks, notesCount, timer, sessions, doneBlocks, topics, subjects, todayIso }
   }, [])
 
   const say = useCallback((m: MascotMessage) => {
@@ -132,6 +136,28 @@ export function MascotHost() {
       )
     }
     lastLevel.current = lvl
+  }, [data])
+
+  // Conquistas novas: o Capi comemora (na primeira vez, registra sem alarde)
+  useEffect(() => {
+    if (!data) return
+    const list = achievements(computeStats({ sessions: data.sessions, blocks: data.allBlocks, reviews: data.reviews, notes: data.notes, subjects: data.subjects }))
+    const known = new Set(data.unlocked.map((u) => u.id))
+    const fresh = list.filter((a) => a.unlocked && !known.has(a.id))
+    if (!fresh.length) return
+    db.achievements.bulkPut(fresh.map((a) => ({ id: a.id, unlockedAt: Date.now() })))
+    if (!data.unlocked.length && fresh.length > 1) return // estado já existente antes da V3
+    const a = fresh[0]
+    window.setTimeout(
+      () =>
+        showMascot({
+          pose: 'comemorando',
+          title: `🏆 Conquista: ${a.title}`,
+          text: `${a.description} Desbloqueada!${fresh.length > 1 ? ` E mais ${fresh.length - 1}.` : ''}`,
+          actions: [{ label: 'Ver conquistas', primary: true, to: '/' }, { label: 'Uhuul!' }],
+        }),
+      7000,
+    )
   }, [data])
 
   const ask = () => {

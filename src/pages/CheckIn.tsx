@@ -8,10 +8,18 @@ import { currentWeekId, getSettings, saveCheckin } from '../db/repo'
 import type { AreaId, AreaPercents, Availability } from '../db/types'
 import { AREA_COLOR } from '../lib/colors'
 import { DAY_NAMES, dayIndex, fmtTime, fmtWeekRange, parseTime } from '../lib/dates'
-import { Btn, Card, Chip } from '../components/ui'
+import { Btn, Card } from '../components/ui'
+import { SubjectIcon } from '../components/SubjectIcon'
+import { tint } from '../lib/colors'
 import { Capybara } from '../components/Capybara'
 
 const FAC_FLOOR = 66
+
+const PRESETS = [
+  { label: 'Manhã', start: 8 * 60, end: 12 * 60 },
+  { label: 'Tarde', start: 14 * 60, end: 18 * 60 },
+  { label: 'Noite', start: 19 * 60, end: 22 * 60 },
+]
 
 /** Ajusta uma área e redistribui o restante entre as outras, mantendo soma 100. */
 function rebalance(p: AreaPercents, changed: AreaId, value: number): AreaPercents {
@@ -81,6 +89,12 @@ export function CheckInPage() {
     next[day].push({ start, end: Math.min(start + 120, 23 * 60 + 59) })
     setAvailability(next)
   }
+  const addPreset = (day: number, start: number, end: number) => {
+    const next = availability.map((d) => [...d])
+    if (!next[day].some((w) => w.start === start && w.end === end)) next[day] = [...next[day], { start, end }].sort((a, b) => a.start - b.start)
+    setAvailability(next)
+  }
+  const copyWeekdays = () => setAvailability(availability.map((d, i) => (i >= 1 && i <= 4 ? availability[0].map((w) => ({ ...w })) : d)))
   const removeWin = (day: number, idx: number) => {
     const next = availability.map((d) => [...d])
     next[day].splice(idx, 1)
@@ -177,45 +191,115 @@ export function CheckInPage() {
       </Card>
 
       <Card className="mb-6">
-        <h2 className="mb-1 text-lg font-bold">2. Horários disponíveis</h2>
-        <p className="mb-4 text-sm text-muted">Pré-preenchido com a semana anterior. Ajuste o que mudou.</p>
-        <div className="divide-y divide-line">
-          {DAY_NAMES.map((name, day) => (
-            <div key={day} className={`flex flex-wrap items-center gap-3 py-3 ${day < today ? 'opacity-40' : ''}`}>
-              <span className="w-20 text-sm font-semibold">{name}</span>
-              <div className="flex flex-1 flex-wrap gap-2">
-                {availability[day].length === 0 && <span className="text-sm text-muted">Livre de estudos</span>}
-                {availability[day].map((w, idx) => (
-                  <div key={idx} className="flex items-center gap-1 rounded-xl bg-slate-50 px-2 py-1">
-                    <input type="time" value={fmtTime(w.start)} onChange={(e) => setWin(day, idx, 'start', e.target.value)} className="bg-transparent text-sm outline-none" />
-                    <span className="text-muted">–</span>
-                    <input type="time" value={fmtTime(w.end)} onChange={(e) => setWin(day, idx, 'end', e.target.value)} className="bg-transparent text-sm outline-none" />
-                    <button onClick={() => removeWin(day, idx)} className="ml-1 text-slate-400 hover:text-rose-600" aria-label="Remover horário">
-                      <Trash2 size={14} />
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="mb-1 text-lg font-bold">2. Horários disponíveis</h2>
+            <p className="text-sm text-muted">Pré-preenchido com a semana anterior. Use os atalhos ou ajuste os horários.</p>
+          </div>
+          <button onClick={copyWeekdays} className="rounded-xl bg-[#f1f2f5] px-3 py-2 text-xs font-bold text-ink hover:bg-[#e8e9ee]" title="Usa os horários de segunda em todos os dias úteis">
+            Copiar segunda para seg–sex
+          </button>
+        </div>
+        {/* Régua de horas */}
+        <div className="mb-1 hidden pl-[118px] sm:block">
+          <div className="relative h-4 text-[10px] font-semibold text-muted">
+            {[6, 9, 12, 15, 18, 21, 24].map((h) => (
+              <span key={h} className="absolute -translate-x-1/2" style={{ left: `${((h - 6) / 18) * 100}%` }}>
+                {h}h
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2">
+          {DAY_NAMES.map((name, day) => {
+            const wins = availability[day]
+            const mins = wins.reduce((a, w) => a + Math.max(0, w.end - w.start), 0)
+            const past = day < today
+            return (
+              <div key={day} className={`rounded-2xl border border-line p-3 transition ${past ? 'opacity-40' : 'hover:border-slate-300'}`}>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="w-[106px] shrink-0">
+                    <div className="text-sm font-bold">{name}</div>
+                    <div className="text-xs text-muted">{mins ? `${(mins / 60).toFixed(1).replace('.0', '')}h livres` : 'sem estudo'}</div>
+                  </div>
+                  {/* Linha do tempo 6h–24h */}
+                  <div className="relative hidden h-7 flex-1 overflow-hidden rounded-full bg-[#f1f2f5] sm:block">
+                    {[9, 12, 15, 18, 21].map((h) => (
+                      <span key={h} className="absolute top-0 bottom-0 w-px bg-white" style={{ left: `${((h - 6) / 18) * 100}%` }} />
+                    ))}
+                    {wins.map((w, i) => {
+                      const a = Math.max(0, (w.start - 360) / (18 * 60))
+                      const b = Math.min(1, (w.end - 360) / (18 * 60))
+                      if (b <= a) return null
+                      return (
+                        <span
+                          key={i}
+                          className="absolute top-1 bottom-1 rounded-full bg-gradient-to-r from-[#5b7cff] to-[#3e63f2] shadow-[0_4px_10px_-4px_rgba(62,99,242,0.8)]"
+                          style={{ left: `${a * 100}%`, width: `${(b - a) * 100}%` }}
+                        />
+                      )
+                    })}
+                  </div>
+                  <div className="flex gap-1">
+                    {PRESETS.map((p) => (
+                      <button
+                        key={p.label}
+                        onClick={() => addPreset(day, p.start, p.end)}
+                        className="rounded-full border border-line px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-brand/40 hover:bg-brand-soft hover:text-brand"
+                        title={`${fmtTime(p.start)}–${fmtTime(p.end)}`}
+                      >
+                        + {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {wins.length > 0 && (
+                  <div className="mt-2.5 flex flex-wrap gap-2 sm:pl-[118px]">
+                    {wins.map((w, idx) => (
+                      <div key={idx} className="flex items-center gap-1.5 rounded-xl bg-brand-soft py-1 pr-1.5 pl-3 text-brand">
+                        <input type="time" value={fmtTime(w.start)} onChange={(e) => setWin(day, idx, 'start', e.target.value)} className="bg-transparent text-sm font-bold outline-none" aria-label="Início" />
+                        <span className="opacity-60">→</span>
+                        <input type="time" value={fmtTime(w.end)} onChange={(e) => setWin(day, idx, 'end', e.target.value)} className="bg-transparent text-sm font-bold outline-none" aria-label="Fim" />
+                        <button onClick={() => removeWin(day, idx)} className="rounded-lg p-1 opacity-60 hover:bg-white hover:text-rose-600 hover:opacity-100" aria-label="Remover horário">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    <button onClick={() => addWin(day)} className="flex items-center gap-1 rounded-xl border border-dashed border-line px-3 py-1 text-xs font-semibold text-muted hover:border-brand/40 hover:text-brand">
+                      <Plus size={14} /> horário
                     </button>
                   </div>
-                ))}
+                )}
               </div>
-              <button onClick={() => addWin(day)} className="rounded-lg p-1.5 text-brand hover:bg-brand-soft" aria-label={`Adicionar horário na ${name}`}>
-                <Plus size={16} />
-              </button>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </Card>
 
       {subjects.length > 0 && (
         <Card className="mb-8">
-          <h2 className="mb-1 text-lg font-bold">3. Pausar matérias nesta semana</h2>
-          <p className="mb-4 text-sm text-muted">Clique para pausar (ficam fora do plano só nesta semana).</p>
-          <div className="flex flex-wrap gap-2">
+          <h2 className="mb-1 text-lg font-bold">3. Matérias desta semana</h2>
+          <p className="mb-4 text-sm text-muted">Desligue as que vão ficar de fora só nesta semana.</p>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2">
             {subjects.map((s) => {
               const isPaused = paused.includes(s.id)
               return (
-                <button key={s.id} onClick={() => setPaused(isPaused ? paused.filter((p) => p !== s.id) : [...paused, s.id])}>
-                  <Chip color={isPaused ? '#94a3b8' : s.color} className={isPaused ? 'line-through' : ''}>
-                    {s.name}
-                  </Chip>
+                <button
+                  key={s.id}
+                  onClick={() => setPaused(isPaused ? paused.filter((p) => p !== s.id) : [...paused, s.id])}
+                  className={`flex items-center gap-3 rounded-2xl border p-2.5 text-left transition ${isPaused ? 'border-line bg-[#fafbfc]' : 'border-transparent'}`}
+                  style={isPaused ? undefined : { background: tint(s.color, 0.08), boxShadow: `inset 0 0 0 1.5px ${tint(s.color, 0.35)}` }}
+                >
+                  <span className={isPaused ? 'opacity-40 grayscale' : ''}>
+                    <SubjectIcon subject={s} size={36} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className={`block truncate text-sm font-bold ${isPaused ? 'text-muted line-through' : ''}`}>{s.name}</span>
+                    <span className="text-[11px] text-muted">{isPaused ? 'Pausada' : `Peso ${s.weight}${s.mandatory ? ' · obrigatória' : ''}`}</span>
+                  </span>
+                  <span className={`relative h-5 w-9 shrink-0 rounded-full transition ${isPaused ? 'bg-slate-300' : ''}`} style={isPaused ? undefined : { background: s.color }}>
+                    <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${isPaused ? 'left-0.5' : 'left-[18px]'}`} />
+                  </span>
                 </button>
               )
             })}

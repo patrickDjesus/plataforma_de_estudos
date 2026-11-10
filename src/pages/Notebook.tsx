@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ChevronDown, ChevronRight, FilePlus2, FileText, Link2, Search, Trash2 } from 'lucide-react'
+import { Waypoints, ChevronDown, ChevronRight, FilePlus2, FileText, Link2, Search, Trash2 } from 'lucide-react'
 import { AREAS, useNote, useNotes, useSubjects, useTopics } from '../db/hooks'
 import { createNote, deleteNote, updateNote } from '../db/repo'
 import { db } from '../db/db'
@@ -190,6 +190,9 @@ export function NotebookPage() {
                   ))}
               </select>
               <span className="ml-auto text-xs text-muted">Salvo automaticamente</span>
+              <button onClick={() => navigate(`/mapa?nota=${note.id}`)} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-brand hover:bg-brand-soft" title="Ver as conexões desta nota no mapa">
+                <Waypoints size={14} /> Ver no mapa
+              </button>
               <button
                 onClick={async () => {
                   if (!(await askConfirm(`Excluir a nota "${note.title}"?`))) return
