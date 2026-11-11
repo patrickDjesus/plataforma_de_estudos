@@ -14,7 +14,7 @@ import { XP_PER_BLOCK, levelInfo, xpFrom } from '../lib/xp'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
 import { AchievementsSection } from '../components/Achievements'
-import { RankEmblem, RankLine, RankSection, useRankWatcher } from '../components/Rank'
+import { RankEmblem, RankFrame, RankLine, RankSection, useRankWatcher } from '../components/Rank'
 import { loadRank } from '../db/rank'
 import { ChallengeModal } from '../components/ChallengeModal'
 import { useMastery } from '../db/mastery'
@@ -96,9 +96,11 @@ export function HomePage() {
     <div className="space-y-5">
       {/* Cabeçalho */}
       <Card className="flex flex-wrap items-center gap-x-6 gap-y-5 px-6 py-5">
-        <div className="flex min-w-0 flex-1 basis-56 items-center gap-4">
+        <div className="flex min-w-0 flex-1 basis-56 items-center gap-3">
           <button onClick={() => setSection('rank')} title="Ver seu rank" className="transition hover:-translate-y-0.5 hover:scale-105">
-            <RankEmblem pos={rankState?.pos ?? 0} size={58} />
+            <RankFrame pos={rankState?.pos ?? 0} size={74}>
+              <RankEmblem pos={rankState?.pos ?? 0} size={62} />
+            </RankFrame>
           </button>
           <div className="min-w-0">
             <h1 className="truncate text-xl font-bold">Olá, {name}! 👋</h1>

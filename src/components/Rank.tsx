@@ -1,67 +1,11 @@
-import { useEffect, useId, useRef } from 'react'
+import { useEffect, useRef } from 'react'
+import { RankEmblem, RankFrame } from './RankArt'
 import { ChevronsDown, ChevronsUp, Crown, Shield } from 'lucide-react'
-import { MASTER_POS, POINTS, TIERS, divisionOf, rankName, sizeOf, tierOf, type RankState } from '../lib/rank'
+import { MASTER_POS, POINTS, TIERS, rankName, sizeOf, tierOf, type RankState } from '../lib/rank'
 import { useRank } from '../db/rank'
 import { showMascot } from '../lib/mascotBus'
 
-/** Emblema do rank: escudo metálico; asas a partir de Platina e coroa no Mestre. */
-export function RankEmblem({ pos, size = 56, showDivision = true }: { pos: number; size?: number; showDivision?: boolean }) {
-  const id = useId().replace(/:/g, '')
-  const tier = tierOf(pos)
-  const ti = TIERS.indexOf(tier)
-  const div = divisionOf(pos)
-  const shield = 'M50 12 L82 23 V50 C82 74 67 88 50 96 C33 88 18 74 18 50 V23 Z'
-  const inner = 'M50 20 L75 28.5 V50 C75 69 63.5 80.5 50 87 C36.5 80.5 25 69 25 50 V28.5 Z'
-  return (
-    <svg width={size} height={size * 1.1} viewBox="0 0 100 110" role="img" aria-label={rankName(pos)} className="shrink-0 drop-shadow-[0_6px_10px_rgba(16,24,40,0.25)]">
-      <defs>
-        <linearGradient id={`m${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor={tier.light} />
-          <stop offset="0.55" stopColor={tier.dark} />
-          <stop offset="1" stopColor={tier.light} />
-        </linearGradient>
-        <linearGradient id={`i${id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={tier.dark} />
-          <stop offset="1" stopColor={`color-mix(in srgb, ${tier.dark} 55%, #000)`} />
-        </linearGradient>
-      </defs>
-      {ti >= 4 && (
-        <g fill={`url(#m${id})`} stroke={`color-mix(in srgb, ${tier.dark} 60%, #000)`} strokeWidth="1.5">
-          <path d="M20 34 C6 34 2 46 3 58 C9 52 13 52 19 54 C11 60 10 66 12 74 C17 66 21 64 24 64 Z" />
-          <path d="M80 34 C94 34 98 46 97 58 C91 52 87 52 81 54 C89 60 90 66 88 74 C83 66 79 64 76 64 Z" />
-        </g>
-      )}
-      {ti === 6 && (
-        <path d="M30 16 L36 2 L44 12 L50 0 L56 12 L64 2 L70 16 Z" fill="#ffd34d" stroke="#b8860b" strokeWidth="1.5" strokeLinejoin="round" />
-      )}
-      <path d={shield} fill={`url(#m${id})`} stroke={`color-mix(in srgb, ${tier.dark} 55%, #000)`} strokeWidth="2" />
-      <path d={inner} fill={`url(#i${id})`} />
-      {/* brilho */}
-      <path d="M28 30 L50 22.5 V40 C42 40 34 44 28 50 Z" fill="#fff" opacity="0.18" />
-      {/* pedra central: círculo → losango → estrela */}
-      {ti <= 1 && <circle cx="50" cy="52" r="11" fill={`url(#m${id})`} stroke="#fff" strokeOpacity="0.5" strokeWidth="1.5" />}
-      {(ti === 2 || ti === 3) && <path d="M50 37 L63 52 L50 67 L37 52 Z" fill={`url(#m${id})`} stroke="#fff" strokeOpacity="0.55" strokeWidth="1.5" />}
-      {ti >= 4 && (
-        <path
-          d="M50 35 L54.5 46.5 L66.5 47 L57 54.5 L60.5 66.5 L50 59.5 L39.5 66.5 L43 54.5 L33.5 47 L45.5 46.5 Z"
-          fill={`url(#m${id})`}
-          stroke="#fff"
-          strokeOpacity="0.6"
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        />
-      )}
-      {showDivision && div && (
-        <g>
-          <path d="M30 92 H70 L66 100 L70 108 H30 L34 100 Z" fill={`color-mix(in srgb, ${tier.dark} 80%, #000)`} />
-          <text x="50" y="104" textAnchor="middle" fontSize="12" fontWeight="800" fill="#fff" fontFamily="system-ui, sans-serif">
-            {div}
-          </text>
-        </g>
-      )}
-    </svg>
-  )
-}
+export { RankEmblem, RankFrame } from './RankArt'
 
 /** Avisa (com a Capi) quando o rank sobe ou cai desde a última visita. */
 export function useRankWatcher(rank: RankState, ready: boolean) {
@@ -135,7 +79,9 @@ export function RankSection() {
       >
         <span className="absolute -top-20 -right-16 h-56 w-56 rounded-full bg-white/10" />
         <div className="relative flex flex-wrap items-center gap-6">
-          <RankEmblem pos={rank.pos} size={120} />
+          <RankFrame pos={rank.pos} size={190}>
+            <RankEmblem pos={rank.pos} size={160} />
+          </RankFrame>
           <div className="min-w-0 flex-1">
             <div className="text-xs font-bold tracking-wider text-white/70 uppercase">Seu rank</div>
             <div className="font-display text-4xl font-extrabold">{rankName(rank.pos)}</div>
@@ -170,7 +116,7 @@ export function RankSection() {
             const reached = rank.best.pos >= i * 3
             return (
               <div key={t.id} className={`flex flex-col items-center rounded-2xl p-2 text-center transition ${here ? 'bg-brand-soft ring-2 ring-brand' : ''} ${reached ? '' : 'opacity-35 grayscale'}`}>
-                <RankEmblem pos={pos} size={52} showDivision={false} />
+                <RankEmblem pos={pos} size={60} showDivision={false} animated={reached} />
                 <div className="mt-1 text-xs font-bold">{t.name}</div>
                 <div className="text-[10px] text-muted">{Number.isFinite(t.size) ? `3 × ${t.size} pts` : 'sem limite'}</div>
               </div>
