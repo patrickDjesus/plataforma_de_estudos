@@ -23,6 +23,9 @@ export const POINTS = {
   challengeMax: 10,
   challengeBonus: 5,
   cardPerDay: 10,
+  /** Questões feitas por fora: +1 a cada 2, até +10 por bloco; +3 com 80%+ de acerto. */
+  questionsMax: 10,
+  questionsBonus: 3,
   missed: -6,
   goodWeek: 25,
   badWeek: -15,
@@ -90,6 +93,13 @@ export function rankFromEvents(events: RankEvent[]): RankState {
 }
 
 /** Pontos de um desafio: proporcional à nota, com bônus por 85% ou mais. */
+/** Pontos das questões informadas num bloco. */
+export function questionPoints(n: number, correct?: number) {
+  if (n <= 0) return 0
+  const bonus = correct !== undefined && correct / n >= 0.8 ? POINTS.questionsBonus : 0
+  return Math.min(POINTS.questionsMax, Math.ceil(n / 2)) + bonus
+}
+
 export const challengePoints = (score: number) => Math.round(Math.max(0, Math.min(1, score)) * POINTS.challengeMax) + (score >= 0.85 ? POINTS.challengeBonus : 0)
 
 /** Bônus/penalidade da semana encerrada, pela fração do plano cumprida. */

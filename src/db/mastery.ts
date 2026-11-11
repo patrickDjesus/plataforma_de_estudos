@@ -10,9 +10,10 @@ export interface MasteryMap {
 
 /** Calcula o domínio de todos os tópicos a partir do banco. */
 export async function loadMastery(now = Date.now()): Promise<MasteryMap> {
-  const [topics, challenges, reviews, cards, sessions, errors] = await Promise.all([
+  const [topics, challenges, practiceBlocks, reviews, cards, sessions, errors] = await Promise.all([
     db.topics.toArray(),
     db.challenges.toArray(),
+    db.blocks.filter((b) => !!b.topicId && (b.questions ?? 0) > 0 && b.correct !== undefined).toArray(),
     db.reviews.toArray(),
     db.cards.toArray(),
     db.sessions.toArray(),
@@ -32,11 +33,17 @@ export async function loadMastery(now = Date.now()): Promise<MasteryMap> {
   const cd = by(cards)
   const ss = by(sessions)
   const er = by(errors)
+  const pr = new Map<string, { value: number; at: number }[]>()
+  for (const b of practiceBlocks) {
+    const list = pr.get(b.topicId!) ?? []
+    list.push({ value: b.correct! / b.questions!, at: new Date(b.date + 'T00:00:00').getTime() + b.end * 60000 })
+    pr.set(b.topicId!, list)
+  }
   const rv = new Map(reviews.map((r) => [r.topicId, r]))
   const out = new Map<string, Mastery>()
   const sums = new Map<string, { s: number; n: number }>()
   for (const t of topics) {
-    const m = computeMastery({ topic: t, challenges: ch.get(t.id) ?? [], reviews: rv.get(t.id), cards: cd.get(t.id) ?? [], sessions: ss.get(t.id) ?? [], openErrors: (er.get(t.id) ?? []).length, now })
+    const m = computeMastery({ topic: t, challenges: ch.get(t.id) ?? [], practice: pr.get(t.id), reviews: rv.get(t.id), cards: cd.get(t.id) ?? [], sessions: ss.get(t.id) ?? [], openErrors: (er.get(t.id) ?? []).length, now })
     if (!m) continue
     out.set(t.id, m)
     const acc = sums.get(t.subjectId) ?? { s: 0, n: 0 }

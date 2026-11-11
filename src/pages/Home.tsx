@@ -658,7 +658,7 @@ function WeakPoints() {
         <h3 className="flex items-center gap-2 font-sans text-sm font-semibold">
           <Target size={18} /> Pontos fracos
         </h3>
-        <span className="text-[11px] text-muted">Domínio = desafios 50% · revisões e cartões 25% · confiança 15% · tempo 10% (só conta o que você usa)</span>
+        <span className="text-[11px] text-muted">Domínio = desafios e questões 50% · revisões e cartões 25% · confiança 15% · tempo 10% (só conta o que você usa)</span>
       </div>
       <p className="mb-4 text-xs text-muted">O planejador já dá prioridade a esses tópicos. Um desafio rápido ajuda a subir o domínio.</p>
       {weak.length === 0 ? (

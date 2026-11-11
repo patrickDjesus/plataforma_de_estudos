@@ -112,6 +112,7 @@ function Prompt({ p, onDone }: { p: Pending; onDone: () => void }) {
               <input type="checkbox" checked={withCorrect} onChange={(e) => setWithCorrect(e.target.checked)} className="h-4 w-4 accent-[#3e63f2]" />
               Quero informar os acertos
             </label>
+            <p className="mt-1 pl-6 text-[11px] text-muted">Com os acertos, as questões também contam no domínio do tópico.</p>
             {withCorrect && (
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <Stepper value={correct} onChange={setCorrect} label="acertos" max={count} />

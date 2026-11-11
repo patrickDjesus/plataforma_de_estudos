@@ -175,13 +175,15 @@ export function MascotHost() {
     if (a.run) await a.run()
   }
 
+  // No celular a Capi fica menor, para não cobrir o conteúdo
+  const phone = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 640px)').matches
   return (
     <div
       className="pointer-events-none fixed right-0 bottom-0 z-50 flex items-end gap-2"
-      style={{ paddingRight: 'max(16px, env(safe-area-inset-right, 0px))', paddingBottom: 'max(16px, env(safe-area-inset-bottom, 0px))' }}
+      style={{ paddingRight: `max(${phone ? 8 : 16}px, env(safe-area-inset-right, 0px))`, paddingBottom: `max(${phone ? 8 : 16}px, env(safe-area-inset-bottom, 0px))` }}
     >
       {msg && (
-        <div key={key} className="capi-pop pointer-events-auto relative mb-16 w-[min(340px,calc(100vw-120px))] rounded-[20px] border border-line bg-white p-4 shadow-[0_18px_40px_-14px_rgba(16,24,40,0.35)]">
+        <div key={key} className="capi-pop pointer-events-auto relative mb-16 w-[min(340px,calc(100vw-96px))] rounded-[20px] border border-line bg-white p-4 shadow-[0_18px_40px_-14px_rgba(16,24,40,0.35)]">
           <span className="absolute -right-2 bottom-6 h-4 w-4 rotate-45 border-t border-r border-line bg-white" />
           <button onClick={() => setMsg(null)} className="absolute top-2.5 right-2.5 rounded-full p-1 text-muted hover:bg-slate-100" aria-label="Fechar">
             <X size={15} />
@@ -210,7 +212,7 @@ export function MascotHost() {
         title="Conversar com o Capi"
       >
         <span className="absolute inset-x-3 bottom-1 h-16 rounded-full bg-brand/15 blur-xl transition group-hover:bg-brand/25" />
-        <Capybara key={msg ? `p-${key}` : 'idle'} pose={msg?.pose ?? 'relaxando'} size={msg ? 104 : 78} className="relative transition-all" />
+        <Capybara key={msg ? `p-${key}` : 'idle'} pose={msg?.pose ?? 'relaxando'} size={phone ? (msg ? 72 : 46) : msg ? 104 : 78} className="relative transition-all" />
       </button>
     </div>
   )

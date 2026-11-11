@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MASTER_POS, applyDelta, challengePoints, rankFromEvents, rankName, weekPoints } from './rank'
+import { MASTER_POS, applyDelta, challengePoints, questionPoints, rankFromEvents, rankName, weekPoints } from './rank'
 
 describe('rank', () => {
   it('nomes e divisões', () => {
@@ -32,6 +32,13 @@ describe('rank', () => {
     expect(s.points).toBe(14)
     expect(s.best).toEqual({ pos: 1, points: 20 })
     expect(s.log[0].change).toBe('subiu')
+  })
+  it('questões feitas: +1 a cada 2, teto de 10, bônus com 80%+', () => {
+    expect(questionPoints(0)).toBe(0)
+    expect(questionPoints(5)).toBe(3)
+    expect(questionPoints(50)).toBe(10)
+    expect(questionPoints(20, 16)).toBe(13)
+    expect(questionPoints(20, 10)).toBe(10)
   })
   it('pontos de desafio e de semana', () => {
     expect(challengePoints(1)).toBe(15)

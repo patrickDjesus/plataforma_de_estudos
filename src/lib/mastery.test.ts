@@ -49,6 +49,11 @@ describe('domínio por tópico', () => {
     expect(meses).toBeLessThan(hoje)
     expect(meses).toBeGreaterThanOrEqual(Math.floor(hoje / 2) - 1)
   })
+  it('questões com acertos contam como prova objetiva (sem o teto de 70)', () => {
+    const m = computeMastery({ ...base, practice: [{ value: 0.9, at: NOW }] })
+    expect(m?.value).toBe(75) // 0,5×0,9 / 0,6
+    expect(m?.parts.challenges).toBeCloseTo(0.9)
+  })
   it('cores vão do vermelho ao verde', () => {
     expect(masteryColor(10)).toBe('#ef4444')
     expect(masteryColor(90)).toBe('#10b981')

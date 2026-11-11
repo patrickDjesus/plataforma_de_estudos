@@ -18,6 +18,8 @@ const DAY = 86400000
 export interface MasteryInput {
   topic: Topic
   challenges: Challenge[] // deste tópico
+  /** Questões feitas por fora com acertos informados (fração de acerto). */
+  practice?: { value: number; at: number }[]
   reviews?: Review // revisão espaçada do tópico
   cards: Flashcard[] // deste tópico
   sessions: Session[] // deste tópico
@@ -47,7 +49,7 @@ function recentAverage(points: { value: number; at: number }[], now: number): nu
 const dateMs = (iso: string) => new Date(iso + 'T12:00:00').getTime()
 
 export function computeMastery(m: MasteryInput): Mastery | null {
-  const challengePts = m.challenges.map((c) => ({ value: c.score, at: c.createdAt }))
+  const challengePts = [...m.challenges.map((c) => ({ value: c.score, at: c.createdAt })), ...(m.practice ?? [])]
   const reviewPts = [
     ...(m.reviews?.history ?? []).map((h) => ({ value: RATING_VALUE[h.rating], at: dateMs(h.date) })),
     ...m.cards.flatMap((c) => c.history.map((h) => ({ value: RATING_VALUE[h.rating], at: dateMs(h.date) }))),

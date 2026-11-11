@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
 import { addDays, fromISODate, weekIdOf } from '../lib/dates'
-import { POINTS, challengePoints, rankFromEvents, weekPoints, type RankEvent, type RankState } from '../lib/rank'
+import { POINTS, challengePoints, questionPoints, rankFromEvents, weekPoints, type RankEvent, type RankState } from '../lib/rank'
 
 const at = (date: string, minutes = 12 * 60) => fromISODate(date).getTime() + minutes * 60000
 
@@ -24,6 +24,10 @@ export async function loadRank(now = new Date()): Promise<RankState> {
     if (b.kind !== 'study' && b.kind !== 'revisao') continue
     // Revisões contam pela avaliação (abaixo), não pelo bloco
     if (b.done && b.kind === 'study') events.push({ at: at(b.date, b.end), delta: POINTS.block, label: `Bloco: ${what(b.topicId, b.subjectId)}` })
+    if ((b.questions ?? 0) > 0) {
+      const acc = b.correct !== undefined ? `, ${Math.round((b.correct / b.questions!) * 100)}%` : ''
+      events.push({ at: at(b.date, b.end) + 1, delta: questionPoints(b.questions!, b.correct), label: `${b.questions} questões${acc}: ${what(b.topicId, b.subjectId)}` })
+    }
     if (b.missed && !b.done) events.push({ at: at(b.date, b.end), delta: POINTS.missed, label: `Bloco perdido: ${what(b.topicId, b.subjectId)}` })
   }
   for (const r of reviews) for (const h of r.history) events.push({ at: at(h.date), delta: POINTS.review, label: `Revisão: ${what(r.topicId, r.subjectId)}` })
