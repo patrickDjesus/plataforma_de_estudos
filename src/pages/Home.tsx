@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Crown, Layers, Settings, ArrowRight, BarChart3, BookOpen, RotateCcw, CalendarCheck2, Check, ChevronRight, Clock3, Flame, Globe2, Medal, Play, Target, Trophy, Zap } from 'lucide-react'
@@ -14,7 +14,7 @@ import { XP_PER_BLOCK, levelInfo, xpFrom } from '../lib/xp'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
 import { AchievementsSection } from '../components/Achievements'
-import { RankEmblem, RankFrame, RankLine, RankSection, useRankWatcher } from '../components/Rank'
+import { RankEmblem, RankFrame, RankLine, RankSection, setRankPreview, useRankPreview, useRankWatcher, withPreview } from '../components/Rank'
 import { loadRank } from '../db/rank'
 import { ChallengeModal } from '../components/ChallengeModal'
 import { useMastery } from '../db/mastery'
@@ -41,6 +41,10 @@ export function HomePage() {
   const [scope, setScope] = useState<Scope>('hoje')
   const rankState = useLiveQuery(() => loadRank(), [])
   useRankWatcher(rankState ?? { pos: 0, points: 0, best: { pos: 0, points: 0 }, log: [] }, !!rankState)
+  // Prévia de rank (aba Rank): só visual; sai ao deixar o início
+  const preview = useRankPreview()
+  const shownRank = rankState ? withPreview(rankState, preview) : undefined
+  useEffect(() => () => setRankPreview(null), [])
 
   const todayIso = toISODate(new Date())
   const topicMap = useMemo(() => new Map(topics.map((t) => [t.id, t])), [topics])
@@ -98,13 +102,13 @@ export function HomePage() {
       <Card className="flex flex-wrap items-center gap-x-6 gap-y-5 px-6 py-5">
         <div className="flex min-w-0 flex-1 basis-56 items-center gap-3">
           <button onClick={() => setSection('rank')} title="Ver seu rank" className="transition hover:-translate-y-0.5 hover:scale-105">
-            <RankFrame pos={rankState?.pos ?? 0} size={74}>
-              <RankEmblem pos={rankState?.pos ?? 0} size={62} />
+            <RankFrame pos={shownRank?.pos ?? 0} size={74}>
+              <RankEmblem pos={shownRank?.pos ?? 0} size={62} />
             </RankFrame>
           </button>
           <div className="min-w-0">
             <h1 className="truncate text-xl font-bold">Olá, {name}! 👋</h1>
-            <p className="text-xs text-muted">{rankState ? <RankLine rank={rankState} /> : '…'}</p>
+            <p className="text-xs text-muted">{shownRank ? <RankLine rank={shownRank} /> : '…'}</p>
             <p className="text-[11px] text-muted first-letter:uppercase">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}</p>
           </div>
         </div>

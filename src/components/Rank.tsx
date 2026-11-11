@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useSyncExternalStore } from 'react'
 import { RankEmblem, RankFrame } from './RankArt'
 import { ChevronsDown, ChevronsUp, Crown, Shield } from 'lucide-react'
 import { MASTER_POS, POINTS, TIERS, rankName, sizeOf, tierOf, type RankState } from '../lib/rank'
@@ -6,6 +6,28 @@ import { useRank } from '../db/rank'
 import { showMascot } from '../lib/mascotBus'
 
 export { RankEmblem, RankFrame } from './RankArt'
+
+// ---------- Prévia: ver como fica outro rank, sem mexer nos dados ----------
+let previewPos: number | null = null
+const previewSubs = new Set<() => void>()
+export function setRankPreview(pos: number | null) {
+  previewPos = pos
+  previewSubs.forEach((f) => f())
+}
+export function useRankPreview(): number | null {
+  return useSyncExternalStore(
+    (cb) => {
+      previewSubs.add(cb)
+      return () => previewSubs.delete(cb)
+    },
+    () => previewPos,
+  )
+}
+/** O rank a mostrar: o de verdade, ou o da prévia (com a barra pela metade). */
+export function withPreview(rank: RankState, preview: number | null): RankState {
+  if (preview === null) return rank
+  return { ...rank, pos: preview, points: preview >= MASTER_POS ? 1410 : Math.round(sizeOf(preview) * 0.45) }
+}
 
 /** Avisa (com a Capi) quando o rank sobe ou cai desde a última visita. */
 export function useRankWatcher(rank: RankState, ready: boolean) {
@@ -56,7 +78,9 @@ export function RankLine({ rank }: { rank: RankState }) {
 const fmtWhen = (ms: number) => new Date(ms).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 
 export function RankSection() {
-  const rank = useRank()
+  const real = useRank()
+  const preview = useRankPreview()
+  const rank = withPreview(real, preview)
   const tier = tierOf(rank.pos)
   const size = sizeOf(rank.pos)
   const isMaster = rank.pos >= MASTER_POS
@@ -72,6 +96,27 @@ export function RankSection() {
   ]
   return (
     <div className="space-y-5">
+      {preview !== null && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm">
+          <b className="text-amber-800">👀 Prévia: {rankName(preview)}</b>
+          <span className="text-amber-800/80">Só visual: seu rank de verdade é {rankName(real.pos)}.</span>
+          {preview < MASTER_POS && (
+            <span className="ml-auto flex gap-1">
+              {[0, 1, 2].map((d) => {
+                const p = Math.floor(preview / 3) * 3 + d
+                return (
+                  <button key={d} onClick={() => setRankPreview(p)} className={`rounded-lg px-2.5 py-1 text-xs font-bold ${p === preview ? 'bg-amber-500 text-white' : 'bg-white text-amber-800 hover:bg-amber-100'}`}>
+                    {['III', 'II', 'I'][d]}
+                  </button>
+                )
+              })}
+            </span>
+          )}
+          <button onClick={() => setRankPreview(null)} className={`${preview < MASTER_POS ? '' : 'ml-auto'} rounded-lg bg-ink px-3 py-1 text-xs font-bold text-white`}>
+            Sair da prévia
+          </button>
+        </div>
+      )}
       {/* Rank atual */}
       <div
         className="relative overflow-hidden rounded-[22px] p-6 text-white"
@@ -108,18 +153,24 @@ export function RankSection() {
 
       {/* Escada */}
       <div className="rounded-[18px] border border-line p-5">
-        <h3 className="mb-4 font-sans text-sm font-semibold">Escada de ranks</h3>
+        <h3 className="mb-1 font-sans text-sm font-semibold">Escada de ranks</h3>
+        <p className="mb-4 text-xs text-muted">Clique num rank para ver como ele fica (prévia, sem mexer nos seus pontos).</p>
         <div className="grid grid-cols-4 gap-3 sm:grid-cols-7">
           {TIERS.map((t, i) => {
             const pos = i * 3 + (i === TIERS.length - 1 ? 0 : 2)
             const here = tierOf(rank.pos).id === t.id
             const reached = rank.best.pos >= i * 3
             return (
-              <div key={t.id} className={`flex flex-col items-center rounded-2xl p-2 text-center transition ${here ? 'bg-brand-soft ring-2 ring-brand' : ''} ${reached ? '' : 'opacity-35 grayscale'}`}>
+              <button
+                key={t.id}
+                onClick={() => setRankPreview(tierOf(real.pos).id === t.id ? null : i === TIERS.length - 1 ? MASTER_POS : i * 3 + 1)}
+                title={`Ver ${t.name}`}
+                className={`flex flex-col items-center rounded-2xl p-2 text-center transition hover:-translate-y-0.5 hover:bg-[#f6f7f9] ${here ? 'bg-brand-soft ring-2 ring-brand' : ''} ${reached || here ? '' : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0'}`}
+              >
                 <RankEmblem pos={pos} size={60} showDivision={false} animated={reached} />
                 <div className="mt-1 text-xs font-bold">{t.name}</div>
                 <div className="text-[10px] text-muted">{Number.isFinite(t.size) ? `3 × ${t.size} pts` : 'sem limite'}</div>
-              </div>
+              </button>
             )
           })}
         </div>
