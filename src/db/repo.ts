@@ -6,7 +6,7 @@ import { applyRating, newReview, nextInterval, RATING_LABEL } from '../lib/revie
 import { errorsFromChallenge, reviewError } from '../lib/errors'
 import { planWeek } from '../lib/planner'
 import { loadMastery } from './mastery'
-import { showMascot } from '../lib/mascotBus'
+import { askBlockQuestions, showMascot } from '../lib/mascotBus'
 import { XP_PER_BLOCK } from '../lib/xp'
 import { SEED_SUBJECTS, SEED_VERSION } from '../data/seedContent'
 
@@ -299,6 +299,13 @@ export async function updateBlock(id: string, patch: Partial<Block>) {
   if (b) await regeneratePlan(b.weekId)
 }
 
+/** Registra as questões feitas num bloco (acertos opcionais, nunca acima do total). */
+export async function setBlockQuestions(id: string, questions: number, correct?: number) {
+  const q = Math.max(0, Math.round(questions || 0))
+  const c = correct === undefined || Number.isNaN(correct) ? undefined : Math.min(q, Math.max(0, Math.round(correct)))
+  await db.blocks.update(id, { questions: q, correct: c })
+}
+
 /** Apagar um bloco libera o horário para o plano automático. */
 export async function deleteBlock(id: string) {
   const b = await db.blocks.get(id)
@@ -321,6 +328,11 @@ async function celebrateBlock(b: Pick<Block, 'id' | 'kind' | 'topicId' | 'subjec
   const what = topic?.name ?? subject?.name ?? 'o bloco'
   const xp = Math.floor(seconds / 60) + XP_PER_BLOCK
   const title = CHEERS[Math.floor(Math.random() * CHEERS.length)]
+  // Pergunta se fez questões (uma vez por bloco)
+  if (b.kind === 'study' || b.kind === 'revisao') {
+    const full = await db.blocks.get(b.id)
+    if (full && full.questions === undefined) askBlockQuestions(b.id)
+  }
 
   // Revisão: o Capi pergunta como foi
   if (b.kind === 'revisao' && topic && (await db.reviews.get(topic.id))) {

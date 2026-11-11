@@ -21,6 +21,19 @@ type Listener = (m: MascotMessage) => void
 const listeners = new Set<Listener>()
 
 /** Faz o Capi aparecer com uma mensagem, de qualquer lugar do app. */
+// Pergunta "fez questões?" ao concluir um bloco
+type QListener = (blockId: string) => void
+const qListeners = new Set<QListener>()
+export function askBlockQuestions(blockId: string) {
+  qListeners.forEach((l) => l(blockId))
+}
+export function onAskBlockQuestions(l: QListener) {
+  qListeners.add(l)
+  return () => {
+    qListeners.delete(l)
+  }
+}
+
 export function showMascot(m: MascotMessage) {
   listeners.forEach((l) => l(m))
 }

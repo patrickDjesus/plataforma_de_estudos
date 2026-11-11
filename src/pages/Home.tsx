@@ -14,6 +14,7 @@ import { XP_PER_BLOCK, levelInfo, xpFrom } from '../lib/xp'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
 import { AchievementsSection } from '../components/Achievements'
+import { QuestionsStrip, QuestionsSummary } from '../components/QuestionStats'
 import { RankEmblem, RankFrame, RankLine, RankSection, setRankPreview, useRankPreview, useRankWatcher, withPreview } from '../components/Rank'
 import { loadRank } from '../db/rank'
 import { ChallengeModal } from '../components/ChallengeModal'
@@ -178,6 +179,7 @@ export function HomePage() {
                   ]}
                 />
               </div>
+              <QuestionsStrip onMore={() => setSection('resultados')} />
               <div className="grid gap-5 lg:grid-cols-3">
                 {/* XP */}
                 <Panel title={scope === 'hoje' ? 'XP do dia' : 'XP da semana'} icon={<Medal size={18} />}>
@@ -370,6 +372,7 @@ function Results({ weekId }: { weekId: string }) {
   const maxDay = Math.max(1, ...perDay)
   return (
     <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+      <QuestionsSummary />
       <div className="rounded-[18px] border border-line p-5">
         <h3 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold">
           <BarChart3 size={18} /> Tempo por matéria nesta semana

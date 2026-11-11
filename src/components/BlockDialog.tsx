@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BookOpen, Check, Clock3, Coffee, Flag, Play, RotateCcw, Trash2, X } from 'lucide-react'
 import { AREAS, useSubjects, useTopics } from '../db/hooks'
-import { addBlock, deleteBlock, rateReview, setBlockDone, updateBlock } from '../db/repo'
+import { addBlock, deleteBlock, rateReview, setBlockDone, setBlockQuestions, updateBlock } from '../db/repo'
 import type { Block, BlockKind, ReviewRating } from '../db/types'
 import { RATING_LABEL } from '../lib/review'
 import { tint } from '../lib/colors'
@@ -397,6 +397,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
                 </div>
               </div>
               {minutes <= 0 && <p className="mt-2 text-xs font-semibold text-rose-600">O fim precisa ser depois do início.</p>}
+              {block && hasTopic && (block.done || block.questions !== undefined) && <QuestionsFields block={block} color={color} />}
             </Section>
           </div>
 
@@ -420,6 +421,33 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
           </footer>
         </div>
       </div>
+    </div>
+  )
+}
+
+/** Questões feitas no bloco (editável depois da pergunta da Capi). */
+function QuestionsFields({ block, color }: { block: Block; color: string }) {
+  const [q, setQ] = useState(String(block.questions ?? ''))
+  const [c, setC] = useState(block.correct === undefined ? '' : String(block.correct))
+  const save = (qs: string, cs: string) => setBlockQuestions(block.id, Number(qs) || 0, cs.trim() === '' ? undefined : Number(cs))
+  const n = Number(q) || 0
+  const k = c.trim() === '' ? null : Math.min(n, Number(c) || 0)
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-[#f6f7f9] p-3 text-sm">
+      <span className="font-bold">📝 Questões</span>
+      <label className="flex items-center gap-1.5">
+        <input type="number" min={0} value={q} onChange={(e) => setQ(e.target.value)} onBlur={() => save(q, c)} className="w-16 rounded-lg border border-line bg-white px-2 py-1 text-center font-bold outline-none focus:border-brand" aria-label="Questões feitas" />
+        feitas
+      </label>
+      <label className="flex items-center gap-1.5">
+        <input type="number" min={0} value={c} onChange={(e) => setC(e.target.value)} onBlur={() => save(q, c)} placeholder="—" className="w-16 rounded-lg border border-line bg-white px-2 py-1 text-center font-bold outline-none focus:border-brand" aria-label="Acertos" />
+        acertos
+      </label>
+      {n > 0 && k !== null && (
+        <span className="ml-auto rounded-full px-2.5 py-1 text-xs font-bold text-white" style={{ background: color }}>
+          {Math.round((k / n) * 100)}% de acerto
+        </span>
+      )}
     </div>
   )
 }

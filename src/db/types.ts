@@ -86,6 +86,10 @@ export interface Block {
   auto: boolean
   /** Passou do horário sem ser feito; o conteúdo foi remarcado. */
   missed?: boolean
+  /** Questões feitas por fora (livro, lista) neste bloco; 0 = respondeu "não fiz". */
+  questions?: number
+  /** Quantas dessas questões acertou (opcional). */
+  correct?: number
 }
 
 export type ReviewRating = 'dificil' | 'ok' | 'facil'

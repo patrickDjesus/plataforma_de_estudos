@@ -10,7 +10,7 @@ import { RATING_LABEL } from '../lib/review'
 import { tint } from '../lib/colors'
 import { fmtDuration } from '../lib/dates'
 import { noteText } from '../lib/ai'
-import { showMascot } from '../lib/mascotBus'
+import { askBlockQuestions, showMascot } from '../lib/mascotBus'
 import { buildPhases } from '../lib/focus'
 import { ratingFromScore } from '../lib/challenge'
 import { ChallengeRunner } from '../components/ChallengeRunner'
@@ -185,6 +185,7 @@ export function FocusPage() {
     if (isReview && rating && topic) await rateReview(topic.id, rating, block.id)
     if (!isReview && topicDone && topic && !topic.done) await setTopicDone(topic.id, true)
     navigate('/', { replace: true })
+    if (block.questions === undefined) askBlockQuestions(block.id)
     window.setTimeout(
       () =>
         showMascot({

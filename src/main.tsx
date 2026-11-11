@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ConfirmHost } from './components/confirm'
 import { SeedRunner } from './components/SeedRunner'
+import { QuestionsPromptHost } from './components/QuestionsPrompt'
 import { startCloudSync } from './lib/cloud'
 import './index.css'
 import { Layout } from './components/Layout'
@@ -48,6 +49,7 @@ createRoot(document.getElementById('root')!).render(
       </Routes>
       <ConfirmHost />
       <SeedRunner />
+      <QuestionsPromptHost />
     </Router>
   </StrictMode>,
 )
