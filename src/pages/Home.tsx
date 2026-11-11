@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Layers, Settings, ArrowRight, BarChart3, BookOpen, RotateCcw, CalendarCheck2, Check, ChevronRight, Clock3, Flame, Globe2, Medal, Play, Target, Trophy, Zap } from 'lucide-react'
+import { Crown, Layers, Settings, ArrowRight, BarChart3, BookOpen, RotateCcw, CalendarCheck2, Check, ChevronRight, Clock3, Flame, Globe2, Medal, Play, Target, Trophy, Zap } from 'lucide-react'
 import { db } from '../db/db'
 import { AREAS, useSessions, useSettings, useSubjectMap, useTimer, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
 import { currentWeekId, rateReview } from '../db/repo'
@@ -11,17 +11,18 @@ import type { Block } from '../db/types'
 import { AREA_COLOR, tint } from '../lib/colors'
 import { DAY_SHORT, addDays, daysUntil, fmtDuration, fmtTime, minutesNow, toISODate, weekDates } from '../lib/dates'
 import { XP_PER_BLOCK, levelInfo, xpFrom } from '../lib/xp'
-import { LogoMark } from '../components/Logo'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
 import { AchievementsSection } from '../components/Achievements'
+import { RankEmblem, RankLine, RankSection, useRankWatcher } from '../components/Rank'
+import { loadRank } from '../db/rank'
 import { ChallengeModal } from '../components/ChallengeModal'
 import { useMastery } from '../db/mastery'
 import { masteryColor, masteryLabel } from '../lib/mastery'
 import { ratingFromScore } from '../lib/challenge'
 import { Card, Ring, Tabs } from '../components/ui'
 
-type Section = 'geral' | 'resultados' | 'metas' | 'conquistas'
+type Section = 'geral' | 'resultados' | 'metas' | 'conquistas' | 'rank'
 type Scope = 'hoje' | 'semana'
 
 export function HomePage() {
@@ -38,6 +39,8 @@ export function HomePage() {
   const reviews = useLiveQuery(() => db.reviews.toArray(), [], [])
   const [section, setSection] = useState<Section>('geral')
   const [scope, setScope] = useState<Scope>('hoje')
+  const rankState = useLiveQuery(() => loadRank(), [])
+  useRankWatcher(rankState ?? { pos: 0, points: 0, best: { pos: 0, points: 0 }, log: [] }, !!rankState)
 
   const todayIso = toISODate(new Date())
   const topicMap = useMemo(() => new Map(topics.map((t) => [t.id, t])), [topics])
@@ -94,14 +97,13 @@ export function HomePage() {
       {/* Cabeçalho */}
       <Card className="flex flex-wrap items-center gap-x-6 gap-y-5 px-6 py-5">
         <div className="flex min-w-0 flex-1 basis-56 items-center gap-4">
-          <div className="rounded-full bg-gradient-to-br from-[#ff9a3d] via-[#7c8cff] to-[#2fd89a] p-[3px]">
-            <div className="grid h-14 w-14 place-items-center rounded-full bg-white">
-              <LogoMark size={40} />
-            </div>
-          </div>
-          <div>
+          <button onClick={() => setSection('rank')} title="Ver seu rank" className="transition hover:-translate-y-0.5 hover:scale-105">
+            <RankEmblem pos={rankState?.pos ?? 0} size={58} />
+          </button>
+          <div className="min-w-0">
             <h1 className="truncate text-xl font-bold">Olá, {name}! 👋</h1>
-            <p className="text-xs text-muted first-letter:uppercase">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}</p>
+            <p className="text-xs text-muted">{rankState ? <RankLine rank={rankState} /> : '…'}</p>
+            <p className="text-[11px] text-muted first-letter:uppercase">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}</p>
           </div>
         </div>
 
@@ -144,11 +146,12 @@ export function HomePage() {
         className="flex overflow-hidden rounded-[22px] border border-line bg-white shadow-[0_8px_24px_-12px_rgba(16,24,40,0.08)]"
         style={{ height: 'max(620px, calc(100vh - 290px))' }}
       >
-        <aside className="flex w-[84px] shrink-0 flex-col items-center gap-2 bg-[#1c1d22] py-5">
+        <aside className="thin-scroll flex w-[84px] shrink-0 flex-col items-center gap-1 overflow-y-auto bg-[#1c1d22] py-4">
           <SideItem active={section === 'geral'} onClick={() => setSection('geral')} icon={<Globe2 size={22} />} label="Geral" />
           <SideItem active={section === 'resultados'} onClick={() => setSection('resultados')} icon={<BarChart3 size={22} />} label="Resultados" />
           <SideItem active={section === 'metas'} onClick={() => setSection('metas')} icon={<Target size={22} />} label="Metas" />
           <SideItem active={section === 'conquistas'} onClick={() => setSection('conquistas')} icon={<Trophy size={22} />} label="Conquistas" />
+          <SideItem active={section === 'rank'} onClick={() => setSection('rank')} icon={<Crown size={22} />} label="Rank" />
           {/* Atalhos para páginas que saíram do topo */}
           <div className="mt-auto flex w-full flex-col items-center gap-1 border-t border-white/10 pt-3">
             <SideItem active={false} onClick={() => navigate('/materias')} icon={<Layers size={20} />} label="Matérias" />
@@ -269,6 +272,7 @@ export function HomePage() {
           {section === 'resultados' && <Results weekId={weekId} />}
           {section === 'metas' && <WeekGoals weekId={weekId} />}
           {section === 'conquistas' && <AchievementsSection />}
+          {section === 'rank' && <RankSection />}
         </div>
       </div>
     </div>
@@ -301,7 +305,7 @@ function Stat({ tile, value, label, caption, accent }: { tile: ReactNode; value:
 
 function SideItem({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: ReactNode; label: string }) {
   return (
-    <button onClick={onClick} className={`flex w-full flex-col items-center gap-1 py-2.5 text-[11px] font-semibold transition ${active ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>
+    <button onClick={onClick} className={`flex w-full flex-col items-center gap-1 py-1.5 text-[11px] font-semibold transition ${active ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>
       <span className={`grid h-10 w-10 place-items-center rounded-full transition ${active ? 'bg-gradient-to-br from-[#5b7cff] to-[#3e63f2] shadow-[0_0_18px_rgba(91,124,255,0.6)]' : 'bg-white/5'}`}>{icon}</span>
       {label}
     </button>
