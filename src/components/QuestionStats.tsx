@@ -23,7 +23,11 @@ export interface QuestionStats {
   total: Bucket
   /** Feitas por fora (livro, lista) informadas ao concluir blocos. */
   manual: Bucket
-  /** Respondidas no próprio Mendonça (desafios e Questões). */
+  /** Extras registradas à mão (fora dos blocos). */
+  extra: Bucket
+  /** Respondidas no Rush. */
+  rush: Bucket
+  /** Respondidas nos desafios e listas do Mendonça. */
   app: Bucket
   week: Bucket
   bySubject: Map<string, Bucket>
@@ -32,12 +36,12 @@ export interface QuestionStats {
 }
 
 export async function loadQuestionStats(now = new Date()): Promise<QuestionStats> {
-  const [blocks, challenges] = await Promise.all([db.blocks.filter((b) => (b.questions ?? 0) > 0).toArray(), db.challenges.toArray()])
-  const s: QuestionStats = { total: empty(), manual: empty(), app: empty(), week: empty(), bySubject: new Map(), weeks: [] }
+  const [blocks, challenges, practice] = await Promise.all([db.blocks.filter((b) => (b.questions ?? 0) > 0).toArray(), db.challenges.toArray(), db.practice.toArray()])
+  const s: QuestionStats = { total: empty(), manual: empty(), extra: empty(), rush: empty(), app: empty(), week: empty(), bySubject: new Map(), weeks: [] }
   const thisWeek = weekIdOf(now)
   const weekIds = Array.from({ length: 8 }, (_, i) => addDays(thisWeek, (i - 7) * 7))
   const perWeek = new Map(weekIds.map((w) => [w, 0]))
-  const put = (subjectId: string | undefined, weekId: string, b: Bucket, src: 'manual' | 'app') => {
+  const put = (subjectId: string | undefined, weekId: string, b: Bucket, src: 'manual' | 'extra' | 'rush' | 'app') => {
     add(s.total, b)
     add(s[src], b)
     if (weekId === thisWeek) add(s.week, b)
@@ -57,6 +61,10 @@ export async function loadQuestionStats(now = new Date()): Promise<QuestionStats
     const counted = c.results.filter((r) => r && !r.contested)
     put(c.subjectId, weekIdOf(new Date(c.createdAt)), { done: counted.length, graded: counted.length, correct: counted.filter((r) => r.correct).length }, 'app')
   }
+  for (const p of practice) {
+    const graded = p.correct !== undefined
+    put(p.subjectId, weekIdOf(fromISODate(p.date)), { done: p.done, graded: graded ? p.done : 0, correct: graded ? p.correct! : 0 }, p.source)
+  }
   s.weeks = weekIds.map((w) => ({ weekId: w, done: perWeek.get(w)! }))
   return s
 }
@@ -69,7 +77,7 @@ const pct = (b: Bucket) => (b.graded ? Math.round((b.correct / b.graded) * 100) 
 const accColor = (p: number | null) => (p === null ? '#94a3b8' : p >= 80 ? '#10b981' : p >= 60 ? '#84cc16' : p >= 40 ? '#eab308' : '#ef4444')
 
 /** Faixa compacta no Geral. */
-export function QuestionsStrip({ onMore }: { onMore: () => void }) {
+export function QuestionsStrip({ onMore, onRegister }: { onMore: () => void; onRegister?: () => void }) {
   const s = useQuestionStats()
   if (!s) return null
   const p = pct(s.total)
@@ -84,7 +92,26 @@ export function QuestionsStrip({ onMore }: { onMore: () => void }) {
       <Mini value={s.week.done} label="nesta semana" />
       <Mini value={s.total.done} label="no total" />
       <Mini value={p === null ? '—' : `${p}%`} label="de acerto" color={accColor(p)} />
-      <span className="ml-auto flex items-center gap-1 text-xs font-bold text-brand">
+      {onRegister && (
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={(e) => {
+            e.stopPropagation()
+            onRegister()
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.stopPropagation()
+              onRegister()
+            }
+          }}
+          className="ml-auto rounded-xl bg-brand px-3 py-1.5 text-xs font-bold text-white hover:brightness-110"
+        >
+          + Registrar extras
+        </span>
+      )}
+      <span className={`${onRegister ? '' : 'ml-auto'} flex items-center gap-1 text-xs font-bold text-brand`}>
         Ver resumo <ArrowRight size={14} className="transition group-hover:translate-x-0.5" />
       </span>
     </button>
@@ -128,7 +155,16 @@ export function QuestionsSummary() {
             <Big value={p === null ? '—' : `${p}%`} label="acerto geral" color={accColor(p)} />
             <Big value={pw === null ? '—' : `${pw}%`} label="acerto na semana" color={accColor(pw)} />
             <p className="col-span-2 text-[11px] text-muted">
-              {s.manual.done} feitas por fora (livro, lista) · {s.app.done} no Mendonça. O acerto conta só as questões com acertos informados.
+              {[
+                [s.rush.done, 'no Rush'],
+                [s.manual.done, 'nos blocos'],
+                [s.extra.done, 'extras'],
+                [s.app.done, 'em desafios e listas'],
+              ]
+                .filter(([n]) => (n as number) > 0)
+                .map(([n, l]) => `${n} ${l}`)
+                .join(' · ')}
+              . O acerto conta só as questões com acertos informados.
             </p>
           </div>
           {/* Últimas 8 semanas */}

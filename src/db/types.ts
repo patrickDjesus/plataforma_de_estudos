@@ -232,7 +232,7 @@ export type WritingCategory = 'crase' | 'virgula' | 'concordancia' | 'regencia' 
 
 export interface ErrorEntry {
   id: string
-  source: 'desafio' | 'questoes' | 'flashcard' | 'escrita'
+  source: 'desafio' | 'questoes' | 'flashcard' | 'escrita' | 'rush'
   subjectId?: string
   topicId?: string
   question: string
@@ -265,4 +265,18 @@ export interface Writing {
   summary?: string
   strengths?: string[]
   deviations: WritingDeviation[]
+}
+
+/** Questões feitas fora dos blocos: no Rush (somadas por dia/matéria/tópico) ou extras registradas à mão. */
+export interface Practice {
+  id: string
+  date: string // YYYY-MM-DD
+  source: 'rush' | 'extra'
+  subjectId?: string
+  topicId?: string
+  done: number
+  /** Acertos (o Rush sempre sabe; nas extras é opcional). */
+  correct?: number
+  note?: string
+  createdAt: number
 }

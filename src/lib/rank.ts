@@ -100,6 +100,12 @@ export function questionPoints(n: number, correct?: number) {
   return Math.min(POINTS.questionsMax, Math.ceil(n / 2)) + bonus
 }
 
+/** Pontos de um dia de Rush numa matéria: +1 a cada 2 acertos (até 25), +5 com 10+ questões e 80%+. */
+export function rushPoints(done: number, correct: number) {
+  if (done <= 0) return 0
+  return Math.min(25, Math.ceil(correct / 2)) + (done >= 10 && correct / done >= 0.8 ? 5 : 0)
+}
+
 export const challengePoints = (score: number) => Math.round(Math.max(0, Math.min(1, score)) * POINTS.challengeMax) + (score >= 0.85 ? POINTS.challengeBonus : 0)
 
 /** Bônus/penalidade da semana encerrada, pela fração do plano cumprida. */

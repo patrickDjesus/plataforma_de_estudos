@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { FileQuestion, History, PenLine, Sparkles } from 'lucide-react'
+import { ClipboardPlus, FileQuestion, History, PenLine, Sparkles, Zap } from 'lucide-react'
 import { db } from '../db/db'
 import { useSubjectMap, useTopics } from '../db/hooks'
 import type { Challenge } from '../db/types'
@@ -10,27 +11,36 @@ import { WritingTraining } from '../components/WritingTraining'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
 import { Card, PageHeader, Tabs } from '../components/ui'
+import { RushPage } from './rush/RushPage'
+import { ExtraQuestions } from './ExtraQuestions'
 
-type Tab = 'gerar' | 'escrita' | 'historico'
+type Tab = 'rush' | 'gerar' | 'escrita' | 'registrar' | 'historico'
+const TABS: Tab[] = ['rush', 'gerar', 'escrita', 'registrar', 'historico']
 
 export function QuestionsPage() {
-  const [tab, setTab] = useState<Tab>('gerar')
+  const [params] = useSearchParams()
+  const asked = params.get('aba') as Tab | null
+  const [tab, setTab] = useState<Tab>(asked && TABS.includes(asked) ? asked : 'rush')
   return (
     <>
-      <PageHeader icon={<FileQuestion size={24} />} title="Questões" subtitle="Gere listas sob medida, treine a escrita e veja seu histórico." />
+      <PageHeader icon={<FileQuestion size={24} />} title="Questões" subtitle="Rush de questões sem parar, listas sob medida, treino de escrita e registro das questões que você faz por fora." />
       <div className="mb-5">
         <Tabs<Tab>
           value={tab}
           onChange={setTab}
           items={[
-            { id: 'gerar', label: 'Gerar questões', icon: <Sparkles size={15} /> },
+            { id: 'rush', label: 'Rush', icon: <Zap size={15} /> },
+            { id: 'gerar', label: 'Gerar lista', icon: <Sparkles size={15} /> },
             { id: 'escrita', label: 'Treino de escrita', icon: <PenLine size={15} /> },
+            { id: 'registrar', label: 'Registrar extras', icon: <ClipboardPlus size={15} /> },
             { id: 'historico', label: 'Histórico', icon: <History size={15} /> },
           ]}
         />
       </div>
       <div key={tab} className="page-in">
+        {tab === 'rush' && <RushPage />}
         {tab === 'gerar' && <ChallengeBuilderPage mode="questoes" />}
+        {tab === 'registrar' && <ExtraQuestions />}
         {tab === 'escrita' && <WritingTraining />}
         {tab === 'historico' && <QuestionHistory />}
       </div>

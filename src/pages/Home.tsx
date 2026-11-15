@@ -179,7 +179,7 @@ export function HomePage() {
                   ]}
                 />
               </div>
-              <QuestionsStrip onMore={() => setSection('resultados')} />
+              <QuestionsStrip onMore={() => setSection('resultados')} onRegister={() => navigate('/questoes?aba=registrar')} />
               <div className="grid gap-5 lg:grid-cols-3">
                 {/* XP */}
                 <Panel title={scope === 'hoje' ? 'XP do dia' : 'XP da semana'} icon={<Medal size={18} />}>

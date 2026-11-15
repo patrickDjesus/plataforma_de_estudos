@@ -12,7 +12,7 @@ import { Capybara } from '../components/Capybara'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Card, PageHeader, Tabs } from '../components/ui'
 
-const SOURCE_LABEL = { desafio: 'Desafio', questoes: 'Questões', flashcard: 'Flashcard', escrita: 'Escrita' }
+const SOURCE_LABEL = { desafio: 'Desafio', questoes: 'Questões', flashcard: 'Flashcard', escrita: 'Escrita', rush: 'Rush' }
 
 /** Caderno de erros: revise cada erro até acertar 2 vezes seguidas. */
 export function ErrorsPage() {
