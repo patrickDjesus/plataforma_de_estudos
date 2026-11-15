@@ -146,6 +146,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
 
   return (
     <div
+      id="rush-card"
       ref={card}
       key={shake}
       className={`essential-motion relative rounded-[26px] border-[3px] bg-white p-5 sm:p-7 ${shake ? 'rush-shake' : 'rush-enter'} ${q.boss ? 'rush-boss' : ''} ${onFire ? 'rk-onfire2' : ''}`}

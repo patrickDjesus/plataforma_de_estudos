@@ -3,6 +3,7 @@ import { Capybara } from '../../components/Capybara'
 import type { RushState } from '../../lib/rush'
 import { qHeat } from '../../lib/rush'
 import { sfx } from './actions'
+import { FireCanvas } from './FireCanvas'
 
 // ---------- Barramento de efeitos ----------
 type FxEvent = { type: 'flash'; tone: 'ok' | 'bad' | 'gold' } | { type: 'fly'; text: string; from: [number, number] }
@@ -84,6 +85,8 @@ export function Arena({ heat, boss, onFire, children }: { heat: number; boss: bo
   const h = boss ? 1 : heat
   const glow = Math.max(0, Math.min(1, (h - 0.4) / 0.6))
   const embers = boss ? 30 : h >= 0.6 ? Math.round((h - 0.5) * 50) : onFire ? 8 : 0
+  // fogo de verdade: começa na "Puxada" (6) e vira incêndio no chefão
+  const fire = boss ? 1 : h >= 0.55 ? Math.min(1, (h - 0.5) / 0.5) : onFire ? 0.22 : 0
   const parts = useMemo(
     () =>
       Array.from({ length: 30 }, (_, i) => ({
@@ -108,6 +111,7 @@ export function Arena({ heat, boss, onFire, children }: { heat: number; boss: bo
       {boss && <div className="rk-flicker pointer-events-none absolute inset-0 -z-10 bg-[rgba(255,40,40,.18)]" />}
       {/* combo em chamas: calor laranja embaixo */}
       {onFire && <div className="rk-pulse pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-1/2 bg-[radial-gradient(ellipse_at_bottom,rgba(255,110,30,.28),transparent_70%)]" />}
+      <FireCanvas intensity={fire} />
       {/* brasas */}
       {parts.slice(0, embers).map((p, i) => (
         <span
