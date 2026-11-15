@@ -96,6 +96,9 @@ export function HomePage() {
 
   const focusArea = week ? AREAS.reduce((best, a) => (week.percents[a.id] > week.percents[best.id] ? a : best), AREAS[0]) : AREAS[0]
   const name = settings.userName?.trim() || 'estudante'
+  // Semana temática: mostra a matéria da semana da área de foco (ou a primeira com tema)
+  const themeId = week?.themes ? (week.themes[focusArea.id] ?? Object.values(week.themes).find(Boolean)) : undefined
+  const themeSubject = themeId ? subjects.get(themeId) : undefined
 
   return (
     <div className="space-y-5">
@@ -131,11 +134,15 @@ export function HomePage() {
 
         <Stat tile={<TileIcon color="#ff5d6c"><CalendarCheck2 size={22} /></TileIcon>} value={`${studyDays.size}`} accent="#3e63f2" label="dias estudados" />
         <Stat tile={<TileIcon color="#ff8a1f"><Flame size={22} /></TileIcon>} value={`${streak}`} accent="#ff8a1f" label={streak === 1 ? 'dia seguido' : 'dias seguidos'} />
-        <Stat
-          tile={<TileIcon color={AREA_COLOR[focusArea.id]}><span className="font-display text-lg font-extrabold">{focusArea.name[0]}</span></TileIcon>}
-          caption="Foco da semana"
-          value={focusArea.name}
-        />
+        {themeSubject ? (
+          <Stat tile={<SubjectIcon subject={themeSubject} size={48} />} caption="🎯 Semana de" value={themeSubject.name} />
+        ) : (
+          <Stat
+            tile={<TileIcon color={AREA_COLOR[focusArea.id]}><span className="font-display text-lg font-extrabold">{focusArea.name[0]}</span></TileIcon>}
+            caption="Foco da semana"
+            value={focusArea.name}
+          />
+        )}
         <button onClick={() => startBlock(nextBlock)} className="group flex items-center gap-3 text-left">
           <TileIcon color="#ef2b3f">
             <span className="h-5 w-5 rounded-full bg-gradient-to-b from-white/90 to-white/40 shadow transition group-hover:scale-110" />

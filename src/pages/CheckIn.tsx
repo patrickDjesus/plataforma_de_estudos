@@ -14,6 +14,8 @@ import { Capybara, type CapiPose } from '../components/Capybara'
 import { LogoMark } from '../components/Logo'
 import { guessIcon } from '../components/SubjectIcon'
 import { useSettings } from '../db/hooks'
+import { loadMastery } from '../db/mastery'
+import { suggestThemes, type ThemeSuggestion, type Themes } from '../lib/themes'
 import { VoiceTextarea } from '../components/Voice'
 import { loadWeekStats, saveRetro } from '../db/retro'
 import { RETRO_TAGS, completionRate, hasWeekData, retroHints, trimAvailability, type WeekStats } from '../lib/retro'
@@ -73,6 +75,10 @@ export function CheckInPage() {
   const [prevStats, setPrevStats] = useState<WeekStats | null>(null)
   const [prevRetro, setPrevRetro] = useState<WeekRetro | undefined>()
   const [trimmed, setTrimmed] = useState(false)
+  // Semana temática: uma matéria por área
+  const [themeOn, setThemeOn] = useState(true)
+  const [themes, setThemes] = useState<Themes>({})
+  const [suggested, setSuggested] = useState<Partial<Record<AreaId, ThemeSuggestion>>>({})
 
   useEffect(() => {
     if (percents) return
@@ -83,6 +89,13 @@ export function CheckInPage() {
         const av = w?.availability ?? s.defaultAvailability
         setAvailability(Array.from({ length: 7 }, (_, d) => (av[d] ?? []).filter((x) => Number.isFinite(x.start) && Number.isFinite(x.end))))
         setPaused(w?.pausedSubjectIds ?? [])
+        Promise.all([db.weeks.toArray(), db.subjects.toArray(), loadMastery()]).then(([weeks, subs, mm]) => {
+          const active = subs.filter((x) => !(w?.pausedSubjectIds ?? []).includes(x.id))
+          const sug = suggestThemes(active, weeks.map((x) => ({ weekId: x.id, themes: x.themes })), Object.fromEntries(mm.subjects), weekId)
+          setSuggested(sug)
+          setThemeOn(w ? !!w.themes : s.themeWeeks !== false)
+          setThemes(w?.themes ?? Object.fromEntries(Object.entries(sug).map(([a, v]) => [a, v!.id])))
+        })
       })
     })
     Promise.all([loadWeekStats(prevWeekId), db.weeks.get(prevWeekId)]).then(([st, pw]) => {
@@ -100,9 +113,16 @@ export function CheckInPage() {
   const lowFac = percents.faculdade < FAC_FLOOR
   const canSave = !lowFac || confirmLow
 
+  // Só os temas válidos (matéria existe e não está pausada)
+  const cleanThemes = (ps: string[]): Themes | null => {
+    if (!themeOn) return null
+    const t: Themes = {}
+    for (const [a, id] of Object.entries(themes) as [AreaId, string][]) if (id && subjects.some((x) => x.id === id && !ps.includes(id))) t[a] = id
+    return Object.keys(t).length ? t : null
+  }
   const submit = async (p = percents, av = availability, ps = paused) => {
     setSaving(true)
-    await saveCheckin(weekId, p, av, ps)
+    await saveCheckin(weekId, p, av, ps, cleanThemes(ps))
     navigate('/calendario', { replace: true })
   }
 
@@ -446,7 +466,17 @@ export function CheckInPage() {
           )}
 
           {step === 'materias' && (
-            <StepCard title="Matérias desta semana" subtitle={subjects.length ? 'Desligue as que vão ficar de fora só nesta semana.' : 'Cadastre ao menos uma matéria. Depois você detalha os tópicos em Matérias.'}>
+            <StepCard title="Matérias desta semana" subtitle={subjects.length ? 'Escolha a matéria da semana de cada área e desligue as que vão ficar de fora.' : 'Cadastre ao menos uma matéria. Depois você detalha os tópicos em Matérias.'}>
+              {active.length > 0 && (
+                <ThemePanel
+                  on={themeOn}
+                  setOn={setThemeOn}
+                  themes={themes}
+                  setThemes={setThemes}
+                  suggested={suggested}
+                  active={active}
+                />
+              )}
               {subjects.length > 0 && (
                 <div className="mb-6 grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-2">
                   {subjects.map((s) => {
@@ -454,7 +484,10 @@ export function CheckInPage() {
                     return (
                       <button
                         key={s.id}
-                        onClick={() => setPaused(isPaused ? paused.filter((p) => p !== s.id) : [...paused, s.id])}
+                        onClick={() => {
+                          setPaused(isPaused ? paused.filter((p) => p !== s.id) : [...paused, s.id])
+                          if (!isPaused && themes[s.areaId] === s.id) setThemes({ ...themes, [s.areaId]: undefined })
+                        }}
                         className={`flex items-center gap-3 rounded-2xl border p-2.5 text-left transition ${isPaused ? 'border-line bg-[#fafbfc]' : 'border-transparent'}`}
                         style={isPaused ? undefined : { background: tint(s.color, 0.08), boxShadow: `inset 0 0 0 1.5px ${tint(s.color, 0.35)}` }}
                       >
@@ -509,7 +542,12 @@ export function CheckInPage() {
                       <>
                         <div className="mt-1 font-display text-3xl font-extrabold">{hours((minutes * percents[a.id]) / 100)}</div>
                         <div className="text-xs text-muted">
-                          {percents[a.id]}% · {active.filter((s) => s.areaId === a.id).length} matéria(s)
+                          {percents[a.id]}% ·{' '}
+                          {themeOn && themes[a.id] && active.some((s) => s.id === themes[a.id]) ? (
+                            <b className="text-ink">Semana de {active.find((s) => s.id === themes[a.id])!.name}</b>
+                          ) : (
+                            `${active.filter((s) => s.areaId === a.id).length} matéria(s), variado`
+                          )}
                         </div>
                       </>
                     ) : (
@@ -706,5 +744,81 @@ function RetroStep({ stats, onDone, onSkip }: { stats: WeekStats; onDone: (worke
         </button>
       </div>
     </StepCard>
+  )
+}
+
+function ThemePanel({
+  on,
+  setOn,
+  themes,
+  setThemes,
+  suggested,
+  active,
+}: {
+  on: boolean
+  setOn: (v: boolean) => void
+  themes: Themes
+  setThemes: (t: Themes) => void
+  suggested: Partial<Record<AreaId, ThemeSuggestion>>
+  active: { id: string; name: string; color: string; areaId: AreaId; icon?: string }[]
+}) {
+  return (
+    <div className={`mb-6 rounded-2xl border-2 p-4 transition ${on ? 'border-brand/40 bg-brand-soft/40' : 'border-line'}`}>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="font-display text-lg font-bold">🎯 Semana temática</div>
+          <p className="text-xs text-muted">Uma matéria por área: o estudo novo da semana fica todo nela. As revisões de outras matérias continuam, curtinhas, para você não esquecer.</p>
+        </div>
+        <button
+          onClick={() => setOn(!on)}
+          aria-pressed={on}
+          aria-label="Semana temática"
+          className={`relative h-7 w-12 shrink-0 rounded-full transition ${on ? 'bg-brand' : 'bg-slate-300'}`}
+        >
+          <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${on ? 'left-6' : 'left-1'}`} />
+        </button>
+      </div>
+      {on && (
+        <div className="mt-4 space-y-3">
+          {AREAS.map((a) => {
+            const list = active.filter((s) => s.areaId === a.id)
+            if (!list.length) return null
+            const cur = themes[a.id]
+            const sug = suggested[a.id]
+            return (
+              <div key={a.id}>
+                <div className="mb-1.5 flex flex-wrap items-baseline gap-2 text-xs font-bold" style={{ color: AREA_COLOR[a.id] }}>
+                  {a.name}
+                  {sug && list.some((s) => s.id === sug.id) && (
+                    <span className="font-semibold text-muted">
+                      · sugestão: {list.find((s) => s.id === sug.id)?.name} ({sug.reason})
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {list.map((s) => {
+                    const sel = cur === s.id
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => setThemes({ ...themes, [a.id]: sel ? undefined : s.id })}
+                        aria-pressed={sel}
+                        className={`flex items-center gap-1.5 rounded-full border py-1 pr-3 pl-1 text-sm font-semibold transition ${sel ? 'text-white shadow-sm' : 'border-line bg-white hover:border-slate-300'}`}
+                        style={sel ? { background: s.color, borderColor: s.color } : undefined}
+                      >
+                        <SubjectIcon subject={s as never} size={22} />
+                        {s.name}
+                        {sug?.id === s.id && <span className={`ml-0.5 text-[10px] ${sel ? 'text-white/80' : 'text-brand'}`}>★</span>}
+                      </button>
+                    )
+                  })}
+                  {!cur && <span className="self-center text-xs text-muted">Nenhuma escolhida: essa área fica variada.</span>}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }

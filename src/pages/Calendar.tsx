@@ -118,7 +118,21 @@ export function CalendarPage() {
 
       <Card className="overflow-hidden p-0">
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 pb-4">
-          <h2 className="text-xl font-bold">{fmtWeekRange(weekId)}</h2>
+          <div>
+            <h2 className="text-xl font-bold">{fmtWeekRange(weekId)}</h2>
+            {week?.themes && (
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {Object.values(week.themes)
+                  .map((id) => (id ? subjects.get(id) : undefined))
+                  .filter((s): s is Subject => !!s)
+                  .map((s) => (
+                    <span key={s.id} className="rounded-full px-2.5 py-0.5 text-xs font-bold text-white" style={{ background: s.color }}>
+                      🎯 Semana de {s.name}
+                    </span>
+                  ))}
+              </div>
+            )}
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             <Tabs
               value={view}

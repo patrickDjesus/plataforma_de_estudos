@@ -5,6 +5,7 @@ import { addDays, minutesNow, toISODate, weekIdOf } from '../lib/dates'
 import { applyRating, newReview, nextInterval, RATING_LABEL } from '../lib/review'
 import { errorsFromChallenge, reviewError } from '../lib/errors'
 import { planWeek } from '../lib/planner'
+import { themedSubjects, type Themes } from '../lib/themes'
 import { loadMastery } from './mastery'
 import { askBlockQuestions, showMascot } from '../lib/mascotBus'
 import { XP_PER_BLOCK } from '../lib/xp'
@@ -192,11 +193,11 @@ export async function findNoteByTitle(title: string): Promise<Note | undefined> 
 
 // ---------- Semana e planejamento ----------
 
-export async function saveCheckin(weekId: string, percents: AreaPercents, availability: Availability, pausedSubjectIds: string[]) {
+export async function saveCheckin(weekId: string, percents: AreaPercents, availability: Availability, pausedSubjectIds: string[], themes?: Themes | null) {
   const existing = await db.weeks.get(weekId)
-  const week: Week = { id: weekId, percents, availability, pausedSubjectIds, createdAt: existing?.createdAt ?? Date.now(), ...(existing?.retro ? { retro: existing.retro } : {}) }
+  const week: Week = { id: weekId, percents, availability, pausedSubjectIds, createdAt: existing?.createdAt ?? Date.now(), ...(existing?.retro ? { retro: existing.retro } : {}), ...(themes ? { themes } : {}) }
   await db.weeks.put(week)
-  await updateSettings({ defaultAvailability: availability, lastPercents: percents })
+  await updateSettings({ defaultAvailability: availability, lastPercents: percents, ...(themes !== undefined ? { themeWeeks: !!themes } : {}) })
   await regeneratePlan(weekId)
 }
 
@@ -259,7 +260,8 @@ async function regeneratePlanNow(weekId: string, now: Date) {
     weekId,
     availability: week.availability,
     percents: week.percents,
-    subjects: allSubjects.filter((s) => !week.pausedSubjectIds.includes(s.id)),
+    // Semana temática: estudo novo só da matéria da semana de cada área (revisões continuam)
+    subjects: themedSubjects(allSubjects.filter((s) => !week.pausedSubjectIds.includes(s.id)), week.themes),
     topics,
     busy: keep,
     settings,

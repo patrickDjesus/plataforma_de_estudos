@@ -57,6 +57,8 @@ export interface Week {
   createdAt: number
   /** Revisão semanal feita no check-in seguinte. */
   retro?: WeekRetro
+  /** Semana temática: a matéria da semana de cada área (sem isso, a semana é variada). */
+  themes?: Partial<Record<AreaId, string>>
 }
 
 export type RetroTag = 'pouco-tempo' | 'cansaco' | 'distracoes' | 'materia-dificil' | 'plano-irreal'
@@ -141,6 +143,8 @@ export interface Settings {
   seedVersion?: number
   /** Capi dá boas-vindas ao abrir o site (padrão: sim). */
   mascotWelcome?: boolean
+  /** Preferência: semanas temáticas (uma matéria por área). Padrão: sim. */
+  themeWeeks?: boolean
 }
 
 export interface TimerState {
