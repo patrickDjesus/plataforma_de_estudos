@@ -59,7 +59,7 @@ export function RushCapi({ mood, size = 86, talk = true, side = 'left', heat = 0
       {talk && line && (
         <div
           role="status"
-          className={`capi-pop absolute top-1 z-10 w-max max-w-[min(260px,55vw)] rounded-2xl border border-line bg-white px-3 py-2 text-[13px] leading-snug font-bold text-ink shadow-[0_8px_20px_-10px_rgba(16,24,40,.35)] ${side === 'left' ? 'right-full mr-2 rounded-br-md' : 'left-full ml-2 rounded-bl-md'} ${hot ? 'border-rose-300 bg-[#2a0409] text-rose-100' : ''}`}
+          className={`capi-pop absolute top-1 z-10 w-max max-w-[min(260px,55vw)] rounded-2xl border px-3 py-2 text-[13px] leading-snug font-bold shadow-[0_8px_20px_-10px_rgba(16,24,40,.35)] ${side === 'left' ? 'right-full mr-2 rounded-br-md' : 'left-full ml-2 rounded-bl-md'} ${hot ? 'border-rose-400 bg-[#2a0409] text-rose-100' : 'border-line bg-white text-ink'}`}
         >
           {shown}
         </div>

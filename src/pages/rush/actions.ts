@@ -258,7 +258,6 @@ export function goNext(silent = false) {
   ensureFill()
   const q = rush.get().current
   if (q && !silent) {
-    if (q.boss) sfx('boss')
     window.setTimeout(() => say('newq', newqTier(q)), 350)
   } else if (q) window.setTimeout(() => say('newq', newqTier(q)), 350)
 }

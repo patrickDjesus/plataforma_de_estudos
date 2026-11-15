@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BarChart3, CheckCircle2, Flame, ListOrdered, NotebookPen, Pause, Pencil, Play, RotateCcw, SlidersHorizontal, Star, Target, Thermometer, TrendingUp, Volume2, VolumeX } from 'lucide-react'
+import { BarChart3, CheckCircle2, ListOrdered, NotebookPen, Pause, Pencil, Play, RotateCcw, SlidersHorizontal, Star, Target, Thermometer, TrendingUp, Volume2, VolumeX } from 'lucide-react'
 import { useSubjectMap, useTopics } from '../../db/hooks'
 import { famStatus, fmtLong, ITEMS, type ItemId, type RushState } from '../../lib/rush'
 import { tint } from '../../lib/colors'
@@ -10,6 +10,7 @@ import { RushCapi } from './RushCapi'
 import { RushSetup } from './RushSetup'
 import { RushQuestion } from './RushQuestion'
 import { RushReport } from './RushReport'
+import { Arena, arenaMood, BossIntro, ComboMeter, FxLayer, Rays, useCountUp } from './RushFx'
 import { generatingFor, rush, runtime, useRuntime, useRush } from './store'
 import { checkAI, ensureFill, errCopy, fill, goNext, onMega, onToast, restartRush, setLookups, sfx, togglePause, toast, type Toast } from './actions'
 
@@ -34,10 +35,13 @@ export function RushPage() {
   }, [])
 
   const showSide = S.started && S.view === 'rush'
+  const onFire = S.started && S.view === 'rush' && S.stats.streak >= 5
   return (
-    <div className="relative">
+    <Arena mood={arenaMood(S)} onFire={onFire}>
       <Toasts />
       <Mega />
+      <FxLayer />
+      <BossIntro S={S} />
       <EndScreen S={S} />
       {S.started && <TopBar S={S} />}
       <div className={`grid items-start gap-5 ${showSide ? 'lg:grid-cols-[minmax(0,1fr)_320px]' : ''}`}>
@@ -60,7 +64,7 @@ export function RushPage() {
         </div>
         {showSide && <Side S={S} />}
       </div>
-    </div>
+    </Arena>
   )
 }
 
@@ -101,13 +105,8 @@ function TopBar({ S }: { S: RushState }) {
           <Bubble icon={<CheckCircle2 size={14} className="text-brand" />} title="Acerto">
             {acc}
           </Bubble>
-          <Bubble icon={<Flame size={14} className="text-orange-500" />} title="Combo atual (recorde)" hot={st.streak >= 3}>
-            {st.streak}
-            {st.best ? <small className="font-sans text-[11px] text-muted"> rec. {st.best}</small> : null}
-          </Bubble>
-          <Bubble icon={<Star size={14} className="text-amber-500" />} title="Pontos deste Rush">
-            {S.score.toLocaleString('pt-BR')}
-          </Bubble>
+          <ComboMeter streak={st.streak} best={st.best} />
+          <Score value={S.score} />
           <Bubble icon={<Thermometer size={14} className="text-rose-500" />} title="Dificuldade atual das questões novas (0 a 10)">
             {S.level.toFixed(1)}
           </Bubble>
@@ -251,7 +250,9 @@ function Side({ S }: { S: RushState }) {
                 </span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-[#eef0f4]">
-                <i className="block h-full rounded-full bg-gradient-to-r from-[#3e63f2] to-[#ff5fa2] transition-all" style={{ width: `${Math.round((100 * m.p) / m.n)}%` }} />
+                <i className="relative block h-full overflow-hidden rounded-full bg-gradient-to-r from-[#3e63f2] to-[#ff5fa2] transition-all duration-700" style={{ width: `${Math.round((100 * m.p) / m.n)}%` }}>
+                  <span className="rk-shimmer absolute inset-0" />
+                </i>
               </div>
               <div className="text-[11px] font-bold text-muted">
                 +{m.xp} pts{m.item ? ` · ${ITEMS[m.item].name}` : ''}
@@ -372,7 +373,8 @@ function Mega() {
   if (!m) return null
   return (
     <div className="pointer-events-none fixed inset-0 z-[75] grid place-items-center">
-      <span key={m.k} className="rush-mega px-4 text-center font-display text-[clamp(36px,8vw,76px)] font-extrabold text-amber-300 [paint-order:stroke_fill] [-webkit-text-stroke:3px_#16181d]">
+      <span key={m.k} className="rush-mega relative isolate px-4 text-center font-display text-[clamp(36px,8vw,76px)] font-extrabold text-amber-300 [paint-order:stroke_fill] [-webkit-text-stroke:3px_#16181d]">
+        <Rays size={560} />
         {m.text}
       </span>
     </div>
@@ -439,5 +441,20 @@ function EndScreen({ S }: { S: RushState }) {
         </div>
       </div>
     </div>
+  )
+}
+
+/** Placar de pontos que conta subindo (e recebe os "+pts" voando). */
+function Score({ value }: { value: number }) {
+  const shown = useCountUp(value)
+  const [pulse, setPulse] = useState(0)
+  useEffect(() => {
+    if (value) setPulse((n) => n + 1)
+  }, [value])
+  return (
+    <span id="rush-score" key={pulse} title="Pontos deste Rush" className={`flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-100 to-yellow-50 px-3 py-1 font-display text-sm font-extrabold text-amber-800 tabular-nums ring-1 ring-amber-200 ${pulse ? 'rush-bump' : ''}`}>
+      <Star size={14} className="fill-amber-400 text-amber-500" />
+      {shown.toLocaleString('pt-BR')}
+    </span>
   )
 }

@@ -8,6 +8,7 @@ import { useSubjectMap } from '../../db/hooks'
 import { RushCapi, type CapiMood } from './RushCapi'
 import { askAboutQuestion, errCopy, finishAnswer, goNext, markDoubt, overrideWrong, say, sfx, skipQuestion, submit, togglePause, applyFifty } from './actions'
 import { centerOf, confetti } from '../../lib/sfx'
+import { fx, Rays } from './RushFx'
 
 const OK_WORDS = ['Acertou!', 'Mandou bem!', 'Isso aí!', 'Arrasou!', 'Boa!!']
 
@@ -79,10 +80,15 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
   // efeitos ao responder
   useEffect(() => {
     if (ph !== 'feedback') return
+    const [x, y] = centerOf(card.current?.querySelector('[data-verdict]') ?? card.current)
     if (L.correct) {
-      const [x, y] = centerOf(card.current?.querySelector('[data-verdict]') ?? card.current)
       confetti(x, y, q.boss ? 160 : 50 + q.dificuldade * 6)
-    } else setShake((n) => n + 1)
+      fx({ type: 'flash', tone: q.boss ? 'gold' : 'ok' })
+      if (L.pts) window.setTimeout(() => fx({ type: 'fly', text: `+${L.pts}`, from: [x, y] }), 250)
+    } else {
+      setShake((n) => n + 1)
+      fx({ type: 'flash', tone: 'bad' })
+    }
     // foco no "Próxima"
     window.setTimeout(() => document.getElementById('rush-next')?.focus({ preventScroll: true }), 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,18 +142,19 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
   const hs = heatStyle(q)
   const mood: CapiMood = ph === 'checking' ? 'think' : ph === 'feedback' ? (L.correct ? 'happy' : 'sad') : sleepy ? 'sleepy' : q.boss ? 'boss' : S.stats.streak >= 8 && qHeat(q) < 0.45 ? 'cool' : 'idle'
   const fastLeft = Math.max(0, 1 - elapsed / 45000)
+  const onFire = S.stats.streak >= 5 && ph !== 'feedback'
 
   return (
     <div
       ref={card}
       key={shake}
-      className={`relative rounded-[26px] border-[3px] bg-white p-5 sm:p-7 ${shake ? 'rush-shake' : 'rush-enter'} ${q.boss ? 'rush-boss' : ''}`}
-      style={{ borderColor: ph === 'feedback' ? (L.correct ? '#22b573' : '#ff5c7a') : hs.border, boxShadow: ph === 'feedback' ? `0 8px 0 ${L.correct ? '#16915a' : '#e03a5a'}` : hs.shadow }}
+      className={`essential-motion relative rounded-[26px] border-[3px] bg-white p-5 sm:p-7 ${shake ? 'rush-shake' : 'rush-enter'} ${q.boss ? 'rush-boss' : ''} ${onFire ? 'rk-onfire' : ''}`}
+      style={{ borderColor: ph === 'feedback' ? (L.correct ? '#22b573' : '#ff5c7a') : hs.border, boxShadow: ph === 'feedback' ? `0 8px 0 ${L.correct ? '#16915a' : '#e03a5a'}` : onFire ? '0 8px 0 #ff8a3d, 0 0 36px rgba(255,120,40,.35)' : hs.shadow }}
     >
       {/* faixa da matéria e número da questão */}
       <span className="absolute -top-[3px] right-28 left-8 h-[7px] rounded-b-lg" style={{ background: `linear-gradient(90deg, ${color}, color-mix(in srgb, ${color} 70%, #000))` }} />
       <span className="absolute -top-4 left-6 z-[2] rounded-full px-3 py-0.5 font-display text-[13px] font-bold text-white" style={{ background: color, boxShadow: `0 3px 0 color-mix(in srgb, ${color} 70%, #000)` }}>
-        Q {S.stats.done + (answered ? 0 : 1)}
+        {onFire && <span className="rk-flame mr-1">🔥</span>}Q {S.stats.done + (answered ? 0 : 1)}
       </span>
       {ph !== 'feedback' && (
         <div className="absolute -top-12 right-4 z-[3]">
@@ -227,7 +234,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
                     say('pick', undefined, { L: 'ABCDE'[i] })
                   }
                 }}
-                className={`rush-alt grid grid-cols-[34px_1fr] items-center gap-3 rounded-2xl border-[3px] px-3.5 py-2.5 text-left font-semibold transition ${gone ? 'pointer-events-none scale-[.98] opacity-30 line-through' : ''} ${right ? 'border-emerald-500 bg-emerald-50 shadow-[0_4px_0_#22b573]' : wrong ? 'border-rose-400 bg-rose-50 shadow-[0_4px_0_#ff5c7a]' : sel ? 'shadow-[0_4px_0_var(--c)]' : 'border-line bg-white shadow-[0_4px_0_#e6e8f0] hover:translate-x-1 enabled:hover:border-[var(--c)]'}`}
+                className={`rush-alt grid grid-cols-[34px_1fr] items-center gap-3 rounded-2xl border-[3px] px-3.5 py-2.5 text-left font-semibold transition active:translate-y-1 active:shadow-none ${gone ? 'pointer-events-none scale-[.98] opacity-30 line-through' : ''} ${right ? 'rk-right rk-shine-host border-emerald-500 bg-emerald-50 shadow-[0_4px_0_#22b573]' : wrong ? 'rk-wrong border-rose-400 bg-rose-50 shadow-[0_4px_0_#ff5c7a]' : sel ? 'shadow-[0_4px_0_var(--c)]' : 'border-line bg-white shadow-[0_4px_0_#e6e8f0] enabled:hover:-translate-y-0.5 enabled:hover:border-[var(--c)] enabled:hover:shadow-[0_6px_0_#e6e8f0]'}`}
                 style={{ ['--c' as string]: color, animationDelay: `${i * 0.05}s`, ...(sel ? { borderColor: color, background: tint(color, 0.1) } : {}) }}
               >
                 <span className={`grid h-[34px] w-[34px] place-items-center rounded-full font-display text-base font-bold ${right ? 'bg-emerald-500 text-white' : wrong ? 'bg-rose-500 text-white' : sel ? 'text-white' : 'bg-[#f1f2f5]'}`} style={sel ? { background: color } : undefined}>
@@ -305,7 +312,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
               type="button"
               onClick={() => submit(ctx, { choice: selected, answer: ans, rac })}
               disabled={q.formato === 'multipla' ? selected == null : !ans.trim()}
-              className="flex items-center gap-2 rounded-2xl px-5 py-3 font-display text-base font-bold text-white transition hover:brightness-110 active:translate-y-1 disabled:opacity-40"
+              className={`flex items-center gap-2 rounded-2xl px-5 py-3 font-display text-base font-bold text-white transition hover:brightness-110 active:translate-y-1 disabled:opacity-40 ${(q.formato === 'multipla' ? selected != null : ans.trim()) ? 'rk-shine-host rk-breathe' : ''}`}
               style={{ background: color, boxShadow: `0 5px 0 color-mix(in srgb, ${color} 70%, #000)` }}
             >
               Conferir <kbd className="rounded-md bg-white/25 px-1.5 text-[11px]">Enter</kbd>
@@ -388,11 +395,14 @@ function Feedback({ S, q, color }: { S: RushState; q: RushQ; color: string }) {
   return (
     <div className="mt-6 grid gap-3.5">
       <div data-verdict className={`rush-pop relative grid grid-cols-[86px_1fr] items-center gap-3.5 rounded-[22px] px-4 py-3.5 ${ok ? 'bg-emerald-50' : 'bg-rose-50'}`}>
-        <RushCapi mood={ok ? 'happy' : 'sad'} size={86} side="right" />
+        <span className="relative isolate">
+          {ok && <Rays size={180} color={S.current?.boss ? 'rgba(255,190,40,.6)' : 'rgba(34,181,115,.35)'} />}
+          <RushCapi mood={ok ? 'happy' : 'sad'} size={86} side="right" />
+        </span>
         <div className="min-w-0">
           <div className={`flex flex-wrap items-center gap-2 font-display text-3xl leading-none font-extrabold ${ok ? 'text-emerald-700' : 'text-rose-600'}`}>
             {word}
-            {ok && L.pts ? <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 font-sans text-sm text-emerald-700">+{L.pts} pts</span> : null}
+            {ok && L.pts ? <span className="rk-pop-in rounded-full bg-gradient-to-r from-amber-300 to-yellow-200 px-2.5 py-0.5 font-sans text-sm text-amber-900 shadow-[0_3px_0_#e8a800]">⭐ +{L.pts} pts</span> : null}
             {ok && S.stats.streak >= 3 && <span className="rush-bump rounded-full bg-orange-400 px-2.5 py-0.5 text-sm text-white">🔥 combo x{(1 + Math.min(S.stats.streak - 1, 9) / 10).toFixed(1)}</span>}
             {ok && L.fast && <span className="rounded-full bg-amber-100 px-2.5 py-0.5 font-sans text-xs text-amber-800">⚡ rápido +25%</span>}
             {L.shielded && <span className="rounded-full bg-blue-100 px-2.5 py-0.5 font-sans text-xs text-blue-700">🛡️ escudo segurou o combo</span>}
@@ -409,7 +419,7 @@ function Feedback({ S, q, color }: { S: RushState; q: RushQ; color: string }) {
           id="rush-next"
           type="button"
           onClick={() => goNext()}
-          className="flex items-center gap-2 rounded-2xl px-5 py-3 font-display text-base font-bold text-white transition hover:brightness-110 active:translate-y-1"
+          className="rk-shine-host flex items-center gap-2 rounded-2xl px-5 py-3 font-display text-base font-bold text-white transition hover:brightness-110 active:translate-y-1"
           style={{ background: color, boxShadow: `0 5px 0 color-mix(in srgb, ${color} 70%, #000)` }}
         >
           Próxima <ArrowRight size={17} /> <kbd className="rounded-md bg-white/25 px-1.5 text-[11px]">Enter</kbd>

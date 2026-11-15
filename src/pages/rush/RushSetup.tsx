@@ -5,6 +5,7 @@ import type { RushCfg, RushSubjectCfg } from '../../lib/rush'
 import { tint } from '../../lib/colors'
 import { SubjectIcon } from '../../components/SubjectIcon'
 import { RushCapi } from './RushCapi'
+import { Rays } from './RushFx'
 import { rush } from './store'
 import { sfx, startRush, toast, ensureFill } from './actions'
 import { centerOf, confetti } from '../../lib/sfx'
@@ -61,11 +62,24 @@ export function RushSetup() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center gap-4">
-        <RushCapi mood="idle" size={96} talk={false} />
+      <div className="relative isolate mb-6 flex flex-wrap items-center gap-5 overflow-hidden rounded-[24px] bg-gradient-to-br from-[#1f2a6b] via-[#3e2a8c] to-[#7a1f6b] p-5 text-white sm:p-6">
+        <Rays size={520} color="rgba(255,255,255,.12)" className="left-[15%]" />
+        <span className="relative isolate shrink-0">
+          <Rays size={200} color="rgba(255,210,60,.35)" />
+          <RushCapi mood="idle" size={108} talk={false} />
+        </span>
         <div className="min-w-[220px] flex-1">
-          <h2 className="font-display text-3xl font-extrabold sm:text-4xl">{S.started ? 'Ajustes do Rush' : 'Bora de Rush?'}</h2>
-          <p className="mt-1 max-w-2xl text-sm text-muted">
+          <div className="mb-1 flex flex-wrap gap-1.5">
+            {['🔥 Combo', '⚔️ Chefões', '🎯 Missões', '🛡️ Itens', '🔁 Revisões'].map((t, i) => (
+              <span key={t} className="rk-pop-in rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-bold backdrop-blur" style={{ animationDelay: `${i * 80}ms` }}>
+                {t}
+              </span>
+            ))}
+          </div>
+          <h2 className="font-display text-5xl leading-none font-extrabold tracking-tight sm:text-6xl">
+            <span className="bg-[linear-gradient(90deg,#ffd23c,#ff9a3d,#ff5fa2,#9bb3ff,#ffd23c)] bg-[length:300%_100%] bg-clip-text text-transparent [animation:rk-title_6s_ease-in-out_infinite]">{S.started ? 'AJUSTES' : 'RUSH!'}</span>
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-white/80">
             {S.started
               ? 'O que você mudar aqui vale para as próximas questões. As que já estão na fila continuam lá.'
               : 'Escolha as matérias e vá resolvendo sem parar. Errou? Eu explico na hora e trago a mesma ideia de volta umas questões depois, até você dominar. Cada questão conta nas suas estatísticas, no rank e no domínio do tópico.'}
@@ -245,7 +259,7 @@ export function RushSetup() {
 
       {err && <p className="mb-3 rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">{err}</p>}
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={(e) => go(e.currentTarget)} className="flex items-center gap-2 rounded-2xl bg-brand px-7 py-3.5 font-display text-lg font-bold text-white shadow-[0_6px_0_#2a47c4] transition hover:brightness-110 active:translate-y-1 active:shadow-[0_2px_0_#2a47c4]">
+        <button type="button" onClick={(e) => go(e.currentTarget)} className="rk-shine-host rk-breathe flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#3e63f2] to-[#9b6bff] px-8 py-4 font-display text-xl font-bold text-white shadow-[0_6px_0_#2a47c4] transition hover:brightness-110 active:translate-y-1 active:shadow-[0_2px_0_#2a47c4]">
           {S.started ? (
             <>
               Salvar e voltar <Save size={18} />

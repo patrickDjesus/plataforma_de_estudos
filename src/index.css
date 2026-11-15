@@ -153,3 +153,45 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 .rush-mega { animation: rush-mega 1.8s cubic-bezier(.3, 1.6, .5, 1) forwards; }
 .rush-delay-in { animation: rush-fade .4s 2.4s both; }
 .rush-stripes { background: repeating-linear-gradient(-45deg, #3e63f2 0 12px, #7c8cff 12px 24px); background-size: 34px 34px; animation: rush-stripes 1s linear infinite; }
+
+/* Rush gamificado: arena, partículas, flashes, raios e bordas de fogo */
+@property --rk-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes rk-angle { to { --rk-a: 360deg } }
+@keyframes rk-arena { 0%, 100% { background-position: 0% 50% } 50% { background-position: 100% 50% } }
+@keyframes rk-rise { 0% { transform: translateY(0) scale(1); opacity: 0 } 10% { opacity: 1 } 100% { transform: translateY(-110vh) translateX(var(--drift, 20px)) scale(.4); opacity: 0 } }
+@keyframes rk-float { 0%, 100% { transform: translateY(0) rotate(0) scale(1); opacity: .5 } 50% { transform: translateY(-26px) rotate(25deg) scale(1.25); opacity: 1 } }
+@keyframes rk-flash { 0% { opacity: 0 } 15% { opacity: 1 } 100% { opacity: 0 } }
+@keyframes rk-rays { to { transform: rotate(360deg) } }
+@keyframes rk-shine-x { 0% { transform: translateX(-120%) skewX(-20deg) } 60%, 100% { transform: translateX(260%) skewX(-20deg) } }
+@keyframes rk-shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+@keyframes rk-fly { 0% { transform: translate(0, 0) scale(.6); opacity: 0 } 15% { transform: translate(0, -24px) scale(1.25); opacity: 1 } 100% { transform: translate(var(--dx), var(--dy)) scale(.5); opacity: .2 } }
+@keyframes rk-boss-in { 0% { opacity: 0; transform: scale(2.2) rotate(-8deg); filter: blur(8px) } 40% { opacity: 1; transform: scale(.92) rotate(2deg); filter: none } 55% { transform: scale(1.04) rotate(-1deg) } 100% { transform: scale(1) } }
+@keyframes rk-quake { 0%, 100% { transform: translate(0, 0) } 10% { transform: translate(-8px, 4px) } 20% { transform: translate(7px, -5px) } 30% { transform: translate(-6px, -3px) } 40% { transform: translate(5px, 5px) } 50% { transform: translate(-3px, 2px) } 60% { transform: translate(2px, -2px) } }
+@keyframes rk-pop-in { 0% { transform: scale(0) rotate(-20deg); opacity: 0 } 60% { transform: scale(1.25) rotate(6deg); opacity: 1 } 100% { transform: scale(1) rotate(0) } }
+@keyframes rk-flame-flicker { 0%, 100% { transform: scale(1) rotate(-3deg) } 50% { transform: scale(1.12, 1.2) rotate(3deg) } }
+@keyframes rk-glow-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 120, 40, .0) } 50% { box-shadow: 0 0 26px 4px rgba(255, 120, 40, .55) } }
+@keyframes rk-right { 0% { transform: scale(1) } 40% { transform: scale(1.04) } 100% { transform: scale(1) } }
+@keyframes rk-wrong { 0%, 100% { transform: translateX(0) } 25% { transform: translateX(-7px) } 50% { transform: translateX(6px) } 75% { transform: translateX(-3px) } }
+@keyframes rk-title { 0%, 100% { background-position: 0% 50% } 50% { background-position: 100% 50% } }
+@keyframes rk-breathe { 0%, 100% { transform: scale(1) } 50% { transform: scale(1.04) } }
+.rk-arena { background-size: 300% 300%; animation: rk-arena 14s ease-in-out infinite; transition: background-color 1s; }
+.rk-ember { position: absolute; bottom: -20px; border-radius: 9999px; animation: rk-rise linear infinite; pointer-events: none; }
+.rk-spark { position: absolute; pointer-events: none; animation: rk-float ease-in-out infinite; }
+.rk-flash { animation: rk-flash .7s ease-out forwards; }
+.rk-rays { animation: rk-rays 9s linear infinite; }
+.rk-shine-host { position: relative; overflow: hidden; }
+.rk-shine-host::after { content: ''; position: absolute; inset: 0; width: 40%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55), transparent); animation: rk-shine-x 2.8s ease-in-out infinite; pointer-events: none; }
+.rk-shimmer { background-image: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, .55) 50%, transparent 100%); background-size: 200% 100%; animation: rk-shimmer 2.2s linear infinite; }
+.rk-fly { animation: rk-fly .9s cubic-bezier(.5, 0, .7, 1) forwards; }
+.rk-boss-in { animation: rk-boss-in .9s cubic-bezier(.2, 1.4, .4, 1) both; }
+.rk-quake { animation: rk-quake .6s ease-in-out; }
+.rk-pop-in { animation: rk-pop-in .5s cubic-bezier(.3, 1.6, .5, 1) both; }
+.rk-flame { display: inline-block; transform-origin: 50% 90%; animation: rk-flame-flicker .5s ease-in-out infinite; }
+.rk-glow-pulse { animation: rk-glow-pulse 1.4s ease-in-out infinite; }
+.rk-right { animation: rk-right .5s cubic-bezier(.3, 1.6, .5, 1); }
+.rk-wrong { animation: rk-wrong .45s ease; }
+.rk-title { background: linear-gradient(90deg, #3e63f2, #9b6bff, #ff5fa2, #ff9a3d, #3e63f2); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: rk-title 6s ease-in-out infinite; }
+.rk-breathe { animation: rk-breathe 2.4s ease-in-out infinite; }
+.rk-onfire { border-color: transparent !important; background: linear-gradient(#fff, #fff) padding-box, conic-gradient(from var(--rk-a), #ff5f1f, #ffd000, #ff2d75, #9b6bff, #ff5f1f) border-box !important; animation: rk-angle 2.6s linear infinite; }
+@keyframes rk-out { 0%, 85% { opacity: 1 } 100% { opacity: 0 } }
+.rush-delay-out { animation: rk-out 2.2s ease forwards; }
