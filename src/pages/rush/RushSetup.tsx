@@ -5,7 +5,6 @@ import type { RushCfg, RushSubjectCfg } from '../../lib/rush'
 import { tint } from '../../lib/colors'
 import { SubjectIcon } from '../../components/SubjectIcon'
 import { RushCapi } from './RushCapi'
-import { Rays } from './RushFx'
 import { rush } from './store'
 import { sfx, startRush, toast, ensureFill } from './actions'
 import { centerOf, confetti } from '../../lib/sfx'
@@ -62,24 +61,22 @@ export function RushSetup() {
 
   return (
     <div>
-      <div className="relative isolate mb-6 flex flex-wrap items-center gap-5 overflow-hidden rounded-[24px] bg-gradient-to-br from-[#1f2a6b] via-[#3e2a8c] to-[#7a1f6b] p-5 text-white sm:p-6">
-        <Rays size={520} color="rgba(255,255,255,.12)" className="left-[15%]" />
-        <span className="relative isolate shrink-0">
-          <Rays size={200} color="rgba(255,210,60,.35)" />
-          <RushCapi mood="idle" size={108} talk={false} />
-        </span>
+      <div className="relative isolate mb-6 flex flex-wrap items-center gap-5 overflow-hidden rounded-[24px] bg-[#16181d] p-5 text-white sm:p-7">
+        <span className="pointer-events-none absolute -top-24 -left-16 -z-10 h-72 w-72 rounded-full bg-[#3e63f2]/35 blur-3xl" />
+        <span className="pointer-events-none absolute -right-10 -bottom-28 -z-10 h-72 w-72 rounded-full bg-[#b3122e]/30 blur-3xl" />
+        <span className="pointer-events-none absolute inset-0 -z-10 opacity-[.07] [background-image:linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)] [background-size:28px_28px]" />
+        <RushCapi mood="idle" size={104} talk={false} />
         <div className="min-w-[220px] flex-1">
-          <div className="mb-1 flex flex-wrap gap-1.5">
-            {['🔥 Combo', '⚔️ Chefões', '🎯 Missões', '🛡️ Itens', '🔁 Revisões'].map((t, i) => (
-              <span key={t} className="rk-pop-in rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-bold backdrop-blur" style={{ animationDelay: `${i * 80}ms` }}>
+          <div className="text-[11px] font-bold tracking-[.3em] text-[#9db0ff] uppercase">Modo treino</div>
+          <h2 className="mt-1 font-display text-5xl leading-none font-extrabold tracking-tight sm:text-6xl">{S.started ? 'Ajustes' : 'Rush'}</h2>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {['Combo', 'Chefões', 'Missões', 'Itens', 'Revisões'].map((t) => (
+              <span key={t} className="rounded-full border border-white/15 px-2.5 py-0.5 text-[11px] font-semibold text-white/75">
                 {t}
               </span>
             ))}
           </div>
-          <h2 className="font-display text-5xl leading-none font-extrabold tracking-tight sm:text-6xl">
-            <span className="bg-[linear-gradient(90deg,#ffd23c,#ff9a3d,#ff5fa2,#9bb3ff,#ffd23c)] bg-[length:300%_100%] bg-clip-text text-transparent [animation:rk-title_6s_ease-in-out_infinite]">{S.started ? 'AJUSTES' : 'RUSH!'}</span>
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm text-white/80">
+          <p className="mt-3 max-w-2xl text-sm text-white/65">
             {S.started
               ? 'O que você mudar aqui vale para as próximas questões. As que já estão na fila continuam lá.'
               : 'Escolha as matérias e vá resolvendo sem parar. Errou? Eu explico na hora e trago a mesma ideia de volta umas questões depois, até você dominar. Cada questão conta nas suas estatísticas, no rank e no domínio do tópico.'}
@@ -259,7 +256,7 @@ export function RushSetup() {
 
       {err && <p className="mb-3 rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">{err}</p>}
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={(e) => go(e.currentTarget)} className="rk-shine-host rk-breathe flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#3e63f2] to-[#9b6bff] px-8 py-4 font-display text-xl font-bold text-white shadow-[0_6px_0_#2a47c4] transition hover:brightness-110 active:translate-y-1 active:shadow-[0_2px_0_#2a47c4]">
+        <button type="button" onClick={(e) => go(e.currentTarget)} className="rk-shine-host flex items-center gap-2 rounded-2xl bg-brand px-8 py-4 font-display text-xl font-bold text-white shadow-[0_6px_0_#2a47c4] transition hover:brightness-110 active:translate-y-1 active:shadow-[0_2px_0_#2a47c4]">
           {S.started ? (
             <>
               Salvar e voltar <Save size={18} />

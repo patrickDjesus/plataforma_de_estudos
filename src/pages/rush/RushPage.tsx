@@ -10,7 +10,7 @@ import { RushCapi } from './RushCapi'
 import { RushSetup } from './RushSetup'
 import { RushQuestion } from './RushQuestion'
 import { RushReport } from './RushReport'
-import { Arena, arenaMood, BossIntro, ComboMeter, FxLayer, Rays, useCountUp } from './RushFx'
+import { Arena, arenaHeat, Banner, BossIntro, ComboMeter, FxLayer, useCountUp } from './RushFx'
 import { generatingFor, rush, runtime, useRuntime, useRush } from './store'
 import { checkAI, ensureFill, errCopy, fill, goNext, onMega, onToast, restartRush, setLookups, sfx, togglePause, toast, type Toast } from './actions'
 
@@ -37,7 +37,7 @@ export function RushPage() {
   const showSide = S.started && S.view === 'rush'
   const onFire = S.started && S.view === 'rush' && S.stats.streak >= 5
   return (
-    <Arena mood={arenaMood(S)} onFire={onFire}>
+    <Arena heat={arenaHeat(S)} boss={!!(S.view === 'rush' && S.current?.boss)} onFire={onFire}>
       <Toasts />
       <Mega />
       <FxLayer />
@@ -250,7 +250,7 @@ function Side({ S }: { S: RushState }) {
                 </span>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-[#eef0f4]">
-                <i className="relative block h-full overflow-hidden rounded-full bg-gradient-to-r from-[#3e63f2] to-[#ff5fa2] transition-all duration-700" style={{ width: `${Math.round((100 * m.p) / m.n)}%` }}>
+                <i className="relative block h-full overflow-hidden rounded-full bg-[#3e63f2] transition-all duration-700" style={{ width: `${Math.round((100 * m.p) / m.n)}%` }}>
                   <span className="rk-shimmer absolute inset-0" />
                 </i>
               </div>
@@ -350,7 +350,7 @@ function Toasts() {
       {list.map((t) => (
         <div
           key={t.id}
-          className={`${t.out ? 'rush-toast-out' : 'rush-toast'} rounded-full px-5 py-2.5 text-center font-display text-[15px] font-bold text-white shadow-[0_6px_0_rgba(16,24,40,.2)] ${t.tone === 'gold' ? 'bg-gradient-to-r from-[#3e63f2] to-[#ff5fa2]' : t.tone === 'item' ? 'border-2 border-amber-300 bg-[#4a3500]' : 'bg-ink'}`}
+          className={`${t.out ? 'rush-toast-out' : 'rush-toast'} rounded-2xl px-5 py-2.5 text-center font-display text-[15px] font-bold text-white shadow-[0_6px_0_rgba(16,24,40,.2)] ${t.tone === 'gold' ? 'border-l-4 border-amber-400 bg-[#16181d]' : t.tone === 'item' ? 'border-l-4 border-sky-400 bg-[#16181d]' : 'bg-[#16181d]'}`}
         >
           {t.text}
         </div>
@@ -371,14 +371,7 @@ function Mega() {
     [],
   )
   if (!m) return null
-  return (
-    <div className="pointer-events-none fixed inset-0 z-[75] grid place-items-center">
-      <span key={m.k} className="rush-mega relative isolate px-4 text-center font-display text-[clamp(36px,8vw,76px)] font-extrabold text-amber-300 [paint-order:stroke_fill] [-webkit-text-stroke:3px_#16181d]">
-        <Rays size={560} />
-        {m.text}
-      </span>
-    </div>
-  )
+  return <Banner text={m.text} k={m.k} />
 }
 
 function EndScreen({ S }: { S: RushState }) {
@@ -452,7 +445,7 @@ function Score({ value }: { value: number }) {
     if (value) setPulse((n) => n + 1)
   }, [value])
   return (
-    <span id="rush-score" key={pulse} title="Pontos deste Rush" className={`flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-100 to-yellow-50 px-3 py-1 font-display text-sm font-extrabold text-amber-800 tabular-nums ring-1 ring-amber-200 ${pulse ? 'rush-bump' : ''}`}>
+    <span id="rush-score" key={pulse} title="Pontos deste Rush" className={`flex items-center gap-1.5 rounded-full bg-[#f1f2f5] px-3 py-1 font-display text-sm font-extrabold tabular-nums ${pulse ? 'rush-bump' : ''}`}>
       <Star size={14} className="fill-amber-400 text-amber-500" />
       {shown.toLocaleString('pt-BR')}
     </span>

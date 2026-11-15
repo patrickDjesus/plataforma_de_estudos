@@ -43,91 +43,94 @@ export function useCountUp(value: number, ms = 700) {
   return shown
 }
 
-// ---------- Arena: fundo animado que esquenta com a dificuldade ----------
-type Mood = 'calm' | 'warm' | 'hot' | 'boss'
-export function arenaMood(S: RushState): Mood {
+// ---------- Arena: escurece e fica ameaçadora conforme a dificuldade ----------
+/** "Calor" do momento (0–1). Fora da questão, a arena fica calma. */
+export function arenaHeat(S: RushState): number {
   const q = S.view === 'rush' ? S.current : null
-  if (!q) return 'calm'
-  if (q.boss) return 'boss'
-  const h = qHeat(q)
-  return h >= 0.7 ? 'hot' : h >= 0.45 ? 'warm' : 'calm'
+  return q ? qHeat(q) : 0
 }
-const ARENA: Record<Mood, string> = {
-  calm: 'linear-gradient(120deg, #e9eeff, #f4ecff, #e6fbf2, #fff4e2, #e9eeff)',
-  warm: 'linear-gradient(120deg, #fff1e3, #ffe2d1, #fff3c9, #ffe6ef, #fff1e3)',
-  hot: 'linear-gradient(120deg, #ffd6c2, #ffab92, #ffd0a0, #ff9fb0, #ffd6c2)',
-  boss: 'linear-gradient(120deg, #1c0307, #5c0a18, #2a0409, #7a1020, #1c0307)',
+
+const hex = (c: string) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16))
+function mixHex(a: string, b: string, t: number) {
+  const [x, y] = [hex(a), hex(b)]
+  return `rgb(${x.map((v, i) => Math.round(v + (y[i] - v) * t)).join(',')})`
 }
+/** Claro e limpo até a média; daí escurece até um quase-preto avermelhado. */
+const STOPS: [number, string][] = [
+  [0, '#eef0f5'],
+  [0.35, '#e6e8ee'],
+  [0.5, '#2c2f38'],
+  [0.65, '#1d1a20'],
+  [0.8, '#160b0e'],
+  [1, '#0b0204'],
+]
+export function arenaColor(h: number) {
+  for (let i = 1; i < STOPS.length; i++)
+    if (h <= STOPS[i][0]) {
+      const [a, ca] = STOPS[i - 1]
+      const [b, cb] = STOPS[i]
+      return mixHex(ca, cb, (h - a) / (b - a))
+    }
+  return STOPS[STOPS.length - 1][1]
+}
+export const isDark = (h: number) => h >= 0.45
 
 function rand(seed: number) {
   const x = Math.sin(seed * 9301 + 49297) * 233280
   return x - Math.floor(x)
 }
 
-export function Arena({ mood, onFire, children }: { mood: Mood; onFire: boolean; children: React.ReactNode }) {
-  const embers = mood === 'hot' || mood === 'boss' || onFire
-  const count = mood === 'boss' ? 34 : mood === 'hot' ? 22 : onFire ? 16 : 0
+export function Arena({ heat, boss, onFire, children }: { heat: number; boss: boolean; onFire: boolean; children: React.ReactNode }) {
+  const h = boss ? 1 : heat
+  const glow = Math.max(0, Math.min(1, (h - 0.4) / 0.6))
+  const embers = boss ? 30 : h >= 0.6 ? Math.round((h - 0.5) * 50) : onFire ? 8 : 0
   const parts = useMemo(
     () =>
-      Array.from({ length: 34 }, (_, i) => ({
+      Array.from({ length: 30 }, (_, i) => ({
         left: rand(i + 1) * 100,
-        size: 3 + rand(i + 50) * 6,
-        dur: 5 + rand(i + 99) * 7,
-        delay: -rand(i + 7) * 12,
-        drift: (rand(i + 3) - 0.5) * 120,
-      })),
-    [],
-  )
-  const sparks = useMemo(
-    () =>
-      Array.from({ length: 14 }, (_, i) => ({
-        left: rand(i + 200) * 100,
-        top: rand(i + 300) * 100,
-        size: 10 + rand(i + 400) * 14,
-        dur: 3 + rand(i + 500) * 4,
-        delay: -rand(i + 600) * 5,
-        ch: ['✦', '✧', '•', '★'][i % 4],
-        color: ['#a9b8ff', '#ffb8d9', '#9be7c4', '#ffd27a'][i % 4],
+        size: 2 + rand(i + 50) * 3.5,
+        dur: 7 + rand(i + 99) * 8,
+        delay: -rand(i + 7) * 14,
+        drift: (rand(i + 3) - 0.5) * 90,
       })),
     [],
   )
   return (
-    <div className="essential-motion relative isolate overflow-hidden rounded-[32px] p-3 transition-colors duration-1000 sm:p-5" style={{ background: ARENA[mood] }}>
-      <div className="rk-arena pointer-events-none absolute inset-0 -z-10" style={{ backgroundImage: ARENA[mood] }} />
-      {/* vinheta e brilho de chão */}
-      <div className={`pointer-events-none absolute inset-0 -z-10 ${mood === 'boss' ? 'rk-pulse bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,.55))]' : 'bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,.55),transparent_60%)]'}`} />
-      {onFire && <div className="rk-pulse pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-1/2 bg-[radial-gradient(ellipse_at_bottom,rgba(255,110,30,.35),transparent_70%)]" />}
-      {/* faíscas calmas */}
-      {!embers &&
-        sparks.map((s, i) => (
-          <span key={i} className="rk-spark -z-10" style={{ left: `${s.left}%`, top: `${s.top}%`, fontSize: s.size, color: s.color, animationDuration: `${s.dur}s`, animationDelay: `${s.delay}s` }}>
-            {s.ch}
-          </span>
-        ))}
-      {/* brasas subindo */}
-      {embers &&
-        parts.slice(0, count).map((p, i) => (
-          <span
-            key={i}
-            className="rk-ember -z-10"
-            style={{
-              left: `${p.left}%`,
-              width: p.size,
-              height: p.size,
-              background: i % 3 ? '#ff7a1a' : '#ffd23c',
-              boxShadow: `0 0 ${p.size * 2}px ${i % 3 ? '#ff5a00' : '#ffb300'}`,
-              animationDuration: `${p.dur}s`,
-              animationDelay: `${p.delay}s`,
-              ['--drift' as string]: `${p.drift}px`,
-            }}
-          />
-        ))}
+    <div className="essential-motion relative isolate overflow-hidden rounded-[32px] p-3 transition-[background-color] duration-[1200ms] sm:p-5" style={{ backgroundColor: arenaColor(h) }}>
+      {/* brilho vermelho que sobe do chão */}
+      <div
+        className={`pointer-events-none absolute inset-0 -z-10 transition-opacity duration-1000 ${h >= 0.8 ? 'rk-heartbeat' : ''}`}
+        style={{ opacity: glow, background: 'radial-gradient(120% 70% at 50% 110%, rgba(190,20,30,.55), rgba(120,10,20,.18) 45%, transparent 70%)' }}
+      />
+      {/* vinheta que vai fechando */}
+      <div className="pointer-events-none absolute inset-0 -z-10 transition-opacity duration-1000" style={{ opacity: glow, background: 'radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,.6))' }} />
+      {/* chefão: relâmpago vermelho de vez em quando */}
+      {boss && <div className="rk-flicker pointer-events-none absolute inset-0 -z-10 bg-[rgba(255,40,40,.18)]" />}
+      {/* combo em chamas: calor laranja embaixo */}
+      {onFire && <div className="rk-pulse pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-1/2 bg-[radial-gradient(ellipse_at_bottom,rgba(255,110,30,.28),transparent_70%)]" />}
+      {/* brasas */}
+      {parts.slice(0, embers).map((p, i) => (
+        <span
+          key={i}
+          className="rk-ember -z-10"
+          style={{
+            left: `${p.left}%`,
+            width: p.size,
+            height: p.size,
+            background: i % 3 ? '#ff4a1a' : '#ffb347',
+            boxShadow: `0 0 ${p.size * 3}px ${i % 3 ? '#ff2a00' : '#ff8a00'}`,
+            animationDuration: `${p.dur}s`,
+            animationDelay: `${p.delay}s`,
+            ['--drift' as string]: `${p.drift}px`,
+          }}
+        />
+      ))}
       {children}
     </div>
   )
 }
 
-// ---------- Flash de tela e pontos voando ----------
+// ---------- Flash de borda e pontos voando ----------
 export function FxLayer() {
   const [flash, setFlash] = useState<{ k: number; tone: 'ok' | 'bad' | 'gold' } | null>(null)
   const [flies, setFlies] = useState<{ k: number; text: string; x: number; y: number; dx: number; dy: number }[]>([])
@@ -143,15 +146,15 @@ export function FxLayer() {
       window.setTimeout(() => setFlies((l) => l.filter((f) => f.k !== k)), 1000)
     }
   })
-  const color = flash?.tone === 'ok' ? 'rgba(34,181,115,.35)' : flash?.tone === 'bad' ? 'rgba(255,60,90,.35)' : 'rgba(255,201,60,.45)'
+  const color = flash?.tone === 'ok' ? 'rgba(34,181,115,.28)' : flash?.tone === 'bad' ? 'rgba(220,30,50,.32)' : 'rgba(255,190,60,.32)'
   return (
     <>
-      {flash && <div key={flash.k} className="rk-flash pointer-events-none fixed inset-0 z-[66]" style={{ background: `radial-gradient(ellipse at center, transparent 35%, ${color})` }} />}
+      {flash && <div key={flash.k} className="rk-flash pointer-events-none fixed inset-0 z-[66]" style={{ background: `radial-gradient(ellipse at center, transparent 50%, ${color})` }} />}
       {flies.map((f) => (
         <span
           key={f.k}
-          className="rk-fly pointer-events-none fixed z-[67] font-display text-2xl font-extrabold text-amber-400 [paint-order:stroke_fill] [-webkit-text-stroke:2px_#16181d]"
-          style={{ left: f.x - 30, top: f.y - 16, ['--dx' as string]: `${f.dx}px`, ['--dy' as string]: `${f.dy}px` }}
+          className="rk-fly pointer-events-none fixed z-[67] rounded-full bg-[#16181d] px-2.5 py-0.5 font-display text-sm font-bold text-amber-300 shadow-lg"
+          style={{ left: f.x - 24, top: f.y - 12, ['--dx' as string]: `${f.dx}px`, ['--dy' as string]: `${f.dy}px` }}
         >
           {f.text}
         </span>
@@ -160,26 +163,29 @@ export function FxLayer() {
   )
 }
 
-// ---------- Raios girando (atrás de letreiros e da Capi) ----------
-export function Rays({ color = 'rgba(255,210,60,.45)', size = 260, className = '' }: { color?: string; size?: number; className?: string }) {
+/** Anel que se expande (atrás da Capi quando acerta). */
+export function Ring({ color = 'rgba(34,181,115,.5)', size = 120 }: { color?: string; size?: number }) {
+  return <span aria-hidden className="rk-ring pointer-events-none absolute top-1/2 left-1/2 -z-10 rounded-full border-4" style={{ width: size, height: size, marginLeft: -size / 2, marginTop: -size / 2, borderColor: color }} />
+}
+
+// ---------- Faixa de destaque (combo, nível, chefão derrotado…) ----------
+export function Banner({ text, k }: { text: string; k: number }) {
+  const [icon, ...rest] = text.split(' ')
+  const hasIcon = /\p{Extended_Pictographic}/u.test(icon)
   return (
-    <span
-      aria-hidden
-      className={`rk-rays pointer-events-none absolute top-1/2 left-1/2 -z-10 rounded-full ${className}`}
-      style={{
-        width: size,
-        height: size,
-        marginLeft: -size / 2,
-        marginTop: -size / 2,
-        background: `repeating-conic-gradient(${color} 0deg 10deg, transparent 10deg 24deg)`,
-        maskImage: 'radial-gradient(circle, #000 20%, transparent 70%)',
-        WebkitMaskImage: 'radial-gradient(circle, #000 20%, transparent 70%)',
-      }}
-    />
+    <div className="pointer-events-none fixed inset-x-0 top-[18%] z-[75] flex justify-center px-4">
+      <div key={k} className="rk-banner flex items-center gap-3 rounded-2xl border border-white/10 bg-[#16181d]/92 px-6 py-3.5 text-white shadow-[0_20px_50px_-15px_rgba(0,0,0,.6)] backdrop-blur">
+        {hasIcon && <span className="text-3xl">{icon}</span>}
+        <div>
+          <div className="font-display text-2xl leading-none font-extrabold tracking-wide uppercase sm:text-3xl">{hasIcon ? rest.join(' ') : text}</div>
+          <div className="mt-2 h-[3px] w-16 rounded-full bg-gradient-to-r from-amber-400 to-orange-500" />
+        </div>
+      </div>
+    </div>
   )
 }
 
-// ---------- Entrada do chefão ----------
+// ---------- Entrada do chefão (cinema) ----------
 export function BossIntro({ S }: { S: RushState }) {
   const q = S.current
   const seen = useRef<string | null>(null)
@@ -189,23 +195,23 @@ export function BossIntro({ S }: { S: RushState }) {
       seen.current = q.id
       setShow(q.id)
       sfx('boss')
-      const t = window.setTimeout(() => setShow(null), 2200)
+      const t = window.setTimeout(() => setShow(null), 2400)
       return () => window.clearTimeout(t)
     }
   }, [q?.id, q?.boss, S.phase, S.view])
   if (!show) return null
   return (
-    <button type="button" onClick={() => setShow(null)} className="rush-delay-out fixed inset-0 z-[74] grid cursor-pointer place-items-center overflow-hidden bg-[radial-gradient(circle,#5c0a18,#16020a)] text-center" aria-label="Fechar">
-      <span className="rk-quake relative isolate flex flex-col items-center">
-        <Rays color="rgba(255,60,40,.5)" size={720} />
-        <span className="rk-boss-in">
-          <Capybara pose="focado" size={150} />
+    <button type="button" onClick={() => setShow(null)} className="rush-delay-out fixed inset-0 z-[74] cursor-pointer overflow-hidden bg-[radial-gradient(ellipse_at_center,#3a0610,#070102_70%)]" aria-label="Fechar">
+      <span className="rk-letterbox-top absolute inset-x-0 top-0 h-[14vh] bg-black" />
+      <span className="rk-letterbox-bottom absolute inset-x-0 bottom-0 h-[14vh] bg-black" />
+      <span className="rk-heartbeat absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_60%,rgba(200,20,30,.45),transparent)]" />
+      <span className="rk-quake relative flex h-full flex-col items-center justify-center text-center">
+        <span className="rk-boss-in opacity-90">
+          <Capybara pose="focado" size={130} />
         </span>
-        <span className="rk-boss-in font-display text-[clamp(44px,10vw,96px)] leading-none font-extrabold text-rose-100 [paint-order:stroke_fill] [-webkit-text-stroke:4px_#3a0a12]" style={{ animationDelay: '.15s' }}>
-          ⚔️ CHEFÃO
-        </span>
-        <span className="rk-boss-in mt-2 text-lg font-bold text-rose-200" style={{ animationDelay: '.3s' }}>
-          Vale 3x os pontos. Lê duas vezes e vai com tudo!
+        <span className="rk-slam mt-2 font-display text-[clamp(46px,10vw,104px)] leading-none font-extrabold text-white [text-shadow:0_0_40px_rgba(255,40,50,.65)]">CHEFÃO</span>
+        <span className="rk-boss-in mt-4 text-sm font-semibold tracking-[.3em] text-rose-200/80 uppercase" style={{ animationDelay: '.45s' }}>
+          vale 3x os pontos · leia duas vezes
         </span>
       </span>
     </button>
@@ -219,17 +225,17 @@ export function ComboMeter({ streak, best }: { streak: number; best: number }) {
   const mult = (1 + Math.min(Math.max(streak - 1, 0), 9) / 10).toFixed(1)
   const hot = streak >= 5
   return (
-    <span key={streak} title={`Combo atual: ${streak} (recorde ${best})`} className={`rush-bump flex items-center gap-2 rounded-full py-1 pr-3 pl-1.5 ${hot ? 'rk-glow-pulse bg-gradient-to-r from-orange-500 to-rose-500 text-white' : 'bg-[#f1f2f5]'}`}>
-      <span className={`grid h-7 w-7 place-items-center rounded-full ${hot ? 'bg-white/20' : 'bg-white'}`} style={{ fontSize: 14 + Math.min(streak, 10) }}>
-        <span className={streak >= 3 ? 'rk-flame' : ''}>{streak >= 3 ? '🔥' : '✨'}</span>
+    <span key={streak} title={`Combo atual: ${streak} (recorde ${best})`} className={`rush-bump flex items-center gap-2 rounded-full py-1 pr-3 pl-1.5 transition-colors ${hot ? 'bg-[#16181d] text-white shadow-[0_0_18px_-2px_rgba(255,120,30,.6)]' : 'bg-[#f1f2f5]'}`}>
+      <span className={`grid h-7 w-7 place-items-center rounded-full text-[15px] ${hot ? 'bg-orange-500/20' : 'bg-white'}`}>
+        <span className={streak >= 3 ? 'rk-flame' : 'opacity-40 grayscale'}>🔥</span>
       </span>
       <span className="leading-none">
         <span className="block font-display text-sm font-extrabold tabular-nums">
-          {streak} <span className={`text-[11px] ${hot ? 'text-white/80' : 'text-muted'}`}>x{mult}</span>
+          {streak} <span className={`text-[11px] font-bold ${hot ? 'text-orange-300' : 'text-muted'}`}>x{mult}</span>
         </span>
-        <span className="mt-0.5 flex gap-[2px]">
+        <span className="mt-1 flex gap-[2px]">
           {Array.from({ length: segs }, (_, i) => (
-            <i key={i} className={`block h-1.5 w-2 rounded-sm transition-colors ${i < filled ? (hot ? 'bg-amber-200' : 'bg-orange-400') : hot ? 'bg-white/25' : 'bg-slate-300/70'}`} />
+            <i key={i} className={`block h-1 w-2 rounded-sm transition-colors ${i < filled ? 'bg-orange-500' : hot ? 'bg-white/15' : 'bg-slate-300/70'}`} />
           ))}
         </span>
       </span>

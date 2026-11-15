@@ -8,16 +8,16 @@ import { useSubjectMap } from '../../db/hooks'
 import { RushCapi, type CapiMood } from './RushCapi'
 import { askAboutQuestion, errCopy, finishAnswer, goNext, markDoubt, overrideWrong, say, sfx, skipQuestion, submit, togglePause, applyFifty } from './actions'
 import { centerOf, confetti } from '../../lib/sfx'
-import { fx, Rays } from './RushFx'
+import { fx, Ring } from './RushFx'
 
 const OK_WORDS = ['Acertou!', 'Mandou bem!', 'Isso aí!', 'Arrasou!', 'Boa!!']
 
-/** Cores de "calor" do cartão conforme a dificuldade. */
+/** Cartão conforme a dificuldade: num fundo escuro, ele "flutua" com sombra pesada e borda avermelhada. */
 function heatStyle(q: RushQ) {
   const h = qHeat(q)
-  if (q.boss) return { border: '#ff4d5e', shadow: '0 8px 0 #8f0c22, 0 0 46px rgba(255,60,40,.35)' }
-  if (h >= 0.7) return { border: '#ff8a7a', shadow: '0 8px 0 #ffb39c' }
-  if (h >= 0.45) return { border: '#ffd2b8', shadow: '0 8px 0 #ffe0cc' }
+  if (q.boss) return { border: '#b3122e', shadow: '0 30px 80px -20px rgba(0,0,0,.9), 0 0 0 1px rgba(255,40,50,.25)' }
+  if (h >= 0.7) return { border: '#7a1020', shadow: '0 30px 70px -24px rgba(0,0,0,.85)' }
+  if (h >= 0.45) return { border: '#3a3d47', shadow: '0 24px 60px -24px rgba(0,0,0,.7)' }
   return { border: '#e3e6ee', shadow: '0 8px 0 #e6e8f0' }
 }
 
@@ -148,8 +148,8 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
     <div
       ref={card}
       key={shake}
-      className={`essential-motion relative rounded-[26px] border-[3px] bg-white p-5 sm:p-7 ${shake ? 'rush-shake' : 'rush-enter'} ${q.boss ? 'rush-boss' : ''} ${onFire ? 'rk-onfire' : ''}`}
-      style={{ borderColor: ph === 'feedback' ? (L.correct ? '#22b573' : '#ff5c7a') : hs.border, boxShadow: ph === 'feedback' ? `0 8px 0 ${L.correct ? '#16915a' : '#e03a5a'}` : onFire ? '0 8px 0 #ff8a3d, 0 0 36px rgba(255,120,40,.35)' : hs.shadow }}
+      className={`essential-motion relative rounded-[26px] border-[3px] bg-white p-5 sm:p-7 ${shake ? 'rush-shake' : 'rush-enter'} ${q.boss ? 'rush-boss' : ''} ${onFire ? 'rk-onfire2' : ''}`}
+      style={{ borderColor: ph === 'feedback' ? (L.correct ? '#22b573' : '#ff5c7a') : hs.border, boxShadow: ph === 'feedback' ? `0 8px 0 ${L.correct ? '#16915a' : '#e03a5a'}` : onFire ? `${hs.shadow}, 0 0 30px -6px rgba(255,120,30,.45)` : hs.shadow }}
     >
       {/* faixa da matéria e número da questão */}
       <span className="absolute -top-[3px] right-28 left-8 h-[7px] rounded-b-lg" style={{ background: `linear-gradient(90deg, ${color}, color-mix(in srgb, ${color} 70%, #000))` }} />
@@ -174,9 +174,11 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
 
       {/* meta */}
       <div className="mb-4 flex flex-wrap items-center gap-1.5 pr-20">
-        <span className={`flex items-center gap-2 rounded-full py-1 pr-3 pl-2 text-xs font-extrabold ${di.tier === 5 ? 'bg-[#3a0a12] text-rose-200' : di.tier === 4 ? 'bg-orange-100 text-[#8f0c22]' : di.tier === 3 ? 'bg-amber-100' : 'bg-[#f1f2f5]'}`} title={`Dificuldade ${di.d} de 10`}>
-          <span className="h-2 w-14 overflow-hidden rounded-full bg-black/10">
-            <span className="block h-full rounded-full bg-[linear-gradient(90deg,#22b573,#ffc93c_45%,#ff5c3a_75%,#8f0c22)] bg-[length:56px_100%] transition-all" style={{ width: `${di.d * 10}%` }} />
+        <span className={`flex items-center gap-2 rounded-full py-1 pr-3 pl-2 text-xs font-extrabold ${di.tier >= 4 ? 'bg-[#16181d] text-white' : 'bg-[#f1f2f5]'}`} title={`Dificuldade ${di.d} de 10`}>
+          <span className="flex gap-[2px]">
+            {Array.from({ length: 10 }, (_, i) => (
+              <i key={i} className="block h-2.5 w-1.5 rounded-[2px]" style={{ background: i < di.d ? (i < 4 ? '#94a3b8' : i < 6 ? '#f59e0b' : i < 8 ? '#ef4444' : '#b91c1c') : di.tier >= 4 ? 'rgba(255,255,255,.15)' : '#dfe3ea' }} />
+            ))}
           </span>
           {di.emoji} {di.d}/10 · {di.label}
         </span>
@@ -312,7 +314,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
               type="button"
               onClick={() => submit(ctx, { choice: selected, answer: ans, rac })}
               disabled={q.formato === 'multipla' ? selected == null : !ans.trim()}
-              className={`flex items-center gap-2 rounded-2xl px-5 py-3 font-display text-base font-bold text-white transition hover:brightness-110 active:translate-y-1 disabled:opacity-40 ${(q.formato === 'multipla' ? selected != null : ans.trim()) ? 'rk-shine-host rk-breathe' : ''}`}
+              className={`flex items-center gap-2 rounded-2xl px-5 py-3 font-display text-base font-bold text-white transition hover:brightness-110 active:translate-y-1 disabled:opacity-40 ${(q.formato === 'multipla' ? selected != null : ans.trim()) ? 'rk-shine-host' : ''}`}
               style={{ background: color, boxShadow: `0 5px 0 color-mix(in srgb, ${color} 70%, #000)` }}
             >
               Conferir <kbd className="rounded-md bg-white/25 px-1.5 text-[11px]">Enter</kbd>
@@ -396,14 +398,14 @@ function Feedback({ S, q, color }: { S: RushState; q: RushQ; color: string }) {
     <div className="mt-6 grid gap-3.5">
       <div data-verdict className={`rush-pop relative grid grid-cols-[86px_1fr] items-center gap-3.5 rounded-[22px] px-4 py-3.5 ${ok ? 'bg-emerald-50' : 'bg-rose-50'}`}>
         <span className="relative isolate">
-          {ok && <Rays size={180} color={S.current?.boss ? 'rgba(255,190,40,.6)' : 'rgba(34,181,115,.35)'} />}
+          {ok && <Ring color={S.current?.boss ? 'rgba(245,158,11,.6)' : 'rgba(34,181,115,.5)'} />}
           <RushCapi mood={ok ? 'happy' : 'sad'} size={86} side="right" />
         </span>
         <div className="min-w-0">
           <div className={`flex flex-wrap items-center gap-2 font-display text-3xl leading-none font-extrabold ${ok ? 'text-emerald-700' : 'text-rose-600'}`}>
             {word}
-            {ok && L.pts ? <span className="rk-pop-in rounded-full bg-gradient-to-r from-amber-300 to-yellow-200 px-2.5 py-0.5 font-sans text-sm text-amber-900 shadow-[0_3px_0_#e8a800]">⭐ +{L.pts} pts</span> : null}
-            {ok && S.stats.streak >= 3 && <span className="rush-bump rounded-full bg-orange-400 px-2.5 py-0.5 text-sm text-white">🔥 combo x{(1 + Math.min(S.stats.streak - 1, 9) / 10).toFixed(1)}</span>}
+            {ok && L.pts ? <span className="rk-pop-in rounded-full bg-[#16181d] px-2.5 py-0.5 font-sans text-sm text-amber-300">+{L.pts} pts</span> : null}
+            {ok && S.stats.streak >= 3 && <span className="rush-bump rounded-full bg-orange-100 px-2.5 py-0.5 font-sans text-sm text-orange-700">🔥 combo x{(1 + Math.min(S.stats.streak - 1, 9) / 10).toFixed(1)}</span>}
             {ok && L.fast && <span className="rounded-full bg-amber-100 px-2.5 py-0.5 font-sans text-xs text-amber-800">⚡ rápido +25%</span>}
             {L.shielded && <span className="rounded-full bg-blue-100 px-2.5 py-0.5 font-sans text-xs text-blue-700">🛡️ escudo segurou o combo</span>}
           </div>

@@ -55,7 +55,7 @@ let canvas: HTMLCanvasElement | null = null
 let ctx: CanvasRenderingContext2D | null = null
 let parts: P[] = []
 let raf = 0
-const COLORS = ['#3e63f2', '#ff9a3d', '#2fd89a', '#ffc93c', '#ff5c7a', '#9b6bff']
+const COLORS = ['#3e63f2', '#22b573', '#ffc93c', '#ffffff', '#7c8cff']
 
 function ensureCanvas() {
   if (canvas) return
