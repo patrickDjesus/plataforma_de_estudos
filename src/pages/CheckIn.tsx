@@ -5,9 +5,11 @@ import { AlertTriangle, ArrowLeft, ArrowRight, CalendarRange, Check, Clock3, Lay
 import { db } from '../db/db'
 import { AREAS, useSubjects } from '../db/hooks'
 import { addSubject, currentWeekId, getSettings, saveCheckin, updateSubject } from '../db/repo'
+import { exportBackup } from '../db/repo'
+import { Download, GraduationCap } from 'lucide-react'
 import type { AreaId, AreaPercents, Availability } from '../db/types'
 import { AREA_COLOR } from '../lib/colors'
-import { DAY_NAMES, addDays, dayIndex, fmtTime, fmtWeekRange, parseTime } from '../lib/dates'
+import { DAY_NAMES, addDays, dayIndex, fmtTime, fmtWeekRange, parseTime, toISODate } from '../lib/dates'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { tint } from '../lib/colors'
 import { Capybara, type CapiPose } from '../components/Capybara'
@@ -57,7 +59,9 @@ const totalMinutes = (av: Availability, fromDay = 0) => av.slice(fromDay).flat()
 
 export function CheckInPage() {
   const navigate = useNavigate()
-  const weekId = currentWeekId()
+  // Sábado à tarde ou domingo: já planeja a semana que vem
+  const planningNext = dayIndex() === 6 || (dayIndex() === 5 && new Date().getHours() >= 12)
+  const weekId = planningNext ? addDays(currentWeekId(), 7) : currentWeekId()
   const subjects = useSubjects()
   const existing = useLiveQuery(() => db.weeks.get(weekId), [weekId])
   const [percents, setPercents] = useState<AreaPercents | null>(null)
@@ -70,7 +74,7 @@ export function CheckInPage() {
   const settings = useSettings()
   const weekEnd = addDays(weekId, 6)
   const reviewsThisWeek = useLiveQuery(() => db.reviews.where('due').belowOrEqual(weekEnd).count(), [weekEnd], 0)
-  const today = dayIndex()
+  const today = planningNext ? 0 : dayIndex()
   const prevWeekId = addDays(weekId, -7)
   const [prevStats, setPrevStats] = useState<WeekStats | null>(null)
   const [prevRetro, setPrevRetro] = useState<WeekRetro | undefined>()
@@ -251,7 +255,7 @@ export function CheckInPage() {
 
   const CAPI: Record<Step, { pose: CapiPose; text: string }> = {
     retro: { pose: 'pensando', text: `Antes de planejar, ${name}, bora olhar a semana passada? O que funcionou e o que travou?` },
-    inicio: { pose: 'acenando', text: existing ? `Oi, ${name}! Mudou alguma coisa? Bora reajustar a semana.` : `Oi, ${name}! Semana nova chegando. Bora planejar juntos?` },
+    inicio: { pose: 'acenando', text: existing ? `Oi, ${name}! Mudou alguma coisa? Bora reajustar a semana.` : planningNext ? `Oi, ${name}! Fim de semana é hora de deixar a próxima pronta. Bora?` : `Oi, ${name}! Semana nova chegando. Bora planejar juntos?` },
     foco: { pose: 'pensando', text: 'Onde você quer colocar sua energia esta semana?' },
     horarios: { pose: 'focado', text: 'Quando você vai ter tempo livre para estudar?' },
     materias: { pose: 'relaxando', text: subjects.length ? 'Alguma matéria vai ficar de fora esta semana?' : 'Primeiro me conta: o que você está estudando?' },
@@ -351,7 +355,17 @@ export function CheckInPage() {
           {step === 'inicio' && (
             <div className="rounded-[28px] border border-line bg-white p-8 shadow-[0_20px_50px_-28px_rgba(16,24,40,0.35)] sm:p-10">
               <p className="mb-3 inline-flex rounded-full bg-brand-soft px-3 py-1 text-xs font-bold tracking-wider text-brand uppercase">{fmtWeekRange(weekId)}</p>
-              <h1 className="text-4xl font-extrabold sm:text-5xl">{existing ? 'Reajustar a semana' : 'Nova semana, novo foco'}</h1>
+              <h1 className="text-4xl font-extrabold sm:text-5xl">{existing ? 'Reajustar a semana' : planningNext ? 'Planejar a próxima semana' : 'Nova semana, novo foco'}</h1>
+              {planningNext && <p className="mt-2 text-sm font-semibold text-brand">Fim de semana: o plano vale para a semana que começa segunda.</p>}
+              {subjects.length > 0 && !subjects.some((s) => s.areaId === 'faculdade') && (
+                <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <GraduationCap size={18} className="shrink-0" />
+                  <span className="flex-1">A Faculdade está sem matérias. Sem elas, o planejador não reserva os 2/3 e o tempo vai para as outras áreas.</span>
+                  <button onClick={() => navigate('/materias')} className="rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-600">
+                    Cadastrar agora
+                  </button>
+                </div>
+              )}
               <p className="mt-3 max-w-lg text-muted">
                 Em 4 passos rápidos você define o foco por área, seus horários e as matérias da semana. Eu monto a rota de estudos com revisões incluídas.
               </p>
@@ -565,6 +579,7 @@ export function CheckInPage() {
                 <Summary label="Revisões na semana" value={`${reviewsThisWeek}`} />
               </div>
               {active.length === 0 && <p className="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">Nenhuma matéria ativa: o plano sairá vazio. Volte um passo e cadastre ou ligue uma matéria.</p>}
+              <BackupCard />
               <button
                 onClick={() => submit()}
                 disabled={!canSave || saving}
@@ -817,6 +832,79 @@ function ThemePanel({
               </div>
             )
           })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Backup semanal: a Capi lembra no check-in; some depois de baixar/copiar nesta semana. */
+function BackupCard() {
+  const key = 'mendonca-backup-week'
+  const wk = currentWeekId()
+  const [done, setDone] = useState(() => {
+    try {
+      return localStorage.getItem(key) === wk
+    } catch {
+      return false
+    }
+  })
+  const [text, setText] = useState('')
+  const [copied, setCopied] = useState(false)
+  const mark = () => {
+    try {
+      localStorage.setItem(key, wk)
+    } catch {
+      /* ok */
+    }
+    setDone(true)
+  }
+  const run = async () => {
+    const json = await exportBackup()
+    if (import.meta.env.VITE_ARTIFACT) {
+      // A página publicada não baixa arquivos: copia para a área de transferência
+      try {
+        await navigator.clipboard.writeText(json)
+        setCopied(true)
+        mark()
+        return
+      } catch {
+        setText(json)
+        return
+      }
+    }
+    const blob = new Blob([json], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `mendonca-backup-${toISODate(new Date())}.json`
+    a.click()
+    URL.revokeObjectURL(a.href)
+    mark()
+  }
+  if (done && !text)
+    return (
+      <p className="mt-4 flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800">
+        <Check size={16} /> Backup desta semana feito{copied ? ' (copiado; cole num arquivo .json e guarde)' : ''}.
+      </p>
+    )
+  return (
+    <div className="mt-4 rounded-2xl border border-line bg-[#f6f7f9] p-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <Capybara pose="estudando" size={46} />
+        <div className="min-w-0 flex-1 text-sm">
+          <b>Backup da semana.</b> <span className="text-muted">Seus dados ficam no navegador e na nuvem do claude.ai. Um backup por semana garante que nada se perca.</span>
+        </div>
+        <button onClick={run} className="flex items-center gap-1.5 rounded-xl bg-ink px-3.5 py-2 text-xs font-bold text-white hover:bg-black">
+          <Download size={14} /> {import.meta.env.VITE_ARTIFACT ? 'Copiar backup' : 'Baixar backup'}
+        </button>
+      </div>
+      {text && (
+        <div className="mt-3">
+          <p className="mb-1 text-xs text-muted">Não consegui copiar sozinho. Selecione tudo abaixo, copie e cole num arquivo .json:</p>
+          <textarea readOnly value={text} onFocus={(e) => e.target.select()} className="h-24 w-full rounded-xl border border-line bg-white p-2 font-mono text-[11px]" />
+          <button onClick={mark} className="mt-2 text-xs font-bold text-brand">
+            Já copiei
+          </button>
         </div>
       )}
     </div>

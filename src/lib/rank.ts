@@ -106,6 +106,12 @@ export function rushPoints(done: number, correct: number) {
   return Math.min(25, Math.ceil(correct / 2)) + (done >= 10 && correct / done >= 0.8 ? 5 : 0)
 }
 
+/** Simulado: +1 por acerto (até 40), +10 com 70%+ de acerto. */
+export function simuladoPoints(done: number, correct: number) {
+  if (done <= 0) return 0
+  return Math.min(40, correct) + (correct / done >= 0.7 ? 10 : 0)
+}
+
 export const challengePoints = (score: number) => Math.round(Math.max(0, Math.min(1, score)) * POINTS.challengeMax) + (score >= 0.85 ? POINTS.challengeBonus : 0)
 
 /** Bônus/penalidade da semana encerrada, pela fração do plano cumprida. */

@@ -1,8 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { ArrowRight, ListChecks } from 'lucide-react'
 import { db } from '../db/db'
-import { useSubjectMap } from '../db/hooks'
-import { addDays, fromISODate, weekIdOf } from '../lib/dates'
+import { useSettings, useSubjectMap } from '../db/hooks'
+import { DEFAULT_DAILY_GOAL, goalStreak } from '../lib/dailyGoal'
+import { addDays, fromISODate, toISODate, weekIdOf } from '../lib/dates'
 import { tint } from '../lib/colors'
 import { SubjectIcon } from './SubjectIcon'
 
@@ -27,21 +28,26 @@ export interface QuestionStats {
   extra: Bucket
   /** Respondidas no Rush. */
   rush: Bucket
+  /** Respondidas em simulados. */
+  simulado: Bucket
   /** Respondidas nos desafios e listas do Mendonça. */
   app: Bucket
   week: Bucket
   bySubject: Map<string, Bucket>
   /** Últimas 8 semanas (mais antiga primeiro). */
   weeks: { weekId: string; done: number }[]
+  /** Questões por dia (YYYY-MM-DD). */
+  byDay: Map<string, number>
 }
 
 export async function loadQuestionStats(now = new Date()): Promise<QuestionStats> {
   const [blocks, challenges, practice] = await Promise.all([db.blocks.filter((b) => (b.questions ?? 0) > 0).toArray(), db.challenges.toArray(), db.practice.toArray()])
-  const s: QuestionStats = { total: empty(), manual: empty(), extra: empty(), rush: empty(), app: empty(), week: empty(), bySubject: new Map(), weeks: [] }
+  const s: QuestionStats = { total: empty(), manual: empty(), extra: empty(), rush: empty(), simulado: empty(), app: empty(), week: empty(), bySubject: new Map(), weeks: [], byDay: new Map() }
   const thisWeek = weekIdOf(now)
   const weekIds = Array.from({ length: 8 }, (_, i) => addDays(thisWeek, (i - 7) * 7))
   const perWeek = new Map(weekIds.map((w) => [w, 0]))
-  const put = (subjectId: string | undefined, weekId: string, b: Bucket, src: 'manual' | 'extra' | 'rush' | 'app') => {
+  const put = (subjectId: string | undefined, weekId: string, b: Bucket, src: 'manual' | 'extra' | 'rush' | 'simulado' | 'app', day?: string) => {
+    if (day) s.byDay.set(day, (s.byDay.get(day) ?? 0) + b.done)
     add(s.total, b)
     add(s[src], b)
     if (weekId === thisWeek) add(s.week, b)
@@ -55,15 +61,15 @@ export async function loadQuestionStats(now = new Date()): Promise<QuestionStats
   for (const b of blocks) {
     const n = b.questions ?? 0
     const graded = b.correct !== undefined
-    put(b.subjectId, weekIdOf(fromISODate(b.date)), { done: n, graded: graded ? n : 0, correct: graded ? b.correct! : 0 }, 'manual')
+    put(b.subjectId, weekIdOf(fromISODate(b.date)), { done: n, graded: graded ? n : 0, correct: graded ? b.correct! : 0 }, 'manual', b.date)
   }
   for (const c of challenges) {
     const counted = c.results.filter((r) => r && !r.contested)
-    put(c.subjectId, weekIdOf(new Date(c.createdAt)), { done: counted.length, graded: counted.length, correct: counted.filter((r) => r.correct).length }, 'app')
+    put(c.subjectId, weekIdOf(new Date(c.createdAt)), { done: counted.length, graded: counted.length, correct: counted.filter((r) => r.correct).length }, 'app', toISODate(new Date(c.createdAt)))
   }
   for (const p of practice) {
     const graded = p.correct !== undefined
-    put(p.subjectId, weekIdOf(fromISODate(p.date)), { done: p.done, graded: graded ? p.done : 0, correct: graded ? p.correct! : 0 }, p.source)
+    put(p.subjectId, weekIdOf(fromISODate(p.date)), { done: p.done, graded: graded ? p.done : 0, correct: graded ? p.correct! : 0 }, p.source, p.date)
   }
   s.weeks = weekIds.map((w) => ({ weekId: w, done: perWeek.get(w)! }))
   return s
@@ -89,6 +95,7 @@ export function QuestionsStrip({ onMore, onRegister }: { onMore: () => void; onR
         </span>
         Questões
       </span>
+      <DailyGoalMini s={s} />
       <Mini value={s.week.done} label="nesta semana" />
       <Mini value={s.total.done} label="no total" />
       <Mini value={p === null ? '—' : `${p}%`} label="de acerto" color={accColor(p)} />
@@ -157,6 +164,7 @@ export function QuestionsSummary() {
             <p className="col-span-2 text-[11px] text-muted">
               {[
                 [s.rush.done, 'no Rush'],
+                [s.simulado.done, 'em simulados'],
                 [s.manual.done, 'nos blocos'],
                 [s.extra.done, 'extras'],
                 [s.app.done, 'em desafios e listas'],
@@ -227,5 +235,30 @@ function Big({ value, label, color }: { value: number | string; label: string; c
       </div>
       <div className="text-xs text-muted">{label}</div>
     </div>
+  )
+}
+
+/** Meta do dia: anel de progresso + sequência. */
+function DailyGoalMini({ s }: { s: QuestionStats }) {
+  const settings = useSettings()
+  const goal = settings.dailyGoal ?? DEFAULT_DAILY_GOAL
+  const today = toISODate(new Date())
+  const done = s.byDay.get(today) ?? 0
+  const streak = goalStreak(s.byDay, goal, today)
+  const pct = Math.min(1, done / goal)
+  const hit = done >= goal
+  return (
+    <span className="flex items-center gap-2" title={`Meta do dia: ${done}/${goal} questões · ${streak} dia(s) seguidos batendo a meta`}>
+      <span className="relative grid h-9 w-9 place-items-center rounded-full" style={{ background: `conic-gradient(${hit ? '#22b573' : '#3e63f2'} ${pct * 360}deg, #e6e8f0 0deg)` }}>
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-[11px] font-extrabold tabular-nums">{hit ? '✓' : done}</span>
+      </span>
+      <span className="leading-tight">
+        <b className="block font-display text-base tabular-nums">
+          {done}
+          <span className="text-xs text-muted">/{goal}</span>
+        </b>
+        <span className="text-[11px] text-muted">hoje{streak > 0 ? ` · 🔥 ${streak} dia${streak > 1 ? 's' : ''}` : ''}</span>
+      </span>
+    </span>
   )
 }

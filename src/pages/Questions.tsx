@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ClipboardPlus, FileQuestion, History, PenLine, Sparkles, Zap } from 'lucide-react'
+import { ClipboardPlus, FileQuestion, History, PenLine, Sparkles, Timer, Zap } from 'lucide-react'
 import { db } from '../db/db'
 import { useSubjectMap, useTopics } from '../db/hooks'
 import type { Challenge } from '../db/types'
@@ -13,9 +13,10 @@ import { Capybara } from '../components/Capybara'
 import { Card, PageHeader, Tabs } from '../components/ui'
 import { RushPage } from './rush/RushPage'
 import { ExtraQuestions } from './ExtraQuestions'
+import { Simulado } from './Simulado'
 
-type Tab = 'rush' | 'gerar' | 'escrita' | 'registrar' | 'historico'
-const TABS: Tab[] = ['rush', 'gerar', 'escrita', 'registrar', 'historico']
+type Tab = 'rush' | 'simulado' | 'gerar' | 'escrita' | 'registrar' | 'historico'
+const TABS: Tab[] = ['rush', 'simulado', 'gerar', 'escrita', 'registrar', 'historico']
 
 export function QuestionsPage() {
   const [params] = useSearchParams()
@@ -30,6 +31,7 @@ export function QuestionsPage() {
           onChange={setTab}
           items={[
             { id: 'rush', label: 'Rush', icon: <Zap size={15} /> },
+            { id: 'simulado', label: 'Simulado', icon: <Timer size={15} /> },
             { id: 'gerar', label: 'Gerar lista', icon: <Sparkles size={15} /> },
             { id: 'escrita', label: 'Treino de escrita', icon: <PenLine size={15} /> },
             { id: 'registrar', label: 'Registrar extras', icon: <ClipboardPlus size={15} /> },
@@ -39,6 +41,7 @@ export function QuestionsPage() {
       </div>
       <div key={tab} className="page-in">
         {tab === 'rush' && <RushPage />}
+        {tab === 'simulado' && <Simulado />}
         {tab === 'gerar' && <ChallengeBuilderPage mode="questoes" />}
         {tab === 'registrar' && <ExtraQuestions />}
         {tab === 'escrita' && <WritingTraining />}

@@ -145,6 +145,10 @@ export interface Settings {
   mascotWelcome?: boolean
   /** Preferência: semanas temáticas (uma matéria por área). Padrão: sim. */
   themeWeeks?: boolean
+  /** Meta de questões por dia (padrão 20). */
+  dailyGoal?: number
+  /** Prova alvo (ex.: ENEM, Fuvest) para a IA imitar o estilo. */
+  targetExam?: string
 }
 
 export interface TimerState {
@@ -236,7 +240,7 @@ export type WritingCategory = 'crase' | 'virgula' | 'concordancia' | 'regencia' 
 
 export interface ErrorEntry {
   id: string
-  source: 'desafio' | 'questoes' | 'flashcard' | 'escrita' | 'rush'
+  source: 'desafio' | 'questoes' | 'flashcard' | 'escrita' | 'rush' | 'simulado'
   subjectId?: string
   topicId?: string
   question: string
@@ -275,7 +279,7 @@ export interface Writing {
 export interface Practice {
   id: string
   date: string // YYYY-MM-DD
-  source: 'rush' | 'extra'
+  source: 'rush' | 'extra' | 'simulado'
   subjectId?: string
   topicId?: string
   done: number

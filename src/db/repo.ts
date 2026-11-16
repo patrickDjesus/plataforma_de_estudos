@@ -7,7 +7,7 @@ import { errorsFromChallenge, reviewError } from '../lib/errors'
 import { planWeek } from '../lib/planner'
 import { themedSubjects, type Themes } from '../lib/themes'
 import { loadMastery } from './mastery'
-import { askBlockQuestions, showMascot } from '../lib/mascotBus'
+import { askBlockQuestions, capiMood, showMascot } from '../lib/mascotBus'
 import { XP_PER_BLOCK } from '../lib/xp'
 import { SEED_SUBJECTS, SEED_VERSION } from '../data/seedContent'
 
@@ -153,6 +153,7 @@ export async function replanMissed(now = new Date()): Promise<number> {
     )
     .toArray()
   if (!missed.length) return 0
+  capiMood('chorando', 6000)
   await Promise.all(missed.map((b) => db.blocks.update(b.id, { missed: true })))
   await regeneratePlan(weekId, now)
   return missed.length

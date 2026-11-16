@@ -6,7 +6,10 @@ import { db } from '../db/db'
 import { currentWeekId, replanMissed, setBlockDone } from '../db/repo'
 import { addDays, minutesNow, toISODate } from '../lib/dates'
 import { capiQuestion, capiWelcome, type CapiContext } from '../lib/capiTalk'
-import { onMascot, showMascot, type MascotMessage } from '../lib/mascotBus'
+import { onCapiMood, onMascot, showMascot, type MascotMessage } from '../lib/mascotBus'
+import { useLocation } from 'react-router-dom'
+import { DEFAULT_DAILY_GOAL } from '../lib/dailyGoal'
+import { loadQuestionStats } from './QuestionStats'
 import { levelInfo, xpFrom } from '../lib/xp'
 import { achievements, computeStats } from '../lib/achievements'
 import { Capybara } from './Capybara'
@@ -19,6 +22,21 @@ import { useSyncStatus } from '../lib/cloud'
 export function MascotHost() {
   const navigate = useNavigate()
   const [msg, setMsg] = useState<MascotMessage | null>(null)
+  // Humor passageiro (pose sem balão) e humor pela hora/rota
+  const [mood, setMood] = useState<MascotMessage['pose'] | null>(null)
+  const moodTimer = useRef<number | undefined>(undefined)
+  useEffect(
+    () =>
+      onCapiMood((pose, ms) => {
+        window.clearTimeout(moodTimer.current)
+        setMood(pose)
+        moodTimer.current = window.setTimeout(() => setMood(null), ms)
+      }),
+    [],
+  )
+  const location = useLocation()
+  const hour = new Date().getHours()
+  const idlePose: MascotMessage['pose'] = hour >= 23 || hour < 6 ? 'dormindo' : location.pathname.startsWith('/desafio') || location.pathname.startsWith('/questoes') ? 'focado' : location.pathname.startsWith('/caderno') ? 'estudando' : 'relaxando'
   const [key, setKey] = useState(0)
   const asked = useRef(0)
   const welcomed = useRef(false)
@@ -128,6 +146,38 @@ export function MascotHost() {
     window.setTimeout(() => say(capiWelcome(ctx)), 700)
   }, [ctx, data, say, sync])
 
+  // Meta do dia batida: a Capi dança (uma vez por dia)
+  const goalDay = useRef<string | null>(null)
+  useEffect(() => {
+    if (!data) return
+    let alive = true
+    loadQuestionStats().then((st) => {
+      if (!alive) return
+      const today = data.todayIso
+      const goal = data.settings?.dailyGoal ?? DEFAULT_DAILY_GOAL
+      const done = st.byDay.get(today) ?? 0
+      let seen: string | null = null
+      try {
+        seen = localStorage.getItem('mendonca-goal-day')
+      } catch {
+        /* ok */
+      }
+      if (goalDay.current === null) goalDay.current = seen
+      if (done >= goal && goalDay.current !== today) {
+        goalDay.current = today
+        try {
+          localStorage.setItem('mendonca-goal-day', today)
+        } catch {
+          /* ok */
+        }
+        window.setTimeout(() => showMascot({ pose: 'comemorando', title: `Meta do dia batida! 🎯 ${done}/${goal}`, text: 'Questões feitas, sequência garantida. Agora é lucro: quer continuar ou descansar?', autoHideMs: 9000 }), 1200)
+      }
+    })
+    return () => {
+      alive = false
+    }
+  }, [data])
+
   // Subiu de nível
   useEffect(() => {
     if (!data) return
@@ -212,7 +262,7 @@ export function MascotHost() {
         title="Conversar com o Capi"
       >
         <span className="absolute inset-x-3 bottom-1 h-16 rounded-full bg-brand/15 blur-xl transition group-hover:bg-brand/25" />
-        <Capybara key={msg ? `p-${key}` : 'idle'} pose={msg?.pose ?? 'relaxando'} size={phone ? (msg ? 72 : 46) : msg ? 104 : 78} className="relative transition-all" />
+        <Capybara key={msg ? `p-${key}` : 'idle'} pose={msg?.pose ?? mood ?? idlePose} size={phone ? (msg ? 72 : 46) : msg ? 104 : 78} className="relative transition-all" />
       </button>
     </div>
   )

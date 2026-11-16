@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Check, ChevronDown, Rocket, Save, Search } from 'lucide-react'
-import { AREAS, useSubjects, useTopics } from '../../db/hooks'
+import { AREAS, useSettings, useSubjects, useTopics } from '../../db/hooks'
 import type { RushCfg, RushSubjectCfg } from '../../lib/rush'
 import { tint } from '../../lib/colors'
 import { SubjectIcon } from '../../components/SubjectIcon'
@@ -15,6 +15,7 @@ export function RushSetup() {
   const S = rush.get()
   const subjects = useSubjects()
   const topics = useTopics()
+  const settings = useSettings()
   const [d, setD] = useState<RushCfg>(() => structuredClone(S.cfg))
   const [more, setMore] = useState(false)
   const [err, setErr] = useState('')
@@ -42,7 +43,7 @@ export function RushSetup() {
       sfx('bad')
       return
     }
-    const cfg = { ...d, subjects: subs.map((x) => ({ ...x, focus: x.focus.trim() })), level: d.level.trim() }
+    const cfg = { ...d, subjects: subs.map((x) => ({ ...x, focus: x.focus.trim() })), level: d.level.trim() || (settings.targetExam ? `estilo ${settings.targetExam}` : '') }
     if (!S.started) {
       rush.update((s) => (s.cfg = cfg))
       confetti(...centerOf(el), 90)

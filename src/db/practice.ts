@@ -63,3 +63,32 @@ export async function logRushError(q: RushQ, last: LastInfo | null) {
   }
   await db.errors.add(e)
 }
+
+/** Resultado de um simulado: por matéria, para estatísticas, rank e domínio. */
+export async function logSimulado(rows: { subjectId: string; topicId?: string; done: number; correct: number }[], when = new Date()) {
+  const date = toISODate(when)
+  const now = Date.now()
+  await db.practice.bulkAdd(rows.filter((r) => r.done > 0).map((r, i) => ({ id: `sim-${now}-${i}`, date, source: 'simulado' as const, subjectId: r.subjectId, topicId: r.topicId, done: r.done, correct: r.correct, createdAt: now })))
+}
+
+/** Erro do simulado vai para o caderno de erros. */
+export async function logSimuladoError(q: RushQ, choice: number | null) {
+  const id = `sim-${q.id}`
+  if (await db.errors.get(id)) return
+  const today = toISODate(new Date())
+  await db.errors.add({
+    id,
+    source: 'simulado',
+    subjectId: q.materia,
+    topicId: q.topicId,
+    question: `${q.enunciado}\n${q.alternativas.map((a, i) => `${'ABCDE'[i]}) ${a}`).join('\n')}`,
+    yourAnswer: choice == null ? '(em branco)' : `${'ABCDE'[choice]}) ${q.alternativas[choice]}`,
+    correctAnswer: q.gabarito,
+    explanation: [q.ideia && `Ideia-chave: ${q.ideia}`, q.resolucao].filter(Boolean).join('\n'),
+    createdAt: Date.now(),
+    due: addDays(today, 1),
+    streak: 0,
+    resolved: false,
+    history: [],
+  })
+}

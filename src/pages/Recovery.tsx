@@ -7,6 +7,7 @@ import { useSubjectMap, useTopics } from '../db/hooks'
 import { rateCard, rateReview } from '../db/repo'
 import { ratingFromScore } from '../lib/challenge'
 import { ChallengeModal } from '../components/ChallengeModal'
+import { ReviewTodayButton } from './ReviewToday'
 import type { Flashcard, ReviewRating } from '../db/types'
 import { RATING_LABEL } from '../lib/review'
 import { tint } from '../lib/colors'
@@ -40,6 +41,7 @@ export function RecoveryPage() {
       <PageHeader icon={<Brain size={24} />} title="Recuperação" subtitle="Lembrar sem olhar é o que fixa. Aqui fica tudo que pede revisão hoje." />
       <div className="grid items-start gap-5 lg:grid-cols-[1.3fr_1fr]">
         <div className="space-y-5">
+        <ReviewTodayButton />
         <ReviewsToday onChallenge={(subjectId, topicId) => setModal({ subjectId, topicId, origin: 'revisao' })} />
         <Card className="p-6">
           <div className="mb-4 flex items-center justify-between">
@@ -139,7 +141,7 @@ export function RecoveryPage() {
 }
 
 /** Uma rodada de cartões: frente → mostrar resposta → como foi. */
-function StudySession({ cards, onExit }: { cards: Flashcard[]; onExit: () => void }) {
+export function StudySession({ cards, onExit }: { cards: Flashcard[]; onExit: () => void }) {
   const subjects = useSubjectMap()
   const topics = useTopics()
   const [i, setI] = useState(0)

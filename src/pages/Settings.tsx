@@ -44,6 +44,7 @@ const NUMBER_FIELDS: { key: keyof Settings; label: string; min: number; max: num
   { key: 'maxReviewShare', label: 'Máx. da semana para revisões (%)', min: 5, max: 50, def: 20, scale: 100 },
   { key: 'focusMinutes', label: 'Modo foco: minutos de foco por ciclo', min: 10, max: 90, def: 25 },
   { key: 'focusPauseMinutes', label: 'Modo foco: minutos de pausa', min: 1, max: 30, def: 5 },
+  { key: 'dailyGoal', label: 'Meta de questões por dia', min: 1, max: 300, def: 20 },
 ]
 
 export function SettingsPage() {
@@ -116,6 +117,17 @@ export function SettingsPage() {
                 onChange={(e) => updateSettings({ mascotWelcome: e.target.checked })}
               />
               Boas-vindas ao abrir o site
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-bold">Prova alvo (opcional)</span>
+              <input
+                defaultValue={settings.targetExam ?? ''}
+                key={`exam-${settings.targetExam ?? ''}`}
+                onBlur={(e) => updateSettings({ targetExam: e.target.value.trim() || undefined })}
+                placeholder="Ex.: ENEM, Fuvest, Unicamp"
+                className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm outline-none focus:border-brand"
+              />
+              <span className="mt-1 block text-[11px] text-muted">O Rush, o Simulado e as listas passam a imitar o estilo dessa prova. Vazio = nível ENEM/vestibular em geral.</span>
             </label>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-9">

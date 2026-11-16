@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { capiMood } from '../lib/mascotBus'
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, CircleSlash, Flag, RotateCcw, X, XCircle } from 'lucide-react'
 import { Spinner, VoiceTextarea } from './Voice'
 import { uid } from '../db/db'
@@ -42,6 +43,7 @@ export function ChallengeRunner({ ctx, subjectId, topicId, origin, count, color,
 
   // Gera o desafio
   useEffect(() => {
+    capiMood('focado', 5000)
     let alive = true
     ctl.current = new AbortController()
     ;(async () => {

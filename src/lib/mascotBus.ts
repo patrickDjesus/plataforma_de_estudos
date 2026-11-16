@@ -34,6 +34,19 @@ export function onAskBlockQuestions(l: QListener) {
   }
 }
 
+// Humor passageiro: muda só a pose da Capi flutuante por alguns segundos (sem balão)
+type MoodListener = (pose: CapiPose, ms: number) => void
+const moodL = new Set<MoodListener>()
+export function capiMood(pose: CapiPose, ms = 4000) {
+  moodL.forEach((l) => l(pose, ms))
+}
+export function onCapiMood(l: MoodListener) {
+  moodL.add(l)
+  return () => {
+    moodL.delete(l)
+  }
+}
+
 export function showMascot(m: MascotMessage) {
   listeners.forEach((l) => l(m))
 }

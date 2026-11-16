@@ -15,6 +15,7 @@ import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
 import { AchievementsSection } from '../components/Achievements'
 import { QuestionsStrip, QuestionsSummary } from '../components/QuestionStats'
+import { ReviewTodayButton } from './ReviewToday'
 import { RankEmblem, RankFrame, RankLine, RankSection, setRankPreview, useRankPreview, useRankWatcher, withPreview } from '../components/Rank'
 import { loadRank } from '../db/rank'
 import { ChallengeModal } from '../components/ChallengeModal'
@@ -154,6 +155,17 @@ export function HomePage() {
         </button>
       </Card>
 
+      {subjects.size > 0 && ![...subjects.values()].some((s) => s.areaId === 'faculdade') && (
+        <Card className="flex flex-wrap items-center gap-3 border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900">
+          <Capybara pose="pensando" size={44} />
+          <span className="min-w-0 flex-1">
+            <b>A Faculdade está sem matérias.</b> Cadastre as do semestre para o planejador reservar os 2/3 do tempo e a semana temática ter um tema de Faculdade.
+          </span>
+          <button onClick={() => navigate('/materias')} className="rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-bold text-white hover:bg-amber-600">
+            Cadastrar matérias
+          </button>
+        </Card>
+      )}
       {/* Painel com barra lateral escura */}
       {/* Altura fixa: a barra escura não muda de tamanho ao trocar de seção; o conteúdo rola por dentro */}
       <div
@@ -185,6 +197,9 @@ export function HomePage() {
                     { id: 'semana', label: 'Semana', icon: <CalendarCheck2 size={15} /> },
                   ]}
                 />
+              </div>
+              <div className="mb-5">
+                <ReviewTodayButton />
               </div>
               <QuestionsStrip onMore={() => setSection('resultados')} onRegister={() => navigate('/questoes?aba=registrar')} />
               <div className="grid gap-5 lg:grid-cols-3">

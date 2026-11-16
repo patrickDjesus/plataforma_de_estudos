@@ -212,3 +212,16 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 .rk-ring { animation: rk-ring .9s ease-out forwards; }
 .rk-flicker { animation: rk-flicker 7s linear infinite; }
 .rk-onfire2 { border-color: transparent !important; background: linear-gradient(#fff, #fff) padding-box, conic-gradient(from var(--rk-a), #ff6a00, #ffb300 25%, #ff3d00 50%, #ffb300 75%, #ff6a00) border-box !important; animation: rk-angle 3s linear infinite; }
+
+/* Capi viva: piscar, respirar, orelhas, pulinho no hover */
+@keyframes capi-blink { 0%, 94%, 100% { transform: scaleY(1) } 96%, 98% { transform: scaleY(.08) } }
+@keyframes capi-breathe { 0%, 100% { transform: scale(1, 1) } 50% { transform: scale(1.015, .985) } }
+@keyframes capi-ear-l { 0%, 88%, 100% { transform: rotate(0) } 91% { transform: rotate(-14deg) } 95% { transform: rotate(6deg) } }
+@keyframes capi-ear-r { 0%, 60%, 100% { transform: rotate(0) } 64% { transform: rotate(14deg) } 68% { transform: rotate(-6deg) } }
+@keyframes capi-hop { 0%, 100% { transform: translateY(0) scale(1) } 35% { transform: translateY(-10px) scale(1.05, .95) } 70% { transform: translateY(0) scale(.97, 1.03) } }
+.capi-alive .capi-blink { animation: capi-blink 4.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.capi-alive .capi-breathe { animation: capi-breathe 3.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 70%; }
+.capi-alive .capi-ear-l { animation: capi-ear-l 7s ease-in-out infinite; }
+.capi-alive .capi-ear-r { animation: capi-ear-r 9s ease-in-out infinite 2s; }
+.capi-alive .capi-head { transition: transform .35s ease-out; }
+.capi-alive:hover .capi-bob { animation: capi-hop .6s cubic-bezier(.3, 1.4, .5, 1); }

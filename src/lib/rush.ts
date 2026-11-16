@@ -205,7 +205,7 @@ export function defaultRushState(): RushState {
     cbNeed: 0,
     skipped: 0,
     goalHit: false,
-    sound: true,
+    sound: false,
     fbag: {},
     seq: 0,
     cancelled: [],
@@ -374,7 +374,7 @@ ${lines}
 ${mats.length > 1 ? `Esta leva tem ${mats.length} matérias diferentes (${mats.join(', ')}). Cada questão usa exatamente a matéria da sua linha.\n` : ''}Quando a linha traz um ASSUNTO, a questão tem que ser daquele assunto específico, não de outro da mesma matéria.
 ${DIF_SCALE}
 Respeite a dificuldade pedida de verdade: uma questão de dificuldade 1 tem que ser muito mais simples que uma de dificuldade 7.
-Nível: ${c.level || 'ensino médio / ENEM / vestibular'}
+Nível: ${c.level || 'ensino médio, estilo ENEM/vestibular (reforço: comece fácil e suba com a dificuldade pedida)'}
 Mistura: em torno de ${c.mix}% de questões de CONTA (exigem cálculo numérico) quando a matéria permitir. Em Biologia, conta é genética (probabilidade, cruzamentos), ecologia (pirâmides, populações), proporções, diluições etc. Em matérias sem conta (História, Português, Filosofia…), faça só teoria/interpretação.
 Formato: ${fmtRule(c.format)}
 Varie subtópicos, contextos e o que é pedido. Evite repetir estes conceitos que já caíram: ${recent}

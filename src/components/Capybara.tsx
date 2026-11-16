@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 /**
  * Capi, a capivara mascote do Mendonça.
  * Um único desenho com corpo base + expressões + acessórios, em várias poses.
@@ -42,7 +43,7 @@ const POSE: Record<CapiPose, { eyes: Eyes; mouth: Mouth }> = {
   chorando: { eyes: 'triste', mouth: 'triste' },
 }
 
-function Eye({ x, kind, side }: { x: number; kind: Eyes; side: 'l' | 'r' }) {
+function Eye({ x, kind, side, look }: { x: number; kind: Eyes; side: 'l' | 'r'; look: [number, number] }) {
   const y = 60
   const arc = (dy: number) => <path d={`M${x - 7} ${y + 2} Q${x} ${y + dy} ${x + 7} ${y + 2}`} fill="none" stroke={C.eye} strokeWidth="3.6" strokeLinecap="round" />
   if (kind === 'feliz' || (kind === 'piscando' && side === 'l')) return arc(-7)
@@ -60,8 +61,11 @@ function Eye({ x, kind, side }: { x: number; kind: Eyes; side: 'l' | 'r' }) {
       {kind === 'determinado' && (
         <path d={side === 'l' ? `M${x - 9} ${y - 13} L${x + 7} ${y - 9}` : `M${x + 9} ${y - 13} L${x - 7} ${y - 9}`} stroke={C.eye} strokeWidth="3.4" strokeLinecap="round" />
       )}
-      <circle cx={x} cy={py} r="6.8" fill={C.eye} />
-      <circle cx={x + 2.2} cy={py - 2.4} r="2.3" fill="#fff" />
+      {/* pupila: segue o mouse (look) e pisca (capi-blink) */}
+      <g className="capi-blink" style={{ transformOrigin: `${x}px ${py}px` }}>
+        <circle cx={x + look[0] * 3.5} cy={py + look[1] * 3} r="6.8" fill={C.eye} />
+        <circle cx={x + look[0] * 3.5 + 2.2} cy={py + look[1] * 3 - 2.4} r="2.3" fill="#fff" />
+      </g>
     </g>
   )
 }
@@ -80,14 +84,85 @@ function Mouth({ kind }: { kind: Mouth }) {
   return <path d="M89 109 Q100 118 111 109" fill="none" stroke={C.eye} strokeWidth="3" strokeLinecap="round" />
 }
 
-export function Capybara({ pose = 'acenando', size = 120, className = '' }: { pose?: CapiPose; size?: number; className?: string }) {
+// ---------- Vida: olhos seguem o mouse, bocejo quando você fica parado ----------
+let pointer: [number, number] | null = null
+let lastMove = 0
+if (typeof window !== 'undefined') {
+  addEventListener(
+    'pointermove',
+    (e) => {
+      pointer = [e.clientX, e.clientY]
+      lastMove = performance.now()
+    },
+    { passive: true },
+  )
+  addEventListener('keydown', () => (lastMove = performance.now()), { passive: true })
+}
+const reduce = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+function useAlive(ref: React.RefObject<SVGSVGElement | null>, enabled: boolean) {
+  const [look, setLook] = useState<[number, number]>([0, 0])
+  const [yawn, setYawn] = useState(false)
+  useEffect(() => {
+    if (!enabled || reduce()) return
+    let raf = 0
+    let cur: [number, number] = [0, 0]
+    let wander: [number, number] = [0, 0]
+    let nextWander = 0
+    let yawning = false
+    const tick = (now: number) => {
+      const el = ref.current
+      if (el) {
+        const r = el.getBoundingClientRect()
+        let target: [number, number]
+        if (pointer && now - lastMove < 6000 && r.width) {
+          const cx = r.left + r.width / 2
+          const cy = r.top + r.height * 0.4
+          const dx = pointer[0] - cx
+          const dy = pointer[1] - cy
+          const d = Math.hypot(dx, dy) || 1
+          const m = Math.min(1, d / 220)
+          target = [(dx / d) * m, (dy / d) * m]
+        } else {
+          if (now > nextWander) {
+            nextWander = now + 1500 + Math.random() * 3000
+            wander = Math.random() < 0.35 ? [0, 0] : [(Math.random() - 0.5) * 1.6, (Math.random() - 0.5) * 1.2]
+          }
+          target = wander
+        }
+        cur = [cur[0] + (target[0] - cur[0]) * 0.12, cur[1] + (target[1] - cur[1]) * 0.12]
+        setLook((old) => (Math.abs(old[0] - cur[0]) + Math.abs(old[1] - cur[1]) > 0.01 ? [cur[0], cur[1]] : old))
+        // bocejo: parado há mais de 40 s (uma vez a cada 40 s)
+        const idle = now - lastMove > 40000 && lastMove > 0
+        if (idle && !yawning && Math.random() < 0.004) {
+          yawning = true
+          setYawn(true)
+          window.setTimeout(() => {
+            yawning = false
+            setYawn(false)
+          }, 1800)
+        }
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [enabled, ref])
+  return { look, yawn }
+}
+
+export function Capybara({ pose = 'acenando', size = 120, className = '', alive = true }: { pose?: CapiPose; size?: number; className?: string; alive?: boolean }) {
   const p = POSE[pose]
   const holdsBook = pose === 'estudando'
   const waving = pose === 'acenando' || pose === 'comemorando' || pose === 'formado'
   const chin = pose === 'pensando'
+  const ref = useRef<SVGSVGElement>(null)
+  const { look, yawn } = useAlive(ref, alive && pose !== 'dormindo')
+  const eyes: Eyes = yawn ? 'fechado' : p.eyes
+  const mouth: Mouth = yawn ? 'aberta' : p.mouth
 
   return (
-    <svg width={size} height={size * 1.08} viewBox="0 -14 200 230" className={`capi ${className}`} role="img" aria-label={`Capi, a capivara, ${pose}`}>
+    <svg ref={ref} width={size} height={size * 1.08} viewBox="0 -14 200 230" className={`capi capi-alive ${className}`} role="img" aria-label={`Capi, a capivara, ${pose}`}>
       <defs>
         <linearGradient id="capi-hat" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#ff5d8f" />
@@ -127,9 +202,11 @@ export function Capybara({ pose = 'acenando', size = 120, className = '' }: { po
       )}
 
       <g className="capi-bob">
-        {/* corpo */}
-        <ellipse cx="100" cy="156" rx="60" ry="46" fill={C.body} />
-        <ellipse cx="100" cy="164" rx="36" ry="31" fill={C.belly} />
+        {/* corpo (respira) */}
+        <g className="capi-breathe">
+          <ellipse cx="100" cy="156" rx="60" ry="46" fill={C.body} />
+          <ellipse cx="100" cy="164" rx="36" ry="31" fill={C.belly} />
+        </g>
         <ellipse cx="76" cy="199" rx="16" ry="8" fill={C.dark} />
         <ellipse cx="124" cy="199" rx="16" ry="8" fill={C.dark} />
 
@@ -165,12 +242,16 @@ export function Capybara({ pose = 'acenando', size = 120, className = '' }: { po
           <ellipse cx="146" cy="156" rx="10" ry="19" fill={C.dark} transform="rotate(-18 146 156)" />
         )}
 
-        {/* cabeça */}
-        <g>
-          <ellipse cx="60" cy="36" rx="9" ry="10" fill={C.dark} />
-          <ellipse cx="60" cy="37" rx="4" ry="5" fill={C.earIn} />
-          <ellipse cx="140" cy="36" rx="9" ry="10" fill={C.dark} />
-          <ellipse cx="140" cy="37" rx="4" ry="5" fill={C.earIn} />
+        {/* cabeça (inclina de leve na direção do olhar) */}
+        <g className="capi-head" style={{ transform: `rotate(${(look[0] * 2.5).toFixed(2)}deg)`, transformOrigin: '100px 128px' }}>
+          <g className="capi-ear capi-ear-l" style={{ transformOrigin: '60px 44px' }}>
+            <ellipse cx="60" cy="36" rx="9" ry="10" fill={C.dark} />
+            <ellipse cx="60" cy="37" rx="4" ry="5" fill={C.earIn} />
+          </g>
+          <g className="capi-ear capi-ear-r" style={{ transformOrigin: '140px 44px' }}>
+            <ellipse cx="140" cy="36" rx="9" ry="10" fill={C.dark} />
+            <ellipse cx="140" cy="37" rx="4" ry="5" fill={C.earIn} />
+          </g>
           <rect x="44" y="28" width="112" height="100" rx="38" fill={C.head} />
           <rect x="44" y="28" width="112" height="100" rx="38" fill="url(#capi-shine)" />
           <path d="M93 30 Q97 21 100 30 Q104 20 108 30" fill="none" stroke={C.dark} strokeWidth="2.5" strokeLinecap="round" />
@@ -182,9 +263,10 @@ export function Capybara({ pose = 'acenando', size = 120, className = '' }: { po
           <path d="M100 94 L100 107" stroke="#5e3a22" strokeWidth="2.5" strokeLinecap="round" />
           <ellipse cx="55" cy="80" rx="7" ry="4.5" fill={C.blush} opacity=".5" />
           <ellipse cx="145" cy="80" rx="7" ry="4.5" fill={C.blush} opacity=".5" />
-          <Mouth kind={p.mouth} />
-          <Eye x={76} kind={p.eyes} side="l" />
-          <Eye x={124} kind={p.eyes} side="r" />
+          <Mouth kind={mouth} />
+          <Eye x={76} kind={eyes} side="l" look={look} />
+          <Eye x={124} kind={eyes} side="r" look={look} />
+          {yawn && <ellipse cx="100" cy="116" rx="7" ry="9" fill="#5a2418" />}
         </g>
 
         {pose === 'chorando' && (

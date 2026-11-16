@@ -12,7 +12,7 @@ import { Capybara } from '../components/Capybara'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Card, PageHeader, Tabs } from '../components/ui'
 
-const SOURCE_LABEL = { desafio: 'Desafio', questoes: 'Questões', flashcard: 'Flashcard', escrita: 'Escrita', rush: 'Rush' }
+const SOURCE_LABEL = { desafio: 'Desafio', questoes: 'Questões', flashcard: 'Flashcard', escrita: 'Escrita', rush: 'Rush', simulado: 'Simulado' }
 
 /** Caderno de erros: revise cada erro até acertar 2 vezes seguidas. */
 export function ErrorsPage() {
@@ -115,7 +115,7 @@ function Stat({ label, value, color }: { label: string; value: number; color: st
   )
 }
 
-function ReviewCard({ e, subjects, position, onNext }: { e: ErrorEntry; subjects: ReturnType<typeof useSubjectMap>; position: string; onNext: () => void }) {
+export function ReviewCard({ e, subjects, position, onNext }: { e: ErrorEntry; subjects: ReturnType<typeof useSubjectMap>; position: string; onNext: () => void }) {
   const [shown, setShown] = useState(false)
   const s = e.subjectId ? subjects.get(e.subjectId) : undefined
   const color = s?.color ?? '#0284c7'

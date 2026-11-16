@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from './db'
 import { addDays, fromISODate, weekIdOf } from '../lib/dates'
-import { POINTS, challengePoints, questionPoints, rankFromEvents, rushPoints, weekPoints, type RankEvent, type RankState } from '../lib/rank'
+import { POINTS, challengePoints, questionPoints, rankFromEvents, rushPoints, simuladoPoints, weekPoints, type RankEvent, type RankState } from '../lib/rank'
 
 const at = (date: string, minutes = 12 * 60) => fromISODate(date).getTime() + minutes * 60000
 
@@ -37,7 +37,8 @@ export async function loadRank(now = new Date()): Promise<RankState> {
 
   for (const p of practice) {
     const pct = p.correct !== undefined ? `, ${Math.round((p.correct / Math.max(1, p.done)) * 100)}%` : ''
-    if (p.source === 'rush') events.push({ at: at(p.date, 23 * 60 + 30), delta: rushPoints(p.done, p.correct ?? 0), label: `Rush: ${p.done} questões${pct} · ${what(p.topicId, p.subjectId)}` })
+    if (p.source === 'simulado') events.push({ at: p.createdAt, delta: simuladoPoints(p.done, p.correct ?? 0), label: `Simulado: ${p.done} questões${pct}${p.subjectId ? ` · ${what(p.topicId, p.subjectId)}` : ''}` })
+    else if (p.source === 'rush') events.push({ at: at(p.date, 23 * 60 + 30), delta: rushPoints(p.done, p.correct ?? 0), label: `Rush: ${p.done} questões${pct} · ${what(p.topicId, p.subjectId)}` })
     else events.push({ at: p.createdAt, delta: questionPoints(p.done, p.correct), label: `Questões extras: ${p.done}${pct}${p.subjectId ? ` · ${what(p.topicId, p.subjectId)}` : ''}` })
   }
   const perDay = new Map<string, number>()

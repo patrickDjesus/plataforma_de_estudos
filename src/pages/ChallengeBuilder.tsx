@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, BookOpenCheck, CheckSquare, FileText, ListChecks, MessageSquareText, PenLine, Search, Sparkles, ToggleLeft } from 'lucide-react'
-import { AREAS, useNotes, useSubjects, useTopics } from '../db/hooks'
+import { AREAS, useNotes, useSubjects, useTopics, useSettings } from '../db/hooks'
 import type { ChallengeType, Difficulty } from '../lib/prompts'
 import { tint } from '../lib/colors'
 import { Capybara } from '../components/Capybara'
@@ -37,6 +37,7 @@ const Q_STYLES: { id: string; label: string; hint: string; icon: ReactNode; type
 const REQUEST_HINTS = ['Com cálculos e números', 'Focadas em interpretação', 'Do jeito que cai no ENEM', 'Com exemplos do dia a dia', 'Comparando conceitos parecidos']
 
 export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 'questoes' }) {
+  const settings = useSettings()
   const isQ = mode === 'questoes'
   const navigate = useNavigate()
   const [params] = useSearchParams()
@@ -314,8 +315,8 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
           count={count}
           options={
             isQ
-              ? { types: Q_STYLES.find((q) => q.id === qStyle)!.types, vestibular: Q_STYLES.find((q) => q.id === qStyle)!.vestibular, difficulty, base, request }
-              : { types: effectiveTypes, difficulty }
+              ? { types: Q_STYLES.find((q) => q.id === qStyle)!.types, vestibular: Q_STYLES.find((q) => q.id === qStyle)!.vestibular, difficulty, base, request, exam: settings.targetExam }
+              : { types: effectiveTypes, difficulty, exam: settings.targetExam }
           }
           onClose={() => setRunning(false)}
         />

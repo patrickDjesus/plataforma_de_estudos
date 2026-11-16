@@ -19,6 +19,7 @@ import { RecoveryPage } from './pages/Recovery'
 import { ChallengeBuilderPage } from './pages/ChallengeBuilder'
 import { QuestionsPage } from './pages/Questions'
 import { ErrorsPage } from './pages/Errors'
+import { ReviewTodayPage } from './pages/ReviewToday'
 
 startCloudSync()
 
@@ -43,6 +44,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="desafio" element={<ChallengeBuilderPage />} />
           <Route path="questoes" element={<QuestionsPage />} />
           <Route path="erros" element={<ErrorsPage />} />
+          <Route path="revisar" element={<ReviewTodayPage />} />
           <Route path="materias" element={<SubjectsPage />} />
           <Route path="config" element={<SettingsPage />} />
         </Route>

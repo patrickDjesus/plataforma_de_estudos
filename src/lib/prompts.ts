@@ -59,6 +59,8 @@ export interface ChallengeOptions {
   base?: 'notas' | 'geral'
   /** Múltipla escolha no estilo de vestibular (enunciado com contexto, 5 alternativas). */
   vestibular?: boolean
+  /** Prova alvo (ex.: ENEM, Fuvest): a IA imita o estilo. */
+  exam?: string
 }
 
 const TYPE_SPEC: Record<ChallengeType, string> = {
@@ -85,7 +87,7 @@ export function challengePrompt(c: StudyContext, count: number, opts: ChallengeO
 ${text}
 
 ${DIFFICULTY_TEXT[opts.difficulty ?? 'medio']}
-
+${opts.exam ? `Prova alvo: ${opts.exam}. Imite o estilo, o formato e o nível dessa prova.\n` : ''}
 ${opts.request?.trim() ? `Pedido do estudante (siga com prioridade, desde que seja sobre estudo): "${opts.request.trim().slice(0, 400)}"\n\n` : ''}Crie exatamente ${count} itens usando estes tipos. ${repeat}
 ${types.map((t) => (t === 'multipla' && opts.vestibular ? '- "multipla": questão no estilo de vestibular/ENEM: enunciado com um pequeno contexto (situação, dado ou trecho) e 5 alternativas plausíveis, só uma correta. Campos: question (enunciado completo), options (5 textos, sem letras), correct (índice 0 a 4), explanation (por que a correta está certa).' : TYPE_SPEC[t])).join('\n')}
 

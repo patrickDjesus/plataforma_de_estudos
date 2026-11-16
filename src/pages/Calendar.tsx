@@ -155,7 +155,13 @@ export function CalendarPage() {
           </div>
         </div>
 
+        {view === 'cartoes' && (
+          <div className="sm:hidden">
+            <PhoneView dates={dates} todayIso={todayIso} blocks={blocks} subjects={subjects} topicMap={topicMap} onOpen={setSelected} />
+          </div>
+        )}
         {view === 'cartoes' ? (
+          <div className="hidden sm:block">
           <CardsView
             dates={dates}
             todayIso={todayIso}
@@ -165,6 +171,7 @@ export function CalendarPage() {
             onOpen={setSelected}
             onCreate={(date, start) => setDraft({ date, start })}
           />
+          </div>
         ) : (
         <div className="thin-scroll overflow-x-auto border-t border-line">
           <div className="min-w-[760px]">
@@ -290,7 +297,8 @@ export function CalendarPage() {
             )
           })}
           <span className="ml-auto text-xs text-muted">
-            {view === 'cartoes' ? 'Arraste um cartão para outro dia · clique num espaço vazio para criar' : 'Arraste para mover · puxe a borda inferior para redimensionar · clique num espaço vazio para criar'}
+            <span className="hidden sm:inline">{view === 'cartoes' ? 'Arraste um cartão para outro dia · clique num espaço vazio para criar' : 'Arraste para mover · puxe a borda inferior para redimensionar · clique num espaço vazio para criar'}</span>
+            <span className="sm:hidden">Toque num bloco para ver detalhes · "Feito?" marca como concluído</span>
           </span>
         </div>
       </Card>
@@ -441,6 +449,73 @@ function CardsView({
           )
         })}
       </div>
+    </div>
+  )
+}
+
+/** Celular: hoje em destaque, lista completa e botão "Feito"; outros dias dobrados. */
+function PhoneView({ dates, todayIso, blocks, subjects, topicMap, onOpen }: { dates: string[]; todayIso: string; blocks: Block[]; subjects: Map<string, Subject>; topicMap: Map<string, Topic>; onOpen: (b: Block) => void }) {
+  const [open, setOpen] = useState<string | null>(null)
+  const ordered = [...dates].sort((a, b) => (a === todayIso ? -1 : b === todayIso ? 1 : a < todayIso && b >= todayIso ? 1 : a >= todayIso && b < todayIso ? -1 : a.localeCompare(b)))
+  const names = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
+  const row = (b: Block, big: boolean) => {
+    const subject = b.subjectId ? subjects.get(b.subjectId) : undefined
+    const topic = b.topicId ? topicMap.get(b.topicId) : undefined
+    const color = b.kind === 'compromisso' ? '#64748b' : (subject?.color ?? '#3e63f2')
+    const title = b.kind === 'study' || b.kind === 'revisao' ? (topic?.name ?? subject?.name ?? 'Estudo') : (b.title ?? subject?.name ?? 'Evento')
+    const canDone = b.kind === 'study' || b.kind === 'revisao'
+    return (
+      <div key={b.id} onClick={() => onOpen(b)} className={`flex items-center gap-3 rounded-2xl border border-line bg-white p-3 ${b.done ? 'opacity-60' : ''} ${b.missed && !b.done ? 'opacity-50' : ''}`} style={{ borderLeft: `5px solid ${color}` }}>
+        <div className="min-w-0 flex-1">
+          <div className={`text-sm font-bold ${b.missed && !b.done ? 'line-through' : ''}`}>
+            {b.kind === 'revisao' && <RotateCcw size={12} className="mr-1 inline" />}
+            {b.kind === 'prova' && <Flag size={12} className="mr-1 inline" />}
+            {title}
+          </div>
+          <div className="text-xs text-muted">
+            {fmtTime(b.start)}–{fmtTime(b.end)} · {b.kind === 'revisao' ? 'Revisão · ' : ''}
+            {subject?.name ?? (b.kind === 'compromisso' ? 'Compromisso' : '')}
+            {b.missed && !b.done ? ' · perdido' : ''}
+          </div>
+        </div>
+        {canDone && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setBlockDone(b.id, !b.done)
+            }}
+            className={`flex shrink-0 items-center gap-1 rounded-xl font-bold ${big ? 'px-3.5 py-2.5 text-sm' : 'px-2.5 py-2 text-xs'} ${b.done ? 'bg-emerald-100 text-emerald-700' : 'bg-ink text-white'}`}
+          >
+            <Check size={big ? 16 : 14} /> {b.done ? 'Feito' : 'Feito?'}
+          </button>
+        )}
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-3 px-4 pb-5">
+      {ordered.map((date) => {
+        const list = blocks.filter((b) => b.date === date).sort((a, b) => a.start - b.start)
+        const isToday = date === todayIso
+        const idx = dates.indexOf(date)
+        const expanded = isToday || open === date
+        const done = list.filter((b) => b.done).length
+        return (
+          <div key={date} className={`rounded-2xl ${isToday ? 'bg-brand-soft/60 p-3' : 'border border-line p-2'}`}>
+            <button onClick={() => !isToday && setOpen(expanded ? null : date)} className="flex w-full items-center justify-between gap-2 px-1 py-1 text-left">
+              <span className={`text-sm font-bold ${isToday ? 'text-brand' : ''}`}>
+                {isToday ? 'Hoje · ' : ''}
+                {names[idx]} {fmtDayMonth(date)}
+              </span>
+              <span className="text-xs text-muted">
+                {list.length ? `${done}/${list.length} feitos` : 'livre'}
+                {!isToday && <span className="ml-1">{expanded ? '▾' : '▸'}</span>}
+              </span>
+            </button>
+            {expanded && <div className="mt-2 space-y-2">{list.length ? list.map((b) => row(b, isToday)) : <p className="px-1 text-xs text-muted">Nada planejado.</p>}</div>}
+          </div>
+        )
+      })}
     </div>
   )
 }

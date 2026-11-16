@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { BookOpen, Brain, ChevronDown, FileQuestion, CalendarRange, House, Layers, LayoutGrid, Settings, Waypoints } from 'lucide-react'
 import { db } from '../db/db'
 import { currentWeekId } from '../db/repo'
+import { addDays } from '../lib/dates'
 import { TimerPill } from './TimerPill'
 import { Logo } from './Logo'
 import { SyncBadge } from './SyncBadge'
@@ -31,7 +32,8 @@ export function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   const weekId = currentWeekId()
-  const status = useLiveQuery(async () => ({ week: await db.weeks.get(weekId) }), [weekId])
+  // No fim de semana, a próxima semana já planejada também libera o site
+  const status = useLiveQuery(async () => ({ week: (await db.weeks.get(weekId)) ?? (await db.weeks.get(addDays(weekId, 7))) }), [weekId])
   const sync = useSyncStatus()
 
   useEffect(() => {

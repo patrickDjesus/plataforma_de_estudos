@@ -90,6 +90,7 @@ export function RankSection() {
     ['Revisão concluída', `+${POINTS.review}`],
     ['Desafio ou questões', `até +${POINTS.challengeMax} (+${POINTS.challengeBonus} com 85%+)`],
     ['Flashcards', `+1 por cartão (até ${POINTS.cardPerDay}/dia)`],
+    ['Simulado', '+1 por acerto (até +40; +10 com 70%+)'],
     ['Questões feitas (livro, lista)', `+1 a cada 2 (até +${POINTS.questionsMax}; +${POINTS.questionsBonus} com 80%+)`],
     ['Semana com 80%+ do plano', `+${POINTS.goodWeek}`],
     ['Bloco perdido', `${POINTS.missed}`],
