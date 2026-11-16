@@ -225,3 +225,9 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 .capi-alive .capi-ear-r { animation: capi-ear-r 9s ease-in-out infinite 2s; }
 .capi-alive .capi-head { transition: transform .35s ease-out; }
 .capi-alive:hover .capi-bob { animation: capi-hop .6s cubic-bezier(.3, 1.4, .5, 1); }
+
+/* Celular: grades de uma coluna não podem passar da largura da tela */
+@media (max-width: 639px) {
+  .home-panel .grid:not([class*=" grid-cols-"]):not([class^="grid-cols-"]) { grid-template-columns: minmax(0, 1fr); }
+  .home-panel .grid > * { min-width: 0; }
+}

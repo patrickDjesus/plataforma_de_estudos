@@ -16,6 +16,7 @@ import { Capybara } from '../components/Capybara'
 import { AchievementsSection } from '../components/Achievements'
 import { QuestionsStrip, QuestionsSummary } from '../components/QuestionStats'
 import { ReviewTodayButton } from './ReviewToday'
+import { useIsPhone } from '../lib/phone'
 import { RankEmblem, RankFrame, RankLine, RankSection, setRankPreview, useRankPreview, useRankWatcher, withPreview } from '../components/Rank'
 import { loadRank } from '../db/rank'
 import { ChallengeModal } from '../components/ChallengeModal'
@@ -40,6 +41,7 @@ export function HomePage() {
   const doneBlocksAll = useLiveQuery(() => db.blocks.filter((b) => b.done).toArray(), [], [])
   const reviews = useLiveQuery(() => db.reviews.toArray(), [], [])
   const [section, setSection] = useState<Section>('geral')
+  const phone = useIsPhone()
   const [scope, setScope] = useState<Scope>('hoje')
   const rankState = useLiveQuery(() => loadRank(), [])
   useRankWatcher(rankState ?? { pos: 0, points: 0, best: { pos: 0, points: 0 }, log: [] }, !!rankState)
@@ -144,7 +146,7 @@ export function HomePage() {
             value={focusArea.name}
           />
         )}
-        <button onClick={() => startBlock(nextBlock)} className="group flex items-center gap-3 text-left">
+        <button onClick={() => startBlock(nextBlock)} className="group hidden items-center gap-3 text-left sm:flex">
           <TileIcon color="#ef2b3f">
             <span className="h-5 w-5 rounded-full bg-gradient-to-b from-white/90 to-white/40 shadow transition group-hover:scale-110" />
           </TileIcon>
@@ -156,7 +158,7 @@ export function HomePage() {
       </Card>
 
       {subjects.size > 0 && ![...subjects.values()].some((s) => s.areaId === 'faculdade') && (
-        <Card className="flex flex-wrap items-center gap-3 border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900">
+        <Card className="hidden flex-wrap items-center gap-3 border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900 sm:flex">
           <Capybara pose="pensando" size={44} />
           <span className="min-w-0 flex-1">
             <b>A Faculdade está sem matérias.</b> Cadastre as do semestre para o planejador reservar os 2/3 do tempo e a semana temática ter um tema de Faculdade.
@@ -168,11 +170,28 @@ export function HomePage() {
       )}
       {/* Painel com barra lateral escura */}
       {/* Altura fixa: a barra escura não muda de tamanho ao trocar de seção; o conteúdo rola por dentro */}
+      {phone && (
+        <div className="thin-scroll -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+          {(
+            [
+              ['geral', 'Geral'],
+              ['resultados', 'Resultados'],
+              ['metas', 'Metas'],
+              ['conquistas', 'Conquistas'],
+              ['rank', 'Rank'],
+            ] as [Section, string][]
+          ).map(([id, label]) => (
+            <button key={id} onClick={() => setSection(id)} className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold ${section === id ? 'bg-brand text-white' : 'bg-white text-slate-600'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       <div
         className="flex overflow-hidden rounded-[22px] border border-line bg-white shadow-[0_8px_24px_-12px_rgba(16,24,40,0.08)]"
-        style={{ height: 'max(620px, calc(100vh - 290px))' }}
+        style={phone ? undefined : { height: 'max(620px, calc(100vh - 290px))' }}
       >
-        <aside className="thin-scroll flex w-[84px] shrink-0 flex-col items-center gap-1 overflow-y-auto bg-[#1c1d22] py-4">
+        <aside className="thin-scroll hidden w-[84px] shrink-0 flex-col items-center gap-1 overflow-y-auto bg-[#1c1d22] py-4 sm:flex">
           <SideItem active={section === 'geral'} onClick={() => setSection('geral')} icon={<Globe2 size={22} />} label="Geral" />
           <SideItem active={section === 'resultados'} onClick={() => setSection('resultados')} icon={<BarChart3 size={22} />} label="Resultados" />
           <SideItem active={section === 'metas'} onClick={() => setSection('metas')} icon={<Target size={22} />} label="Metas" />
@@ -185,7 +204,7 @@ export function HomePage() {
           </div>
         </aside>
 
-        <div key={section} className="thin-scroll min-w-0 flex-1 overflow-y-auto p-5">
+        <div key={section} className={`home-panel thin-scroll min-w-0 flex-1 p-4 sm:p-5 ${phone ? '' : 'overflow-y-auto'}`}>
           {section === 'geral' && (
             <>
               <div className="mb-5">
@@ -198,10 +217,12 @@ export function HomePage() {
                   ]}
                 />
               </div>
-              <div className="mb-5">
-                <ReviewTodayButton />
-              </div>
-              <QuestionsStrip onMore={() => setSection('resultados')} onRegister={() => navigate('/questoes?aba=registrar')} />
+              {!phone && (
+                <div className="mb-5">
+                  <ReviewTodayButton />
+                </div>
+              )}
+              <QuestionsStrip onMore={() => setSection('resultados')} onRegister={phone ? undefined : () => navigate('/questoes?aba=registrar')} />
               <div className="grid gap-5 lg:grid-cols-3">
                 {/* XP */}
                 <Panel title={scope === 'hoje' ? 'XP do dia' : 'XP da semana'} icon={<Medal size={18} />}>
@@ -227,7 +248,7 @@ export function HomePage() {
                       )}
                     </p>
                   </div>
-                  <ActionBox label="Continuar de onde parei" onClick={() => startBlock(nextBlock)} />
+                  {!phone && <ActionBox label="Continuar de onde parei" onClick={() => startBlock(nextBlock)} />}
                 </Panel>
 
                 {/* Tarefas */}
@@ -263,7 +284,7 @@ export function HomePage() {
                           ) : running ? (
                             <span className="text-xs font-bold text-emerald-600">● agora</span>
                           ) : (
-                            <button onClick={() => startBlock(b)} className="grid h-8 w-8 place-items-center rounded-full bg-brand-soft text-brand opacity-70 transition group-hover:opacity-100" title="Começar">
+                            <button onClick={() => startBlock(b)} className="hidden h-8 w-8 place-items-center rounded-full bg-brand-soft text-brand opacity-70 transition group-hover:opacity-100 sm:grid" title="Começar">
                               <Play size={14} />
                             </button>
                           )}
@@ -292,7 +313,7 @@ export function HomePage() {
             </>
           )}
 
-          {section === 'geral' && (
+          {section === 'geral' && !phone && (
             <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
               <ReviewsPanel />
               <RecentNotes />
@@ -344,7 +365,7 @@ function SideItem({ active, onClick, icon, label }: { active: boolean; onClick: 
 
 function Panel({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex min-h-[440px] flex-col rounded-[18px] border border-line p-5">
+    <div className="flex flex-col rounded-[18px] border border-line p-5 sm:min-h-[440px]">
       <h3 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold">
         {icon} {title}
       </h3>
@@ -543,7 +564,7 @@ function ReviewsPanel() {
                 </div>
               </div>
               <div className="flex gap-1.5">
-                <button onClick={() => setChallenge(r)} className="rounded-xl px-2.5 py-1.5 text-xs font-bold text-white" style={{ background: s?.color ?? '#3e63f2' }} title="Teste sua memória: a nota define a próxima revisão">
+                <button onClick={() => setChallenge(r)} className="hidden rounded-xl px-2.5 py-1.5 text-xs font-bold text-white sm:block" style={{ background: s?.color ?? '#3e63f2' }} title="Teste sua memória: a nota define a próxima revisão">
                   ⚔️ Desafio
                 </button>
                 {(['dificil', 'ok', 'facil'] as ReviewRating[]).map((k) => (
@@ -711,7 +732,7 @@ function WeakPoints() {
                     {s?.name} · {masteryLabel(m.value)}
                   </div>
                 </div>
-                <button onClick={() => navigate(`/desafio?materia=${t?.subjectId}&topico=${id}`)} className="shrink-0 rounded-xl px-2.5 py-1.5 text-xs font-bold text-white" style={{ background: s?.color ?? '#3e63f2' }}>
+                <button onClick={() => navigate(`/desafio?materia=${t?.subjectId}&topico=${id}`)} className="hidden shrink-0 rounded-xl px-2.5 py-1.5 text-xs font-bold text-white sm:block" style={{ background: s?.color ?? '#3e63f2' }}>
                   ⚔️ Desafio
                 </button>
               </div>

@@ -227,6 +227,7 @@ export function MascotHost() {
 
   // No celular a Capi fica menor, para não cobrir o conteúdo
   const phone = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 640px)').matches
+  if (phone) return null
   return (
     <div
       className="pointer-events-none fixed right-0 bottom-0 z-50 flex items-end gap-2"

@@ -5,6 +5,7 @@ import { BookOpen, Brain, ChevronDown, FileQuestion, CalendarRange, House, Layer
 import { db } from '../db/db'
 import { currentWeekId } from '../db/repo'
 import { addDays } from '../lib/dates'
+import { isPhoneRoute, useIsPhone } from '../lib/phone'
 import { TimerPill } from './TimerPill'
 import { Logo } from './Logo'
 import { SyncBadge } from './SyncBadge'
@@ -35,12 +36,47 @@ export function Layout() {
   // No fim de semana, a próxima semana já planejada também libera o site
   const status = useLiveQuery(async () => ({ week: (await db.weeks.get(weekId)) ?? (await db.weeks.get(addDays(weekId, 7))) }), [weekId])
   const sync = useSyncStatus()
+  const phone = useIsPhone()
+
+  // Celular: só Início e Semana; qualquer outra tela volta para o Início
+  useEffect(() => {
+    if (phone && !isPhoneRoute(location.pathname)) navigate('/', { replace: true })
+  }, [phone, location.pathname, navigate])
 
   useEffect(() => {
     // Espera a nuvem responder: em outro dispositivo a semana pode já existir lá
     if (sync === 'carregando') return
     if (status && !status.week && !FREE_ROUTES.includes(location.pathname)) navigate('/checkin', { replace: true })
   }, [status, sync, location.pathname, navigate])
+
+  if (phone)
+    return (
+      <div className="min-h-full pb-20">
+        <header className="sticky top-0 z-40 border-b border-line bg-white">
+          <div className="flex h-14 items-center justify-between gap-2 px-3">
+            <NavLink to="/" className="flex shrink-0 items-center" aria-label="Mendonça, início">
+              <Logo />
+            </NavLink>
+            <span className="rounded-full bg-[#f1f2f5] px-2.5 py-1 text-[11px] font-bold text-muted">Modo consulta</span>
+            <div className="flex items-center gap-2">
+              <SyncBadge />
+            </div>
+          </div>
+        </header>
+        <main key={`/${location.pathname.split('/')[1]}`} className="page-in px-3 py-4">
+          <Outlet />
+        </main>
+        <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 border-t border-line bg-white" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} aria-label="Navegação">
+          {NAV.slice(0, 2).map(({ to, label, icon: Icon }) => (
+            <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-bold ${isActive ? 'text-brand' : 'text-slate-500'}`}>
+              <Icon size={22} strokeWidth={2} />
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+        <MascotHost />
+      </div>
+    )
 
   return (
     <div className="min-h-full">
