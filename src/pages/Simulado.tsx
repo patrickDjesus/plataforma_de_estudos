@@ -41,6 +41,7 @@ export function Simulado() {
   const [sel, setSel] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [progress, setProgress] = useState('')
+  const [short, setShort] = useState(0)
   const [deadline, setDeadline] = useState(0)
   const [now, setNow] = useState(Date.now())
   const qStart = useRef(0)
@@ -116,6 +117,7 @@ export function Simulado() {
       return
     }
     const list = out.slice(0, size)
+    setShort(list.length < size ? size - list.length : 0)
     setQs(list)
     setAnswers([])
     setI(0)
@@ -260,6 +262,7 @@ export function Simulado() {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <span className="text-sm font-bold text-muted">
             Questão {i + 1} de {qs.length}
+            {short > 0 && <span className="ml-2 text-xs font-semibold text-amber-700">(a IA mandou {qs.length} de {qs.length + short}; o tempo foi ajustado)</span>}
           </span>
           <span className={`flex items-center gap-1.5 rounded-full px-3 py-1 font-display text-base font-extrabold tabular-nums ${urgent ? 'bg-rose-100 text-rose-700' : 'bg-[#16181d] text-white'}`}>
             <Clock3 size={15} /> {fmt(left)}

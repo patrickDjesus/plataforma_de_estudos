@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Check, Clock3, RotateCcw, X } from 'lucide-react'
@@ -66,6 +66,12 @@ export function ReviewTodayPage() {
     else if (from === 'cartoes') setStage(F.reviews.length ? 'revisoes' : 'fim')
     else setStage('fim')
   }
+  // Etapa sem itens (ou já terminada): avança fora da renderização
+  useEffect(() => {
+    if (stage === 'erros' && !F.errors[ei]) next('erros')
+    if (stage === 'revisoes' && !F.reviews[ri]) next('revisoes')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, ei, ri])
 
   const Shell = ({ children }: { children: React.ReactNode }) => (
     <div className="page-in mx-auto max-w-3xl">
@@ -131,10 +137,7 @@ export function ReviewTodayPage() {
 
   if (stage === 'erros') {
     const e = F.errors[ei]
-    if (!e) {
-      next('erros')
-      return null
-    }
+    if (!e) return null
     return (
       <Shell>
         <ReviewCard
@@ -166,10 +169,7 @@ export function ReviewTodayPage() {
 
   if (stage === 'revisoes') {
     const r = F.reviews[ri]
-    if (!r) {
-      next('revisoes')
-      return null
-    }
+    if (!r) return null
     const s = subjects.get(r.subjectId)
     const t = topics.find((x) => x.id === r.topicId)
     const advance = () => {

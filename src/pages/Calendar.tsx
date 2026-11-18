@@ -5,7 +5,9 @@ import { tint } from '../lib/colors'
 import { useSubjectMap, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
 import { currentWeekId, deleteBlock, regeneratePlan, setBlockDone, updateBlock } from '../db/repo'
 import type { Block } from '../db/types'
-import { DAY_SHORT, fmtDayMonth, fmtDuration, fmtTime, fmtWeekRange, minutesNow, toISODate, weekDates } from '../lib/dates'
+import { DAY_SHORT, addDays, fmtDayMonth, fmtDuration, fmtTime, fmtWeekRange, minutesNow, toISODate, weekDates } from '../lib/dates'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../db/db'
 import { BlockDialog, type Draft } from '../components/BlockDialog'
 import { Btn, Card, Chip, PageHeader, Tabs } from '../components/ui'
 import type { Subject, Topic } from '../db/types'
@@ -17,7 +19,14 @@ type DragState = { id: string; mode: 'move' | 'resize'; x0: number; y0: number; 
 
 export function CalendarPage() {
   const navigate = useNavigate()
-  const weekId = currentWeekId()
+  // Fim de semana: se a próxima semana já foi planejada, dá para alternar entre as duas
+  const thisWeek = currentWeekId()
+  const nextWeekId = addDays(thisWeek, 7)
+  const nextPlanned = useLiveQuery(async () => !!(await db.weeks.get(nextWeekId)), [nextWeekId], false)
+  const thisPlanned = useLiveQuery(async () => !!(await db.weeks.get(thisWeek)), [thisWeek], true)
+  const [pickNext, setPickNext] = useState<boolean | null>(null)
+  const showNext = nextPlanned && (pickNext ?? !thisPlanned)
+  const weekId = showNext ? nextWeekId : thisWeek
   const week = useWeek(weekId)
   const blocks = useWeekBlocks(weekId)
   const subjects = useSubjectMap()
@@ -120,6 +129,16 @@ export function CalendarPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 pb-4">
           <div>
             <h2 className="text-xl font-bold">{fmtWeekRange(weekId)}</h2>
+            {nextPlanned && (
+              <div className="mt-1.5 inline-flex gap-1 rounded-full bg-[#f1f2f5] p-1 text-xs font-bold">
+                <button onClick={() => setPickNext(false)} className={`rounded-full px-3 py-1 ${!showNext ? 'bg-white text-brand shadow-sm' : 'text-muted'}`}>
+                  Esta semana
+                </button>
+                <button onClick={() => setPickNext(true)} className={`rounded-full px-3 py-1 ${showNext ? 'bg-white text-brand shadow-sm' : 'text-muted'}`}>
+                  Próxima semana
+                </button>
+              </div>
+            )}
             {week?.themes && (
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {Object.values(week.themes)

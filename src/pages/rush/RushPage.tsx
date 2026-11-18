@@ -112,7 +112,7 @@ function TopBar({ S }: { S: RushState }) {
           </Bubble>
         </div>
         <div className="flex items-center gap-1">
-          <IconBtn title={S.sound ? 'Desligar som' : 'Ligar som'} onClick={() => (rush.update((d) => (d.sound = !d.sound)), rush.get().sound && sfx('pop'))}>
+          <IconBtn title={S.sound ? 'Desligar som' : 'Ligar som'} onClick={() => (rush.update((d) => ((d.sound = !d.sound), (d.soundChosen = true))), rush.get().sound && sfx('pop'))}>
             {S.sound ? <Volume2 size={16} /> : <VolumeX size={16} />}
           </IconBtn>
           {S.view === 'rush' && S.current && S.phase === 'answer' && (

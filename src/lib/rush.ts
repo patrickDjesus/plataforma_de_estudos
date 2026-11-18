@@ -162,6 +162,8 @@ export interface RushState {
   skipped: number
   goalHit: boolean
   sound: boolean
+  /** O próprio usuário escolheu o som (sem isso, vale o padrão: desligado). */
+  soundChosen?: boolean
   fbag: Record<string, { sig: string; items: string[] }>
   lastSubj?: string
   seq: number
@@ -220,6 +222,7 @@ export function hydrateRush(raw: unknown): RushState {
   const s: RushState = { ...d, ...r, cfg: { ...d.cfg, ...(r.cfg ?? {}) }, stats: { ...d.stats, ...(r.stats ?? {}) }, items: { ...d.items, ...(r.items ?? {}) } }
   s.cfg.subjects = (s.cfg.subjects ?? []).map((x) => ({ id: x.id, focus: x.focus ?? '', topicIds: x.topicIds ?? [] }))
   if (s.phase === 'checking') s.phase = 'answer'
+  if (!s.soundChosen) s.sound = false
   return s
 }
 
@@ -975,6 +978,7 @@ export function restart(S: RushState): RushState {
   const d = defaultRushState()
   d.cfg = S.cfg
   d.sound = S.sound
+  d.soundChosen = S.soundChosen
   return d
 }
 
