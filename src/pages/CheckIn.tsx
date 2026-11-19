@@ -11,6 +11,7 @@ import type { AreaId, AreaPercents, Availability } from '../db/types'
 import { AREA_COLOR } from '../lib/colors'
 import { DAY_NAMES, addDays, dayIndex, fmtTime, fmtWeekRange, parseTime, toISODate } from '../lib/dates'
 import { SubjectIcon } from '../components/SubjectIcon'
+import { ThemeRoulette } from '../components/ThemeRoulette'
 import { tint } from '../lib/colors'
 import { Capybara, type CapiPose } from '../components/Capybara'
 import { LogoMark } from '../components/Logo'
@@ -83,6 +84,10 @@ export function CheckInPage() {
   const [themeOn, setThemeOn] = useState(true)
   const [themes, setThemes] = useState<Themes>({})
   const [suggested, setSuggested] = useState<Partial<Record<AreaId, ThemeSuggestion>>>({})
+  // Roleta da matéria da semana (Ensino Médio): gira uma vez por semana, ao chegar nas matérias
+  const [roulette, setRoulette] = useState<'fechada' | 'aberta' | 'feita'>('fechada')
+  const [rouletteWon, setRouletteWon] = useState(false)
+  const [lastEnsino, setLastEnsino] = useState<string | undefined>()
 
   useEffect(() => {
     if (percents) return
@@ -97,6 +102,9 @@ export function CheckInPage() {
           const active = subs.filter((x) => !(w?.pausedSubjectIds ?? []).includes(x.id))
           const sug = suggestThemes(active, weeks.map((x) => ({ weekId: x.id, themes: x.themes })), Object.fromEntries(mm.subjects), weekId)
           setSuggested(sug)
+          const prev = weeks.filter((x) => x.id < weekId && x.themes).sort((a, b) => b.id.localeCompare(a.id))[0]
+          setLastEnsino(prev?.themes?.ensino)
+          if (w?.themes?.ensino) setRoulette('feita') // semana já planejada: a roleta já rodou
           setThemeOn(w ? !!w.themes : s.themeWeeks !== false)
           setThemes(w?.themes ?? Object.fromEntries(Object.entries(sug).map(([a, v]) => [a, v!.id])))
         })
@@ -110,6 +118,10 @@ export function CheckInPage() {
     })
   }, [weekId, percents, prevWeekId])
   const hints = useMemo(() => retroHints(prevStats, prevRetro), [prevStats, prevRetro])
+  const ensinoActive = subjects.filter((x) => x.areaId === 'ensino' && !paused.includes(x.id))
+  useEffect(() => {
+    if (step === 'materias' && themeOn && roulette === 'fechada' && ensinoActive.length > 1) setRoulette('aberta')
+  }, [step, themeOn, roulette, ensinoActive.length])
 
   const minutes = useMemo(() => (availability ? totalMinutes(availability, today) : 0), [availability, today])
   if (!percents || !availability) return null
@@ -479,10 +491,24 @@ export function CheckInPage() {
             </StepCard>
           )}
 
+          {roulette === 'aberta' && (
+            <ThemeRoulette
+              subjects={ensinoActive}
+              lastWeekId={lastEnsino}
+              onDone={(id) => {
+                setThemes((t) => ({ ...t, ensino: id }))
+                setRouletteWon(true)
+                setRoulette('feita')
+              }}
+              onSkip={() => setRoulette('feita')}
+            />
+          )}
           {step === 'materias' && (
             <StepCard title="Matérias desta semana" subtitle={subjects.length ? 'Escolha a matéria da semana de cada área e desligue as que vão ficar de fora.' : 'Cadastre ao menos uma matéria. Depois você detalha os tópicos em Matérias.'}>
               {active.length > 0 && (
                 <ThemePanel
+                  onSpin={ensinoActive.length > 1 && !rouletteWon ? () => setRoulette('aberta') : undefined}
+                  rouletteWon={rouletteWon}
                   on={themeOn}
                   setOn={setThemeOn}
                   themes={themes}
@@ -763,6 +789,8 @@ function RetroStep({ stats, onDone, onSkip }: { stats: WeekStats; onDone: (worke
 }
 
 function ThemePanel({
+  onSpin,
+  rouletteWon,
   on,
   setOn,
   themes,
@@ -770,6 +798,8 @@ function ThemePanel({
   suggested,
   active,
 }: {
+  onSpin?: () => void
+  rouletteWon: boolean
   on: boolean
   setOn: (v: boolean) => void
   themes: Themes
@@ -804,7 +834,13 @@ function ThemePanel({
               <div key={a.id}>
                 <div className="mb-1.5 flex flex-wrap items-baseline gap-2 text-xs font-bold" style={{ color: AREA_COLOR[a.id] }}>
                   {a.name}
-                  {sug && list.some((s) => s.id === sug.id) && (
+                  {a.id === 'ensino' && rouletteWon && <span className="font-semibold text-muted">· sorteada pela roleta</span>}
+                  {a.id === 'ensino' && onSpin && (
+                    <button onClick={onSpin} className="rounded-full bg-brand px-2.5 py-0.5 text-[11px] font-bold text-white hover:brightness-110">
+                      Girar a roleta
+                    </button>
+                  )}
+                  {sug && list.some((s) => s.id === sug.id) && !(a.id === 'ensino' && rouletteWon) && (
                     <span className="font-semibold text-muted">
                       · sugestão: {list.find((s) => s.id === sug.id)?.name} ({sug.reason})
                     </span>

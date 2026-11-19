@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Crown, Layers, Settings, ArrowRight, BarChart3, BookOpen, RotateCcw, CalendarCheck2, Check, ChevronRight, Clock3, Flame, Globe2, Medal, Play, Target, Trophy, Zap } from 'lucide-react'
 import { db } from '../db/db'
 import { noteText } from '../lib/ai'
-import { AREAS, useSessions, useSettings, useSubjectMap, useTimer, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
+import { AREAS, useSessions, useSettings, useSubjectMap, useTimer, useTopics, useWeekBlocks } from '../db/hooks'
 import { currentWeekId, rateReview } from '../db/repo'
 import { RATING_LABEL } from '../lib/review'
 import type { ReviewRating } from '../db/types'
@@ -25,6 +25,7 @@ import { useMastery } from '../db/mastery'
 import { masteryColor, masteryLabel } from '../lib/mastery'
 import { ratingFromScore } from '../lib/challenge'
 import { Card, Ring, Tabs } from '../components/ui'
+import { StreakIcon, StudyDaysIcon } from '../components/StatIcons'
 
 type Section = 'geral' | 'resultados' | 'metas' | 'conquistas' | 'rank'
 type Scope = 'hoje' | 'semana'
@@ -32,7 +33,6 @@ type Scope = 'hoje' | 'semana'
 export function HomePage() {
   const navigate = useNavigate()
   const weekId = currentWeekId()
-  const week = useWeek(weekId)
   const blocks = useWeekBlocks(weekId)
   const subjects = useSubjectMap()
   const topics = useTopics()
@@ -98,11 +98,7 @@ export function HomePage() {
     navigate(`/foco/${b.id}`) // sessão guiada
   }
 
-  const focusArea = week ? AREAS.reduce((best, a) => (week.percents[a.id] > week.percents[best.id] ? a : best), AREAS[0]) : AREAS[0]
   const name = settings.userName?.trim() || 'estudante'
-  // Semana temática: mostra a matéria da semana da área de foco (ou a primeira com tema)
-  const themeId = week?.themes ? (week.themes[focusArea.id] ?? Object.values(week.themes).find(Boolean)) : undefined
-  const themeSubject = themeId ? subjects.get(themeId) : undefined
 
   return (
     <div className="space-y-5">
@@ -136,17 +132,8 @@ export function HomePage() {
           </div>
         </div>
 
-        <Stat tile={<TileIcon color="#ff5d6c"><CalendarCheck2 size={22} /></TileIcon>} value={`${studyDays.size}`} accent="#3e63f2" label="dias estudados" />
-        <Stat tile={<TileIcon color="#ff8a1f"><Flame size={22} /></TileIcon>} value={`${streak}`} accent="#ff8a1f" label={streak === 1 ? 'dia seguido' : 'dias seguidos'} />
-        {themeSubject ? (
-          <Stat tile={<SubjectIcon subject={themeSubject} size={48} />} caption="🎯 Semana de" value={themeSubject.name} />
-        ) : (
-          <Stat
-            tile={<TileIcon color={AREA_COLOR[focusArea.id]}><span className="font-display text-lg font-extrabold">{focusArea.name[0]}</span></TileIcon>}
-            caption="Foco da semana"
-            value={focusArea.name}
-          />
-        )}
+        <Stat tile={<StudyDaysIcon count={studyDays.size} />} value={`${studyDays.size}`} accent="#3e63f2" label={studyDays.size === 1 ? 'dia estudado' : 'dias estudados'} />
+        <Stat tile={<StreakIcon streak={streak} />} value={`${streak}`} accent="#ff8a1f" label={streak === 1 ? 'dia seguido' : 'dias seguidos'} />
         <button onClick={() => startBlock(nextBlock)} className="group hidden items-center gap-3 text-left sm:flex">
           <TileIcon color="#ef2b3f">
             <span className="h-5 w-5 rounded-full bg-gradient-to-b from-white/90 to-white/40 shadow transition group-hover:scale-110" />

@@ -35,3 +35,18 @@ describe('semana temática', () => {
     expect(themedSubjects(subjects, null).length).toBe(5)
   })
 })
+
+describe('roleta da matéria da semana', async () => {
+  const { pickThemeSubject } = await import('../components/ThemeRoulette')
+  const mk = (id: string, deadline?: string) => ({ id, name: id, color: '#000', deadline })
+  it('nunca repete a da semana passada', () => {
+    for (let k = 0; k < 50; k++) expect(pickThemeSubject([mk('a'), mk('b'), mk('c')], 'b', new Date('2026-11-16'), () => k / 50).id).not.toBe('b')
+  })
+  it('prova em até 14 dias vence o sorteio', () => {
+    const r = pickThemeSubject([mk('a'), mk('b', '2026-11-25'), mk('c', '2026-11-20')], 'c', new Date('2026-11-16'), () => 0)
+    expect(r).toEqual({ id: 'c', forced: true })
+  })
+  it('com uma só matéria, sorteia ela', () => {
+    expect(pickThemeSubject([mk('a')], 'a').id).toBe('a')
+  })
+})

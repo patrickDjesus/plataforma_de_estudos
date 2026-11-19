@@ -243,3 +243,14 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
   .home-panel .grid:not([class*=" grid-cols-"]):not([class^="grid-cols-"]) { grid-template-columns: minmax(0, 1fr); }
   .home-panel .grid > * { min-width: 0; }
 }
+
+/* Ícones animados do Início: calendário (dias estudados) e fumaça da brasa (dias seguidos) */
+@keyframes st-check { 0%, 18% { stroke-dashoffset: 30 } 42%, 88% { stroke-dashoffset: 0; opacity: 1 } 100% { stroke-dashoffset: 0; opacity: 0 } }
+@keyframes st-flip { 0%, 86% { transform: none } 92% { transform: translateY(-1.5px) rotate(-6deg) } 100% { transform: none } }
+@keyframes st-ring { 0%, 86%, 100% { transform: none } 92% { transform: translateY(-1.5px) } }
+@keyframes st-smoke { 0% { opacity: 0; transform: translateY(2px) } 40% { opacity: .8 } 100% { opacity: 0; transform: translateY(-6px) } }
+.st-check { animation: st-check 3.6s ease-in-out infinite; }
+.st-flip { animation: st-flip 3.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 0%; }
+.st-ring { animation: st-ring 3.6s ease-in-out infinite; transform-box: fill-box; }
+.st-ring-2 { animation-delay: .08s; }
+.st-smoke { animation: st-smoke 2.6s ease-out infinite; transform-box: fill-box; }
