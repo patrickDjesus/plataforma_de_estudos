@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Crown, Layers, Settings, ArrowRight, BarChart3, BookOpen, RotateCcw, CalendarCheck2, Check, ChevronRight, Clock3, Flame, Globe2, Medal, Play, Target, Trophy, Zap } from 'lucide-react'
 import { db } from '../db/db'
+import { noteText } from '../lib/ai'
 import { AREAS, useSessions, useSettings, useSubjectMap, useTimer, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
 import { currentWeekId, rateReview } from '../db/repo'
 import { RATING_LABEL } from '../lib/review'
@@ -314,7 +315,7 @@ export function HomePage() {
           )}
 
           {section === 'geral' && !phone && (
-            <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+            <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
               <ReviewsPanel />
               <RecentNotes />
             </div>
@@ -531,7 +532,7 @@ function ReviewsPanel() {
   const [challenge, setChallenge] = useState<(typeof reviews)[number] | null>(null)
   const topicName = (id: string) => topics.find((t) => t.id === id)?.name ?? 'Tópico'
   return (
-    <div className="rounded-[18px] border border-line p-5">
+    <div className="min-w-0 rounded-[18px] border border-line p-5">
       <h3 className="mb-1 flex items-center gap-2 font-sans text-sm font-semibold">
         <RotateCcw size={18} /> Revisões pendentes
         {due.length > 0 && <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-bold text-white">{due.length}</span>}
@@ -545,7 +546,9 @@ function ReviewsPanel() {
       )}
       {reviews.length === 0 && (
         <div className="flex items-center gap-3 rounded-2xl bg-[#f6f7f9] p-4 text-sm text-muted">
-          <Capybara pose="estudando" size={64} />
+          <span className="shrink-0">
+            <Capybara pose="estudando" size={64} />
+          </span>
           Quando você concluir um tópico, as revisões aparecem aqui (amanhã, em 7 dias e em 30 dias).
         </div>
       )}
@@ -612,7 +615,7 @@ function RecentNotes() {
   const notes = useLiveQuery(() => db.notes.orderBy('updatedAt').reverse().limit(5).toArray(), [], [])
   const subjects = useSubjectMap()
   return (
-    <div className="rounded-[18px] border border-line p-5">
+    <div className="min-w-0 rounded-[18px] border border-line p-5">
       <h3 className="mb-3 flex items-center gap-2 font-sans text-sm font-semibold">
         <BookOpen size={18} /> Notas recentes
       </h3>
@@ -620,7 +623,7 @@ function RecentNotes() {
       <div className="space-y-1">
         {notes.map((n) => {
           const s = subjects.get(n.subjectId)
-          const text = n.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+          const text = noteText(n.content, 240).replace(/\s+/g, ' ')
           return (
             <button key={n.id} onClick={() => navigate(`/caderno/${n.id}`)} className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-slate-50">
               <SubjectIcon subject={s} size={32} />
