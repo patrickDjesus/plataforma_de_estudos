@@ -32,7 +32,7 @@ function Section({ n, title, children }: { n: number; title: string; children: R
   return (
     <section>
       <h3 className="mb-2.5 flex items-center gap-2 font-sans text-[13px] font-semibold text-ink">
-        <span className="grid h-5 w-5 place-items-center rounded-full bg-[#eef0f4] text-[11px] font-bold text-muted">{n}</span>
+        <span className="grid h-5 w-5 place-items-center rounded-md bg-[#ececea] text-[11px] font-bold text-muted">{n}</span>
         {title}
       </h3>
       {children}
@@ -92,7 +92,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
   const e = parseTime(end)
   const minutes = e - s
   const valid = minutes > 0 && (!needsSubject || !!subjectId) && (hasTopic || !!title.trim() || !!subjectId)
-  const color = kind === 'compromisso' ? '#64748b' : (subject?.color ?? '#3e63f2')
+  const color = kind === 'compromisso' ? '#6b6b66' : (subject?.color ?? '#c4471d')
   const dates = weekDates(weekId)
   const todayIso = toISODate(new Date())
   const kinds = kind === 'revisao' ? [...KINDS, REVIEW_KIND] : KINDS
@@ -119,29 +119,29 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
   const status = block ? (block.done ? { label: 'Concluído', cls: 'bg-emerald-400/25' } : block.missed ? { label: 'Perdido · remarcado', cls: 'bg-rose-500/30' } : { label: 'Pendente', cls: 'bg-white/20' }) : { label: 'Novo bloco', cls: 'bg-white/20' }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1026]/45 p-3 backdrop-blur-[3px]" onMouseDown={onClose}>
-      <div className="capi-pop flex max-h-[94vh] w-full max-w-[920px] flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_40px_80px_-24px_rgba(11,16,38,0.55)] md:flex-row" onMouseDown={(ev) => ev.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#18181b]/45 p-3 backdrop-blur-[3px]" onMouseDown={onClose}>
+      <div className="capi-pop flex max-h-[94vh] w-full max-w-[920px] flex-col overflow-hidden rounded-xl bg-white md:flex-row" onMouseDown={(ev) => ev.stopPropagation()}>
         {/* Painel de pré-visualização */}
         <aside
           className="relative flex shrink-0 flex-col overflow-hidden p-6 text-white md:w-[300px]"
-          style={{ background: `radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, ${color} 75%, #fff) 0%, ${color} 45%, color-mix(in srgb, ${color} 70%, #0b1026) 100%)` }}
+          style={{ background: color }}
         >
-          <span className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-white/10" />
-          <span className="absolute right-10 bottom-24 h-3 w-3 rotate-45 rounded-[3px] bg-white/30" />
+          <span className="absolute -top-16 -right-16 h-48 w-48 rounded-md bg-white/10" />
+          <span className="absolute right-10 bottom-24 h-3 w-3 rotate-45 rounded-md bg-white/30" />
           <div className="relative flex items-center justify-between">
-            <span className={`rounded-full px-3 py-1 text-[11px] font-bold tracking-wide uppercase ${status.cls}`}>{status.label}</span>
-            <button onClick={onClose} className="rounded-full bg-white/15 p-1.5 hover:bg-white/25 md:hidden" aria-label="Fechar">
+            <span className={`rounded-md px-3 py-1 text-[11px] font-bold tracking-wide uppercase ${status.cls}`}>{status.label}</span>
+            <button onClick={onClose} className="rounded-md bg-white/15 p-1.5 hover:bg-white/25 md:hidden" aria-label="Fechar">
               <X size={16} />
             </button>
           </div>
 
           <div className="relative mt-6 flex items-center gap-3">
             {kind === 'compromisso' ? (
-              <span className="subject-icon h-14 w-14 rounded-[18px] bg-white/20">
+              <span className="subject-icon h-14 w-14 rounded-lg bg-white/20">
                 <Coffee size={26} />
               </span>
             ) : (
-              <span className="rounded-[20px] bg-white/25 p-1">
+              <span className="rounded-lg bg-white/25 p-1">
                 <SubjectIcon subject={subject} size={52} />
               </span>
             )}
@@ -154,11 +154,11 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
           {/* Cartão como aparece no calendário */}
           <div className="relative mt-6 rounded-2xl bg-white/95 p-1.5 shadow-xl">
             <div
-              className="flex min-h-[92px] flex-col justify-between rounded-[14px] p-3"
+              className="flex min-h-[92px] flex-col justify-between rounded-lg p-3"
               style={
                 kind === 'revisao'
                   ? { background: tint(color, 0.12), border: `2px dashed ${tint(color, 0.7)}`, color: `color-mix(in srgb, ${color} 75%, #000)` }
-                  : { background: kind === 'compromisso' ? 'repeating-linear-gradient(135deg,#6b7280,#6b7280 8px,#737a87 8px,#737a87 16px)' : color, color: '#fff' }
+                  : { background: kind === 'compromisso' ? 'repeating-linear-gradient(135deg,#6b6b66,#6b6b66 8px,#6b6b66 8px,#6b6b66 16px)' : color, color: '#fff' }
               }
             >
               <div className="flex items-start justify-between gap-2">
@@ -166,7 +166,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
                   {kind === 'prova' && <Flag size={12} className="mr-1 inline" />}
                   {previewTitle}
                 </span>
-                <span className="shrink-0 rounded-full bg-white/30 px-1.5 py-0.5 text-[10px] font-bold">{minutes > 0 ? fmtDuration(minutes * 60) : '—'}</span>
+                <span className="shrink-0 rounded-md bg-white/30 px-1.5 py-0.5 text-[10px] font-bold">{minutes > 0 ? fmtDuration(minutes * 60) : '—'}</span>
               </div>
               <span className="text-[11px] font-medium opacity-85 tabular-nums">
                 {start}–{end}
@@ -202,7 +202,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
                     onClose()
                     navigate(`/foco/${block.id}`)
                   }}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3 text-sm font-bold text-ink shadow-lg transition hover:-translate-y-0.5"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-3 text-sm font-bold text-ink shadow-lg transition"
                 >
                   <Play size={16} style={{ color }} /> Começar agora
                 </button>
@@ -213,7 +213,6 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
                   <div className="grid grid-cols-3 gap-1.5">
                     {(['dificil', 'ok', 'facil'] as ReviewRating[]).map((r) => (
                       <button key={r} onClick={() => rateReview(block.topicId!, r, block.id).then(onClose)} className="rounded-xl bg-white/20 py-2 text-xs font-bold hover:bg-white/30">
-                        <span className="block text-base">{RATING_LABEL[r].emoji}</span>
                         {RATING_LABEL[r].label}
                       </button>
                     ))}
@@ -239,7 +238,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
               <h2 className="text-lg font-bold">{block ? 'Editar bloco' : 'Criar bloco'}</h2>
               <p className="text-xs text-muted">{block ? 'Mudou de ideia? Ajuste o que quiser.' : 'Monte o bloco e veja a prévia ao lado.'}</p>
             </div>
-            <button onClick={onClose} className="hidden rounded-full p-2 text-muted hover:bg-slate-100 md:block" aria-label="Fechar">
+            <button onClick={onClose} className="hidden rounded-md p-2 text-muted hover:bg-slate-100 md:block" aria-label="Fechar">
               <X size={18} />
             </button>
           </header>
@@ -256,7 +255,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
                       className={`flex items-start gap-3 rounded-2xl border p-3 text-left transition ${on ? 'border-transparent' : 'border-line hover:border-slate-300 hover:bg-slate-50'}`}
                       style={on ? { background: tint(color, 0.08), boxShadow: `inset 0 0 0 2px ${color}` } : undefined}
                     >
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl" style={on ? { background: color, color: '#fff' } : { background: '#f1f2f5', color: '#6b7385' }}>
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl" style={on ? { background: color, color: '#fff' } : { background: '#efefed', color: '#6b6b66' }}>
                         {k.icon}
                       </span>
                       <span className="min-w-0">
@@ -317,7 +316,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
                       <button
                         key={t.id || 'livre'}
                         onClick={() => setTopicId(t.id)}
-                        className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${on ? 'border-transparent text-white' : t.done ? 'border-line text-muted' : 'border-line hover:bg-slate-50'}`}
+                        className={`flex items-center gap-1.5 rounded-md border px-3.5 py-1.5 text-sm font-semibold transition ${on ? 'border-transparent text-white' : t.done ? 'border-line text-muted' : 'border-line hover:bg-slate-50'}`}
                         style={on ? { background: subject.color } : undefined}
                       >
                         {t.done && <Check size={13} />}
@@ -337,11 +336,11 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
                   value={title}
                   onChange={(ev) => setTitle(ev.target.value)}
                   placeholder={kind === 'prova' ? 'Ex.: P1 de Cálculo' : 'Ex.: Academia'}
-                  className="w-full rounded-2xl border border-line bg-[#f8f9fb] px-4 py-3 text-sm font-semibold outline-none focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10"
+                  className="w-full rounded-2xl border border-line bg-[#f7f7f5] px-4 py-3 text-sm font-semibold outline-none focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10"
                 />
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {(TITLE_HINTS[kind] ?? []).map((h) => (
-                    <button key={h} onClick={() => setTitle(kind === 'prova' && subject ? `${h} de ${subject.name}` : h)} className="rounded-full bg-[#f1f2f5] px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-[#e8e9ee]">
+                    <button key={h} onClick={() => setTitle(kind === 'prova' && subject ? `${h} de ${subject.name}` : h)} className="rounded-md bg-[#efefed] px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-[#e7e7e4]">
                       {h}
                     </button>
                   ))}
@@ -369,7 +368,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
                 })}
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-[#f6f7f9] p-3">
+              <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-[#f4f4f2] p-3">
                 <Clock3 size={18} className="text-muted" />
                 <label className="flex flex-col">
                   <span className="text-[10px] font-semibold text-muted uppercase">Início</span>
@@ -387,7 +386,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
                       <button
                         key={m}
                         onClick={() => setDuration(m)}
-                        className={`rounded-full px-2.5 py-1 text-xs font-bold transition ${on ? 'text-white' : 'bg-white text-slate-600 shadow-sm hover:bg-slate-50'}`}
+                        className={`rounded-md px-2.5 py-1 text-xs font-bold transition ${on ? 'text-white' : 'bg-white text-slate-600 shadow-sm hover:bg-slate-50'}`}
                         style={on ? { background: color } : undefined}
                       >
                         {fmtDuration(m * 60)}
@@ -433,8 +432,8 @@ function QuestionsFields({ block, color }: { block: Block; color: string }) {
   const n = Number(q) || 0
   const k = c.trim() === '' ? null : Math.min(n, Number(c) || 0)
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-[#f6f7f9] p-3 text-sm">
-      <span className="font-bold">📝 Questões</span>
+    <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-[#f4f4f2] p-3 text-sm">
+      <span className="font-bold">Questões</span>
       <label className="flex items-center gap-1.5">
         <input type="number" min={0} value={q} onChange={(e) => setQ(e.target.value)} onBlur={() => save(q, c)} className="w-16 rounded-lg border border-line bg-white px-2 py-1 text-center font-bold outline-none focus:border-brand" aria-label="Questões feitas" />
         feitas
@@ -444,7 +443,7 @@ function QuestionsFields({ block, color }: { block: Block; color: string }) {
         acertos
       </label>
       {n > 0 && k !== null && (
-        <span className="ml-auto rounded-full px-2.5 py-1 text-xs font-bold text-white" style={{ background: color }}>
+        <span className="ml-auto rounded-md px-2.5 py-1 text-xs font-bold text-white" style={{ background: color }}>
           {Math.round((k / n) * 100)}% de acerto
         </span>
       )}

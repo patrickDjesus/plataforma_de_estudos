@@ -1,21 +1,17 @@
-import { Cloud, CloudOff, HardDrive } from 'lucide-react'
-import { Spinner } from './Voice'
 import { syncError, useSyncStatus } from '../lib/cloud'
 
 const LABEL = {
-  carregando: 'Conectando…',
-  sincronizado: 'Salvo na nuvem',
-  enviando: 'Salvando…',
-  local: 'Só neste navegador',
-  erro: 'Nuvem com problema',
+  carregando: 'conectando',
+  sincronizado: 'nuvem',
+  enviando: 'salvando',
+  local: 'local',
+  erro: 'sem nuvem',
 }
 
 /** Indicador discreto de sincronização ao lado do cronômetro. */
 export function SyncBadge() {
   const s = useSyncStatus()
-  const icon =
-    s === 'sincronizado' ? <Cloud size={16} /> : s === 'local' ? <HardDrive size={16} /> : s === 'erro' ? <CloudOff size={16} /> : <Spinner size={16} />
-  const color = s === 'sincronizado' ? 'text-emerald-600 bg-emerald-50' : s === 'erro' ? 'text-rose-600 bg-rose-50' : s === 'local' ? 'text-slate-500 bg-[#f1f2f5]' : 'text-brand bg-brand-soft'
+  const dot = s === 'sincronizado' ? '#4d7a57' : s === 'erro' ? '#b42318' : s === 'local' ? '#a1a19b' : '#c4471d'
   const title =
     s === 'local'
       ? 'Os dados ficam salvos só neste navegador. Abra pelo claude.ai, logado, para sincronizar entre dispositivos.'
@@ -23,9 +19,9 @@ export function SyncBadge() {
         ? syncError()
         : LABEL[s]
   return (
-    <span className={`hidden items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-semibold md:flex ${color}`} title={title}>
-      {icon}
-      <span className="hidden xl:inline">{LABEL[s]}</span>
+    <span className="hidden items-center gap-1.5 font-mono text-[11px] tracking-wider text-muted uppercase md:flex" title={title}>
+      <span className={`h-1.5 w-1.5 rounded-full ${s === 'enviando' || s === 'carregando' ? 'animate-pulse' : ''}`} style={{ background: dot }} />
+      {LABEL[s]}
     </span>
   )
 }

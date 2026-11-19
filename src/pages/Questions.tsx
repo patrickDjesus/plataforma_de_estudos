@@ -26,7 +26,7 @@ export function QuestionsPage() {
   const [tab, setTab] = useState<Tab>(asked && TABS.includes(asked) ? asked : 'rush')
   return (
     <>
-      <PageHeader icon={<FileQuestion size={26} />} color="#3e63f2" title="Questões" subtitle="Rush, simulado, listas sob medida e o registro do que você faz por fora." stats={<QuestionsHeroStats />} />
+      <PageHeader icon={<FileQuestion size={26} />} color="#c4471d" title="Questões" subtitle="Rush, simulado, listas e o que você faz por fora." stats={<QuestionsHeroStats />} />
       <DashShell<Tab>
         value={tab}
         onChange={setTab}
@@ -59,7 +59,7 @@ function QuestionHistory() {
   const sets = list.filter((c) => c.origin === 'questoes' || c.origin === 'demanda')
 
   if (open) {
-    const color = subjects.get(open.subjectId)?.color ?? '#3e63f2'
+    const color = subjects.get(open.subjectId)?.color ?? '#c4471d'
     return (
       <Card className="mx-auto max-w-2xl p-6">
         <ResultView items={open.items} answers={open.answers} results={open.results} fromNotes={open.fromNotes} color={color} onSelfGrade={() => undefined} onContest={() => undefined} onFinish={() => setOpen(null)} />
@@ -93,7 +93,7 @@ function QuestionHistory() {
                   {c.request ? ` · “${c.request}”` : ''}
                 </div>
               </div>
-              <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${pct >= 85 ? 'bg-emerald-50 text-emerald-700' : pct >= 50 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'}`}>{pct}%</span>
+              <span className={`rounded-md px-2.5 py-1 text-xs font-bold ${pct >= 85 ? 'bg-emerald-50 text-emerald-700' : pct >= 50 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'}`}>{pct}%</span>
             </button>
           )
         })}

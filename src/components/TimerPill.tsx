@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, Pause, Play, Square, Timer } from 'lucide-react'
+import { Check, Pause, Play, Square } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { useTimer } from '../db/hooks'
@@ -40,33 +40,27 @@ export function TimerPill() {
   const running = !!timer?.startedAt
 
   return (
-    <div className="flex items-center gap-1 rounded-full bg-[#16181d] py-1 pr-1 pl-1 text-sm font-semibold text-white shadow-[0_8px_20px_-10px_rgba(0,0,0,0.6)]">
-      <span
-        className="grid h-8 w-8 place-items-center rounded-full"
-        style={{ background: `conic-gradient(#7c8cff ${progress * 360}deg, #3a3d46 0deg)` }}
-        title={goal ? `${Math.round(progress * 100)}% do bloco` : undefined}
-      >
-        <span className={`h-5 w-5 rounded-full bg-[#16181d] ${running ? 'animate-pulse' : ''}`} />
-      </span>
+    <div className={`relative flex items-center gap-1 overflow-hidden rounded-md border py-1 pr-1 pl-2 text-sm font-semibold ${timer ? 'border-ink bg-ink text-paper' : 'border-line text-ink'}`}>
+      {timer && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-brand transition-[width]" style={{ width: `${progress * 100}%` }} title={goal ? `${Math.round(progress * 100)}% do bloco` : undefined} />}
+      {running && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />}
       {timer && (
-        <span className="hidden max-w-36 truncate pl-1.5 text-xs font-medium text-slate-400 md:inline" title={timer.label}>
+        <span className="hidden max-w-36 truncate pl-1 text-xs font-medium opacity-60 md:inline" title={timer.label}>
           {timer.label}
         </span>
       )}
-      <span className={`items-center gap-1.5 rounded-full px-2.5 py-1 tabular-nums ${timer ? 'flex' : 'hidden sm:flex'}`}>
-        <Timer size={15} className="text-slate-400" />
+      <span className={`items-center gap-1.5 px-1.5 py-1 font-mono text-[13px] tabular-nums ${timer ? 'flex' : 'hidden sm:flex'}`}>
         {fmtClock(elapsed)}
       </span>
       {timer && (
         <>
-          <button onClick={() => (running ? pauseTimer() : resumeTimer())} className="rounded-full p-1.5 hover:bg-white/10" title={running ? 'Pausar' : 'Continuar'}>
+          <button onClick={() => (running ? pauseTimer() : resumeTimer())} className="rounded-md p-1.5 hover:bg-white/10" title={running ? 'Pausar' : 'Continuar'}>
             {running ? <Pause size={15} /> : <Play size={15} />}
           </button>
-          <button onClick={() => stopChecked(false, elapsed, block)} className="rounded-full p-1.5 hover:bg-white/10" title="Parar e salvar">
+          <button onClick={() => stopChecked(false, elapsed, block)} className="rounded-md p-1.5 hover:bg-white/10" title="Parar e salvar">
             <Square size={14} />
           </button>
           {timer.blockId && (
-            <button onClick={() => stopChecked(true, elapsed, block)} className="rounded-full bg-emerald-500 p-1.5 hover:bg-emerald-400" title="Concluir bloco">
+            <button onClick={() => stopChecked(true, elapsed, block)} className="rounded-md bg-brand p-1.5 hover:bg-[#a83a15]" title="Concluir bloco">
               <Check size={15} />
             </button>
           )}

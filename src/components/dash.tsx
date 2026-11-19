@@ -1,101 +1,86 @@
 import type { ReactNode } from 'react'
 import { ArrowRight } from 'lucide-react'
-import { Card } from './ui'
 
 /**
- * Peças do visual de "painel" do Início, reaproveitadas no resto do site:
- * cabeçalho com números (PageHeader + HeroStat), painel com barra lateral escura (DashShell),
- * caixas internas (Panel) e o botão de ação com seta (ActionBox).
+ * Linguagem visual de "caderno": título grande com serifa, números em colunas separadas por fio,
+ * seções numeradas sublinhadas e blocos marcados por um fio de tinta no topo (em vez de caixas com sombra).
  */
 
-/** Quadradinho colorido com degradê e ícone branco. */
-export function TileIcon({ color, children, size = 48 }: { color: string; children: ReactNode; size?: number }) {
+const today = () => new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+
+/** Rótulo pequeno em fonte de máquina de escrever. */
+export function Kicker({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <div className={`font-mono text-[11px] tracking-[0.12em] text-muted uppercase ${className}`}>{children}</div>
+}
+
+/** Ícone de linha na cor, sem fundo. */
+export function TileIcon({ color, children, size = 40 }: { color: string; children: ReactNode; size?: number }) {
   return (
-    <span className="subject-icon shrink-0 rounded-[14px]" style={{ width: size, height: size, background: `linear-gradient(145deg, ${color}, color-mix(in srgb, ${color} 72%, #000))` }}>
-      <span className="relative z-10 flex">{children}</span>
+    <span className="inline-grid shrink-0 place-items-center rounded-md border" style={{ width: size, height: size, color, borderColor: `color-mix(in srgb, ${color} 30%, transparent)` }}>
+      {children}
     </span>
   )
 }
 
-/** Número do cabeçalho: ícone + valor + rótulo (a 1ª palavra ao lado do número, o resto embaixo). */
-export function HeroStat({ tile, value, label, caption, accent }: { tile: ReactNode; value: ReactNode; label?: string; caption?: string; accent?: string }) {
+/** Um número do cabeçalho: valor grande, legenda curta embaixo. */
+export function HeroStat({ value, label, accent }: { tile?: ReactNode; value: ReactNode; label?: string; caption?: string; accent?: string }) {
   return (
-    <div className="flex items-center gap-3">
-      {tile}
-      <div className="leading-tight">
-        {caption && <div className="text-xs text-muted">{caption}</div>}
-        <div className="font-display text-lg font-bold tabular-nums" style={accent ? { color: accent } : undefined}>
-          {value}
-          {label && <span className="ml-1.5 font-sans text-sm font-medium text-ink">{label.split(' ')[0]}</span>}
-        </div>
-        {label && <div className="text-xs text-muted">{label.split(' ').slice(1).join(' ') || ' '}</div>}
+    <div className="px-5 py-1 first:pl-0 last:pr-0">
+      <div className="font-display text-[30px] leading-none font-semibold tabular-nums" style={accent ? { color: accent } : undefined}>
+        {value}
       </div>
+      {label && <Kicker className="mt-1.5 whitespace-nowrap">{label}</Kicker>}
     </div>
   )
 }
 
-/** Cabeçalho de página no estilo do Início: cartão branco com ícone, título e números à direita. */
+/** Cabeçalho de página: data, título grande e os números do lado, fechado por um fio de tinta. */
 export function PageHeader({
-  icon,
   title,
   subtitle,
   actions,
-  color = '#3e63f2',
   stats,
   back,
 }: {
-  icon: ReactNode
+  icon?: ReactNode
+  color?: string
   title: string
   subtitle?: string
   actions?: ReactNode
-  color?: string
   stats?: ReactNode
   back?: ReactNode
 }) {
   return (
-    <Card className="mb-5 flex flex-wrap items-center gap-x-8 gap-y-4 px-6 py-5">
-      <div className="flex min-w-0 flex-1 basis-64 items-center gap-4">
-        <TileIcon color={color} size={56}>
-          {icon}
-        </TileIcon>
+    <header className="mb-7 border-b-2 border-ink pb-5">
+      <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-5">
         <div className="min-w-0">
-          {back}
-          <h1 className="truncate text-xl font-bold">{title}</h1>
-          {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
+          {back ?? <Kicker>{today()}</Kicker>}
+          <h1 className="mt-1.5 text-[40px] leading-[1.02] sm:text-[46px]">{title}</h1>
+          {subtitle && <p className="mt-2 max-w-xl text-sm text-muted">{subtitle}</p>}
+        </div>
+        <div className="flex flex-wrap items-end gap-x-6 gap-y-4">
+          {stats && <div className="flex flex-wrap divide-x divide-line">{stats}</div>}
+          {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
         </div>
       </div>
-      {stats}
-      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
-    </Card>
-  )
-}
-
-export function SideItem({ active, onClick, icon, label, badge }: { active: boolean; onClick: () => void; icon: ReactNode; label: string; badge?: number }) {
-  return (
-    <button onClick={onClick} className={`relative flex w-full flex-col items-center gap-1 px-1 py-1.5 text-center text-[11px] leading-tight font-semibold transition ${active ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>
-      <span className={`grid h-10 w-10 place-items-center rounded-full transition ${active ? 'bg-gradient-to-br from-[#5b7cff] to-[#3e63f2] shadow-[0_0_18px_rgba(91,124,255,0.6)]' : 'bg-white/5'}`}>{icon}</span>
-      {label}
-      {!!badge && <span className="absolute top-0.5 right-3 min-w-[18px] rounded-full bg-rose-500 px-1 text-[10px] leading-[18px] font-bold text-white tabular-nums">{badge}</span>}
-    </button>
+    </header>
   )
 }
 
 export interface ShellItem<T extends string> {
   id: T
   label: string
-  icon: ReactNode
+  icon?: ReactNode
   badge?: number
 }
 
-/** Painel branco com a barra lateral escura do Início; no celular a barra vira abas no topo. */
+/** Seções da página como um índice numerado e sublinhado. */
 export function DashShell<T extends string>({
   items,
   value,
   onChange,
   footer,
   children,
-  minHeight = 560,
-  flush = false,
 }: {
   items: ShellItem<T>[]
   value: T
@@ -103,62 +88,68 @@ export function DashShell<T extends string>({
   footer?: ReactNode
   children: ReactNode
   minHeight?: number
-  /** Sem espaçamento interno (o conteúdo cuida das bordas). */
   flush?: boolean
 }) {
   return (
     <>
-      <div className="thin-scroll -mx-1 mb-3 flex gap-1.5 overflow-x-auto px-1 pb-1 sm:hidden">
-        {items.map((it) => (
-          <button key={it.id} onClick={() => onChange(it.id)} className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold ${value === it.id ? 'bg-brand text-white' : 'bg-white text-slate-600'}`}>
-            {it.label}
-          </button>
-        ))}
-      </div>
-      <div className="flex overflow-hidden rounded-[22px] border border-line bg-white shadow-[0_8px_24px_-12px_rgba(16,24,40,0.08)]" style={{ minHeight }}>
-        <aside className="hidden w-[84px] shrink-0 flex-col items-center gap-1 bg-[#1c1d22] py-4 sm:flex">
-          {items.map((it) => (
-            <SideItem key={it.id} active={value === it.id} onClick={() => onChange(it.id)} icon={it.icon} label={it.label} badge={it.badge} />
-          ))}
-          {footer && <div className="mt-auto flex w-full flex-col items-center gap-1 border-t border-white/10 pt-3">{footer}</div>}
-        </aside>
-        <div key={value} className={`dash-body page-in min-w-0 flex-1 ${flush ? 'dash-flush flex flex-col' : 'p-4 sm:p-6'}`}>
-          {children}
-        </div>
+      <nav className="thin-scroll mb-7 flex items-end gap-x-7 overflow-x-auto border-b border-line">
+        {items.map((it, i) => {
+          const on = value === it.id
+          return (
+            <button
+              key={it.id}
+              onClick={() => onChange(it.id)}
+              className={`-mb-px flex shrink-0 items-baseline gap-2 border-b-2 pt-1 pb-2.5 text-[15px] font-semibold transition-colors ${on ? 'border-brand text-ink' : 'border-transparent text-muted hover:text-ink'}`}
+            >
+              <span aria-hidden className={`font-mono text-[11px] ${on ? 'text-brand' : ''}`}>{String(i + 1).padStart(2, '0')}</span>
+              {it.label}
+              {!!it.badge && <sup className="font-mono text-[11px] font-semibold text-brand">{it.badge}</sup>}
+            </button>
+          )
+        })}
+        {footer && <div className="ml-auto flex shrink-0 gap-4 pb-2.5 text-sm">{footer}</div>}
+      </nav>
+      <div key={value} className="dash-body page-in">
+        {children}
       </div>
     </>
   )
 }
 
-/** Caixa interna com borda fina e título pequeno com ícone (como "Tarefas do dia"). */
-export function Panel({ title, icon, children, right, className = '' }: { title: ReactNode; icon?: ReactNode; children: ReactNode; right?: ReactNode; className?: string }) {
+/** Link discreto para o rodapé do índice. */
+export function SideItem({ onClick, label }: { active?: boolean; onClick: () => void; icon?: ReactNode; label: string; badge?: number }) {
   return (
-    <div className={`flex flex-col rounded-[18px] border border-line p-5 ${className}`}>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="flex items-center gap-2 font-sans text-sm font-semibold">
-          {icon} {title}
-        </h3>
-        {right}
-      </div>
-      {children}
-    </div>
-  )
-}
-
-/** Faixa de ação azul-clarinha com a bolinha de seta. */
-export function ActionBox({ label, onClick, className = 'mt-5' }: { label: ReactNode; onClick: () => void; className?: string }) {
-  return (
-    <button onClick={onClick} className={`group flex w-full items-center justify-between rounded-2xl bg-brand-soft px-4 py-3.5 text-left text-sm font-bold text-ink transition hover:brightness-95 ${className}`}>
+    <button onClick={onClick} className="font-semibold text-muted underline decoration-line decoration-2 underline-offset-4 hover:text-ink hover:decoration-ink">
       {label}
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-white transition group-hover:translate-x-0.5">
-        <ArrowRight size={16} />
-      </span>
     </button>
   )
 }
 
-/** Contador em pílula (ex.: "3 para hoje"). */
+/** Bloco de conteúdo: fio de tinta no topo e título em caixa-alta pequena. */
+export function Panel({ title, children, right, className = '' }: { title: ReactNode; icon?: ReactNode; children: ReactNode; right?: ReactNode; className?: string }) {
+  return (
+    <section className={`flex flex-col border-t border-ink pt-3 ${className}`}>
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <h3 className="font-mono text-[11px] font-semibold tracking-[0.12em] text-ink uppercase">{title}</h3>
+        {right}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+/** Ação em forma de link sublinhado com seta. */
+export function ActionBox({ label, onClick, className = 'mt-5' }: { label: ReactNode; onClick: () => void; className?: string }) {
+  return (
+    <button onClick={onClick} className={`group inline-flex items-center gap-2 self-start text-left text-sm font-semibold text-ink underline decoration-brand/40 decoration-2 underline-offset-[5px] hover:decoration-brand ${className}`}>
+      {label}
+      <ArrowRight size={15} className="text-brand transition-transform group-hover:translate-x-0.5" />
+    </button>
+  )
+}
+
+/** Contagem curta ao lado de um título. */
 export function CountPill({ children, tone = 'brand' }: { children: ReactNode; tone?: 'brand' | 'rose' | 'emerald' }) {
-  const cls = tone === 'rose' ? 'bg-rose-50 text-rose-600' : tone === 'emerald' ? 'bg-emerald-50 text-emerald-700' : 'bg-brand-soft text-brand'
-  return <span className={`rounded-full px-2.5 py-1 text-xs font-bold tabular-nums ${cls}`}>{children}</span>
+  const cls = tone === 'rose' ? 'text-rose-700' : tone === 'emerald' ? 'text-[#4d7a57]' : 'text-brand'
+  return <span className={`font-mono text-[11px] tracking-wider uppercase tabular-nums ${cls}`}>{children}</span>
 }

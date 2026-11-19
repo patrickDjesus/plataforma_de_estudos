@@ -54,18 +54,20 @@ export function guessIcon(name: string): string {
 export function SubjectIcon({ subject, size = 44, color, iconKey }: { subject?: Pick<Subject, 'name' | 'color' | 'icon'>; size?: number; color?: string; iconKey?: string }) {
   const key = iconKey ?? subject?.icon ?? guessIcon(subject?.name ?? '')
   const Icon = (SUBJECT_ICONS[key] ?? SUBJECT_ICONS.cap).icon
-  const c = color ?? subject?.color ?? '#3e63f2'
+  const c = color ?? subject?.color ?? '#c4471d'
   return (
     <span
       className="subject-icon shrink-0"
       style={{
         width: size,
         height: size,
-        borderRadius: size * 0.3,
-        background: `linear-gradient(145deg, ${c}, color-mix(in srgb, ${c} 70%, #000))`,
+        borderRadius: 4,
+        color: c,
+        background: `color-mix(in srgb, ${c} 9%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${c} 28%, transparent)`,
       }}
     >
-      <Icon size={size * 0.5} strokeWidth={2.2} />
+      <Icon size={size * 0.48} strokeWidth={1.8} />
     </span>
   )
 }

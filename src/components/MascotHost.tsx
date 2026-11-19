@@ -170,7 +170,7 @@ export function MascotHost() {
         } catch {
           /* ok */
         }
-        window.setTimeout(() => showMascot({ pose: 'comemorando', title: `Meta do dia batida! 🎯 ${done}/${goal}`, text: 'Questões feitas, sequência garantida. Agora é lucro: quer continuar ou descansar?', autoHideMs: 9000 }), 1200)
+        window.setTimeout(() => showMascot({ pose: 'comemorando', title: `Meta do dia batida! ${done}/${goal}`, text: 'Questões feitas, sequência garantida. Agora é lucro: quer continuar ou descansar?', autoHideMs: 9000 }), 1200)
       }
     })
     return () => {
@@ -184,7 +184,7 @@ export function MascotHost() {
     const lvl = levelInfo(xpFrom(data.sessions.reduce((a, s) => a + s.seconds, 0), data.doneBlocks.length, data.reviews.reduce((a, r) => a + r.history.length, 0), data.cards.reduce((a, c) => a + c.history.length, 0))).level
     if (lastLevel.current !== null && lvl > lastLevel.current) {
       window.setTimeout(
-        () => showMascot({ pose: 'formado', title: `Nível ${lvl}! 🎓`, text: 'Você subiu de nível. Cada minuto estudado está valendo a pena!', autoHideMs: 8000 }),
+        () => showMascot({ pose: 'formado', title: `Nível ${lvl}!`, text: 'Você subiu de nível. Cada minuto estudado está valendo a pena!', autoHideMs: 8000 }),
         6500,
       )
     }
@@ -205,7 +205,7 @@ export function MascotHost() {
       () =>
         showMascot({
           pose: 'comemorando',
-          title: `🏆 Conquista: ${a.title}`,
+          title: `Conquista: ${a.title}`,
           text: `${a.description} Desbloqueada!${fresh.length > 1 ? ` E mais ${fresh.length - 1}.` : ''}`,
           actions: [{ label: 'Ver conquistas', primary: true, to: '/' }, { label: 'Uhuul!' }],
         }),
@@ -234,9 +234,9 @@ export function MascotHost() {
       style={{ paddingRight: `max(${phone ? 8 : 16}px, env(safe-area-inset-right, 0px))`, paddingBottom: `max(${phone ? 8 : 16}px, env(safe-area-inset-bottom, 0px))` }}
     >
       {msg && (
-        <div key={key} className="capi-pop pointer-events-auto relative mb-16 w-[min(340px,calc(100vw-96px))] rounded-[20px] border border-line bg-white p-4 shadow-[0_18px_40px_-14px_rgba(16,24,40,0.35)]">
+        <div key={key} className="capi-pop pointer-events-auto relative mb-16 w-[min(340px,calc(100vw-96px))] rounded-lg border border-line bg-white p-4">
           <span className="absolute -right-2 bottom-6 h-4 w-4 rotate-45 border-t border-r border-line bg-white" />
-          <button onClick={() => setMsg(null)} className="absolute top-2.5 right-2.5 rounded-full p-1 text-muted hover:bg-slate-100" aria-label="Fechar">
+          <button onClick={() => setMsg(null)} className="absolute top-2.5 right-2.5 rounded-md p-1 text-muted hover:bg-slate-100" aria-label="Fechar">
             <X size={15} />
           </button>
           {msg.title && <div className="mb-1 pr-6 font-display text-[15px] font-bold">{msg.title}</div>}
@@ -247,7 +247,7 @@ export function MascotHost() {
                 <button
                   key={a.label}
                   onClick={() => runAction(a)}
-                  className={`rounded-xl px-3 py-2 text-xs font-bold transition ${a.primary ? 'bg-brand text-white hover:brightness-110' : 'bg-[#f1f2f5] text-ink hover:bg-[#e8e9ee]'}`}
+                  className={`rounded-xl px-3 py-2 text-xs font-bold transition ${a.primary ? 'bg-brand text-white hover:brightness-110' : 'bg-[#efefed] text-ink hover:bg-[#e7e7e4]'}`}
                 >
                   {a.label}
                 </button>
@@ -258,11 +258,11 @@ export function MascotHost() {
       )}
       <button
         onClick={ask}
-        className="pointer-events-auto group relative grid place-items-center rounded-full transition hover:-translate-y-1"
+        className="pointer-events-auto group relative grid place-items-center rounded-md transition"
         aria-label="Conversar com o Capi"
         title="Conversar com o Capi"
       >
-        <span className="absolute inset-x-3 bottom-1 h-16 rounded-full bg-brand/15 blur-xl transition group-hover:bg-brand/25" />
+        <span className="absolute inset-x-3 bottom-1 h-16 rounded-md bg-brand/15 blur-xl transition group-hover:bg-brand/25" />
         <Capybara key={msg ? `p-${key}` : 'idle'} pose={msg?.pose ?? mood ?? idlePose} size={phone ? (msg ? 72 : 46) : msg ? 104 : 78} className="relative transition-all" />
       </button>
     </div>

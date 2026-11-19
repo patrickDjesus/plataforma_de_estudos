@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { BookX, Brain, Check, History as HistoryIcon, Layers3, RotateCcw, Sparkles, Swords, Zap } from 'lucide-react'
+import { BookX, Brain, Check, History as HistoryIcon, Layers3, RotateCcw, ArrowRight, Swords, Zap } from 'lucide-react'
 import { db } from '../db/db'
 import { useSubjectMap, useTopics } from '../db/hooks'
 import { rateCard, rateReview } from '../db/repo'
@@ -49,14 +49,14 @@ export function RecoveryPage({ initial = 'hoje' }: { initial?: Section }) {
     <>
       <PageHeader
         icon={<Brain size={28} />}
-        color="#8b5cf6"
+        color="#6b5a8a"
         title="Recuperação"
         subtitle="Lembrar sem olhar é o que fixa."
         stats={
           <>
-            <HeroStat tile={<TileIcon color="#3e63f2"><RotateCcw size={22} /></TileIcon>} value={reviewsDue} label={reviewsDue === 1 ? 'revisão para hoje' : 'revisões para hoje'} />
-            <HeroStat tile={<TileIcon color="#14b8a6"><Layers3 size={22} /></TileIcon>} value={due.length} label={due.length === 1 ? 'cartão para revisar' : 'cartões para revisar'} />
-            <HeroStat tile={<TileIcon color="#ef4444"><BookX size={22} /></TileIcon>} value={errorsDue} label={`${errorsDue === 1 ? 'erro' : 'erros'} vencendo · ${errorsOpen} em aberto`} accent={errorsDue ? '#ef4444' : undefined} />
+            <HeroStat tile={<TileIcon color="#c4471d"><RotateCcw size={22} /></TileIcon>} value={reviewsDue} label={reviewsDue === 1 ? 'revisão para hoje' : 'revisões para hoje'} />
+            <HeroStat tile={<TileIcon color="#3f7a73"><Layers3 size={22} /></TileIcon>} value={due.length} label={due.length === 1 ? 'cartão para revisar' : 'cartões para revisar'} />
+            <HeroStat tile={<TileIcon color="#b23a2a"><BookX size={22} /></TileIcon>} value={errorsDue} label={`${errorsDue === 1 ? 'erro' : 'erros'} vencendo · ${errorsOpen} em aberto`} accent={errorsDue ? '#b23a2a' : undefined} />
             <HeroStat tile={<TileIcon color="#22b573"><Check size={22} /></TileIcon>} value={`${firm}/${cards.length}`} label="cartões firmes" />
           </>
         }
@@ -82,25 +82,25 @@ export function RecoveryPage({ initial = 'hoje' }: { initial?: Section }) {
                 {cards.length === 0 ? (
                   <div className="flex flex-col items-center py-4 text-center">
                     <Capybara pose="estudando" size={110} />
-                    <p className="mt-2 max-w-sm text-sm text-muted">Você ainda não tem flashcards. Abra uma nota no Caderno e crie cartões à mão ou peça sugestões ao Claude.</p>
+                    <p className="mt-2 max-w-sm text-sm text-muted">Nenhum cartão ainda. Eles nascem no Caderno.</p>
                     <ActionBox label="Ir para o Caderno" onClick={() => navigate('/caderno')} />
                   </div>
                 ) : due.length === 0 ? (
                   <div className="flex flex-col items-center py-4 text-center">
                     <Capybara pose="relaxando" size={110} />
-                    <p className="mt-2 text-sm font-semibold text-emerald-700">Nenhum cartão para hoje. Memória em dia! ✨</p>
+                    <p className="mt-2 text-sm font-semibold text-emerald-700">Nenhum cartão para hoje. Memória em dia!</p>
                   </div>
                 ) : (
                   <>
                     <div className="mb-4 flex flex-wrap gap-2">
-                      <button onClick={() => setFilter(null)} className={`rounded-full px-3 py-1 text-xs font-semibold ${filter ? 'bg-[#f1f2f5] text-slate-600' : 'bg-ink text-white'}`}>
+                      <button onClick={() => setFilter(null)} className={`rounded-md px-3 py-1 text-xs font-semibold ${filter ? 'bg-[#efefed] text-slate-600' : 'bg-ink text-white'}`}>
                         Todas ({due.length})
                       </button>
                       {bySubject.map(([id, n]) => {
                         const s = subjects.get(id)
                         const on = filter === id
                         return (
-                          <button key={id} onClick={() => setFilter(on ? null : id)} className="rounded-full border px-3 py-1 text-xs font-semibold" style={on ? { background: s?.color, borderColor: s?.color, color: '#fff' } : { borderColor: tint(s?.color ?? '#999', 0.4), color: s?.color }}>
+                          <button key={id} onClick={() => setFilter(on ? null : id)} className="rounded-md border px-3 py-1 text-xs font-semibold" style={on ? { background: s?.color, borderColor: s?.color, color: '#fff' } : { borderColor: tint(s?.color ?? '#999', 0.4), color: s?.color }}>
                             {s?.name} ({n})
                           </button>
                         )
@@ -143,7 +143,7 @@ export function RecoveryPage({ initial = 'hoje' }: { initial?: Section }) {
                         </span>
                       </div>
                       <div className="mt-1 h-1.5 overflow-hidden rounded-full" style={{ background: tint(s?.color ?? '#999', 0.12) }}>
-                        <div className="h-full rounded-full" style={{ width: `${(learned / all.length) * 100}%`, background: s?.color }} />
+                        <div className="h-full rounded-md" style={{ width: `${(learned / all.length) * 100}%`, background: s?.color }} />
                       </div>
                     </div>
                   </div>
@@ -186,8 +186,7 @@ export function StudySession({ cards, onExit }: { cards: Flashcard[]; onExit: ()
         <p className="mt-1 text-sm text-muted">{cards.length} cartões revisados</p>
         <div className="mt-4 flex gap-3">
           {(['dificil', 'ok', 'facil'] as ReviewRating[]).map((r) => (
-            <div key={r} className="rounded-2xl bg-[#f6f7f9] px-4 py-2 text-center">
-              <div className="text-xl">{RATING_LABEL[r].emoji}</div>
+            <div key={r} className="rounded-2xl bg-[#f4f4f2] px-4 py-2 text-center">
               <div className="font-display text-lg font-bold">{tally[r]}</div>
               <div className="text-[11px] text-muted">{RATING_LABEL[r].label}</div>
             </div>
@@ -218,17 +217,17 @@ export function StudySession({ cards, onExit }: { cards: Flashcard[]; onExit: ()
           {i + 1} / {cards.length}
         </span>
       </div>
-      <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-[#e6e8ee]">
-        <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${(i / cards.length) * 100}%` }} />
+      <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-[#e7e7e4]">
+        <div className="h-full rounded-md bg-brand transition-all" style={{ width: `${(i / cards.length) * 100}%` }} />
       </div>
-      <div key={card.id} className="capi-pop overflow-hidden rounded-[28px] border border-line bg-white shadow-[0_24px_50px_-28px_rgba(16,24,40,0.4)]">
-        <div className="flex items-center gap-2 px-6 py-3 text-xs font-semibold" style={{ background: tint(s?.color ?? '#3e63f2', 0.1), color: s?.color }}>
+      <div key={card.id} className="capi-pop overflow-hidden rounded-xl border border-line bg-white">
+        <div className="flex items-center gap-2 px-6 py-3 text-xs font-semibold" style={{ background: tint(s?.color ?? '#c4471d', 0.1), color: s?.color }}>
           <SubjectIcon subject={s} size={22} /> {s?.name}
           {t ? ` · ${t.name}` : ''}
         </div>
         <div className="flex min-h-[180px] items-center justify-center px-8 py-10 text-center font-display text-2xl leading-snug font-bold">{card.front}</div>
         {show ? (
-          <div className="border-t border-dashed border-line bg-[#fafbfc] px-8 py-8 text-center text-lg leading-relaxed">{card.back}</div>
+          <div className="border-t border-dashed border-line bg-[#f8f8f6] px-8 py-8 text-center text-lg leading-relaxed">{card.back}</div>
         ) : (
           <div className="border-t border-line p-4">
             <button onClick={() => setShow(true)} className="w-full rounded-2xl bg-ink py-3.5 font-bold text-white hover:bg-black">
@@ -244,9 +243,8 @@ export function StudySession({ cards, onExit }: { cards: Flashcard[]; onExit: ()
             <button
               key={r}
               onClick={() => rate(r)}
-              className={`rounded-2xl border py-3 text-center transition hover:-translate-y-0.5 ${r === 'ok' ? 'border-brand/30 bg-brand-soft text-brand' : 'border-line bg-white'}`}
+              className={`rounded-2xl border py-3 text-center transition ${r === 'ok' ? 'border-brand/30 bg-brand-soft text-brand' : 'border-line bg-white'}`}
             >
-              <div className="text-2xl">{RATING_LABEL[r].emoji}</div>
               <div className="text-sm font-bold">{RATING_LABEL[r].label}</div>
               <div className="text-[11px] text-muted">{r === 'dificil' ? 'volta amanhã' : r === 'ok' ? 'espaça um pouco' : 'espaça bastante'}</div>
             </button>
@@ -265,8 +263,8 @@ function ReviewsToday({ onChallenge }: { onChallenge: (subjectId: string, topicI
   const topics = useTopics()
   return (
     <Panel title="Revisões de tópicos" icon={<RotateCcw size={18} />} right={<CountPill>{reviews.length} para hoje</CountPill>}>
-      <p className="-mt-2 mb-4 text-xs text-muted">O desafio testa sua memória e a nota define a próxima revisão. Sem tempo? Avalie direto.</p>
-      {reviews.length === 0 && <p className="rounded-2xl bg-[#f6f7f9] px-4 py-3 text-sm text-muted">Nenhuma revisão de tópico vencendo hoje.</p>}
+      <p className="-mt-2 mb-4 text-xs text-muted">A nota do desafio marca a próxima revisão.</p>
+      {reviews.length === 0 && <p className="rounded-2xl bg-[#f4f4f2] px-4 py-3 text-sm text-muted">Nenhuma revisão de tópico vencendo hoje.</p>}
       <div className="divide-y divide-line">
         {reviews.map((r) => {
           const s = subjects.get(r.subjectId)
@@ -281,13 +279,13 @@ function ReviewsToday({ onChallenge }: { onChallenge: (subjectId: string, topicI
                   {s?.name} · {late > 0 ? `atrasada ${late}d` : 'vence hoje'}
                 </div>
               </div>
-              <button onClick={() => onChallenge(r.subjectId, r.topicId)} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-white" style={{ background: s?.color ?? '#3e63f2' }}>
+              <button onClick={() => onChallenge(r.subjectId, r.topicId)} className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-white" style={{ background: s?.color ?? '#c4471d' }}>
                 <Swords size={14} /> Desafio
               </button>
               <div className="flex gap-1">
                 {(['dificil', 'ok', 'facil'] as ReviewRating[]).map((k) => (
-                  <button key={k} onClick={() => rateReview(r.topicId, k)} className="rounded-lg bg-[#f1f2f5] px-2 py-1.5 text-xs" title={RATING_LABEL[k].label}>
-                    {RATING_LABEL[k].emoji}
+                  <button key={k} onClick={() => rateReview(r.topicId, k)} className="rounded-md border border-line px-2 py-1 text-xs font-semibold hover:border-ink" title={RATING_LABEL[k].label}>
+                    {RATING_LABEL[k].label}
                   </button>
                 ))}
               </div>
@@ -303,21 +301,16 @@ function ReviewsToday({ onChallenge }: { onChallenge: (subjectId: string, topicI
 function FreeChallenge() {
   const navigate = useNavigate()
   return (
-    <button onClick={() => navigate('/desafio')} className="group relative w-full overflow-hidden rounded-[22px] bg-gradient-to-br from-[#3e63f2] to-[#7b5cff] p-6 text-left text-white shadow-[0_18px_40px_-20px_rgba(62,99,242,0.9)] transition hover:-translate-y-0.5">
-      <span className="absolute -top-10 -right-8 h-36 w-36 rounded-full bg-white/10" />
-      <div className="relative flex items-center gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-white/75 uppercase">
-            <Swords size={14} /> Desafio livre
-          </div>
-          <div className="mt-1 font-display text-2xl font-bold">Monte seu desafio</div>
-          <p className="mt-1 text-sm text-white/80">Escolha matéria, tópico, quantidade, dificuldade e tipos de questão.</p>
-          <span className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-bold text-[#3e63f2] transition group-hover:translate-x-0.5">
-            <Sparkles size={15} /> Começar
-          </span>
-        </div>
-        <Capybara pose="focado" size={110} />
+    <button onClick={() => navigate('/desafio')} className="group flex w-full items-center gap-4 border-t border-ink pt-3 text-left">
+      <div className="flex-1">
+        <div className="font-mono text-[11px] font-semibold tracking-[0.12em] uppercase">Desafio livre</div>
+        <div className="mt-2 font-display text-[28px] leading-tight font-semibold">Monte seu desafio</div>
+        <p className="mt-1 text-sm text-muted">Você escolhe matéria, tópico e dificuldade.</p>
+        <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold underline decoration-brand/40 decoration-2 underline-offset-[5px] group-hover:decoration-brand">
+          Começar <ArrowRight size={15} className="text-brand" />
+        </span>
       </div>
+      <Capybara pose="focado" size={96} />
     </button>
   )
 }
@@ -345,7 +338,7 @@ function History() {
                   {ORIGIN_LABEL[c.origin]} · {new Date(c.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                 </div>
               </div>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${pct >= 85 ? 'bg-emerald-50 text-emerald-700' : pct >= 50 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'}`}>{pct}%</span>
+              <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${pct >= 85 ? 'bg-emerald-50 text-emerald-700' : pct >= 50 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'}`}>{pct}%</span>
             </div>
           )
         })}

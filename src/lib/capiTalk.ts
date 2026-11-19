@@ -66,7 +66,7 @@ export function capiWelcome(ctx: CapiContext): MascotMessage {
     }
   if (!ctx.hasWeek)
     return { pose: 'pensando', title, text: 'Semana nova chegando! Me conta onde você quer focar e eu monto o plano.', actions: [{ label: 'Montar a semana', primary: true, to: '/checkin' }, close] }
-  if (late) return { pose, title, text: 'Estudando até tarde? Faz um bloco leve e vai descansar. É dormindo que a memória se fixa. 🌙', actions: [close] }
+  if (late) return { pose, title, text: 'Estudando até tarde? Faz um bloco leve e vai descansar. É dormindo que a memória se fixa.', actions: [close] }
 
   const reviewLine = ctx.reviewsDue.length
     ? ` E tem ${ctx.reviewsDue.length === 1 ? `1 revisão pendente (${ctx.reviewsDue[0]})` : `${ctx.reviewsDue.length} revisões pendentes`} te esperando.`
@@ -89,7 +89,7 @@ export function capiQuestion(ctx: CapiContext, n: number): MascotMessage {
   const close = { label: 'Agora não' }
   const contextual: MascotMessage[] = []
 
-  if (ctx.timerRunning) contextual.push({ pose: 'focado', title: 'Foco total!', text: 'Você está no meio de um bloco. Vou ficar quietinho aqui do lado. 🤫', actions: [{ label: 'Valeu!' }] })
+  if (ctx.timerRunning) contextual.push({ pose: 'focado', title: 'Foco total!', text: 'Você está no meio de um bloco. Vou ficar quietinho aqui do lado.', actions: [{ label: 'Valeu!' }] })
 
   const missed = ctx.missedToday[0]
   if (missed)
@@ -137,12 +137,12 @@ export function capiQuestion(ctx: CapiContext, n: number): MascotMessage {
       text: 'Me conta: como está sua energia agora?',
       actions: [
         {
-          label: 'Cheio de energia ⚡',
+          label: 'Cheio de energia',
           primary: true,
           run: () => showMascot({ pose: 'focado', title: 'Então aproveita!', text: 'Ataca a matéria mais difícil primeiro, enquanto a cabeça está a mil.', autoHideMs: 7000 }),
         },
         {
-          label: 'Meio cansado 😴',
+          label: 'Meio cansado',
           run: () => showMascot({ pose: 'relaxando', title: 'Vai no seu ritmo', text: 'Faz um bloco curto e leve, uma revisão já conta. E descansa direitinho depois.', autoHideMs: 7000 }),
         },
       ],

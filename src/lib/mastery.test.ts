@@ -55,8 +55,8 @@ describe('domínio por tópico', () => {
     expect(m?.parts.challenges).toBeCloseTo(0.9)
   })
   it('cores vão do vermelho ao verde', () => {
-    expect(masteryColor(10)).toBe('#ef4444')
-    expect(masteryColor(90)).toBe('#10b981')
-    expect(masteryColor(null)).toBe('#94a3b8')
+    expect(masteryColor(10)).toBe('#b23a2a')
+    expect(masteryColor(90)).toBe('#4d7a57')
+    expect(masteryColor(null)).toBe('#a1a19b')
   })
 })

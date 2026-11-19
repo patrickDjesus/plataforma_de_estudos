@@ -29,7 +29,7 @@ export function RushSetup() {
       setD({ ...d, subjects: [...d.subjects, { id, focus: '', topicIds: [] }] })
       sfx('pop')
       const s = subjects.find((x) => x.id === id)
-      confetti(...centerOf(el), 16, [s?.color ?? '#3e63f2', '#ffc93c', '#ffffff'])
+      confetti(...centerOf(el), 16, [s?.color ?? '#c4471d', '#d4ad60', '#ffffff'])
     }
     setErr('')
   }
@@ -62,9 +62,9 @@ export function RushSetup() {
 
   return (
     <div>
-      <div className="relative isolate mb-6 flex flex-wrap items-center gap-5 overflow-hidden rounded-[24px] bg-[#16181d] p-5 text-white sm:p-7">
-        <span className="pointer-events-none absolute -top-24 -left-16 -z-10 h-72 w-72 rounded-full bg-[#3e63f2]/35 blur-3xl" />
-        <span className="pointer-events-none absolute -right-10 -bottom-28 -z-10 h-72 w-72 rounded-full bg-[#b3122e]/30 blur-3xl" />
+      <div className="relative isolate mb-6 flex flex-wrap items-center gap-5 overflow-hidden rounded-xl bg-[#18181b] p-5 text-white sm:p-7">
+        <span className="pointer-events-none absolute -top-24 -left-16 -z-10 h-72 w-72 rounded-md bg-[#c4471d]/35 blur-3xl" />
+        <span className="pointer-events-none absolute -right-10 -bottom-28 -z-10 h-72 w-72 rounded-md bg-[#b3122e]/30 blur-3xl" />
         <span className="pointer-events-none absolute inset-0 -z-10 opacity-[.07] [background-image:linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)] [background-size:28px_28px]" />
         <RushCapi mood="idle" size={104} talk={false} />
         <div className="min-w-[220px] flex-1">
@@ -72,7 +72,7 @@ export function RushSetup() {
           <h2 className="mt-1 font-display text-5xl leading-none font-extrabold tracking-tight sm:text-6xl">{S.started ? 'Ajustes' : 'Rush'}</h2>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {['Combo', 'Chefões', 'Missões', 'Itens', 'Revisões'].map((t) => (
-              <span key={t} className="rounded-full border border-white/15 px-2.5 py-0.5 text-[11px] font-semibold text-white/75">
+              <span key={t} className="rounded-md border border-white/15 px-2.5 py-0.5 text-[11px] font-semibold text-white/75">
                 {t}
               </span>
             ))}
@@ -80,7 +80,7 @@ export function RushSetup() {
           <p className="mt-3 max-w-2xl text-sm text-white/65">
             {S.started
               ? 'O que você mudar aqui vale para as próximas questões. As que já estão na fila continuam lá.'
-              : 'Escolha as matérias e vá resolvendo sem parar. Errou? Eu explico na hora e trago a mesma ideia de volta umas questões depois, até você dominar. Cada questão conta nas suas estatísticas, no rank e no domínio do tópico.'}
+              : 'Questão atrás de questão. Errou, eu explico, e a mesma ideia volta mais tarde.'}
           </p>
         </div>
       </div>
@@ -101,12 +101,12 @@ export function RushSetup() {
                       type="button"
                       aria-pressed={on}
                       onClick={(e) => toggle(s.id, e.currentTarget)}
-                      className={`relative flex items-center gap-2.5 rounded-2xl border-2 p-2.5 text-left transition hover:-translate-y-0.5 ${on ? 'shadow-[0_6px_14px_-8px_rgba(16,24,40,.35)]' : 'border-line bg-white'}`}
+                      className={`relative flex items-center gap-2.5 rounded-2xl border-2 p-2.5 text-left transition ${on ? 'shadow-[0_6px_14px_-8px_rgba(16,24,40,.35)]' : 'border-line bg-white'}`}
                       style={on ? { borderColor: s.color, background: tint(s.color, 0.1) } : undefined}
                     >
                       <SubjectIcon subject={s} size={36} />
                       <span className="min-w-0 flex-1 truncate text-sm font-bold">{s.name}</span>
-                      <span className={`absolute -top-2 -right-2 grid h-6 w-6 place-items-center rounded-full text-white transition ${on ? 'scale-100' : 'scale-0'}`} style={{ background: s.color }}>
+                      <span className={`absolute -top-2 -right-2 grid h-6 w-6 place-items-center rounded-md text-white transition ${on ? 'scale-100' : 'scale-0'}`} style={{ background: s.color }}>
                         <Check size={14} strokeWidth={3} />
                       </span>
                     </button>
@@ -156,7 +156,7 @@ export function RushSetup() {
                   </div>
                   {open && (
                     <div className="mt-3">
-                      <div className="mb-2 flex items-center gap-2 rounded-xl bg-[#f6f7f9] px-3 py-1.5">
+                      <div className="mb-2 flex items-center gap-2 rounded-xl bg-[#f4f4f2] px-3 py-1.5">
                         <Search size={14} className="text-muted" />
                         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar tópico…" className="flex-1 bg-transparent text-sm outline-none" />
                         {x.topicIds.length > 0 && (
@@ -173,7 +173,7 @@ export function RushSetup() {
                               key={t.id}
                               type="button"
                               onClick={() => patchSub(s.id, { topicIds: on ? x.topicIds.filter((i) => i !== t.id) : [...x.topicIds, t.id] })}
-                              className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${on ? 'text-white' : 'border-line bg-white text-slate-600 hover:border-slate-300'}`}
+                              className={`rounded-md border px-2.5 py-1 text-xs font-semibold transition ${on ? 'text-white' : 'border-line bg-white text-slate-600 hover:border-slate-300'}`}
                               style={on ? { background: s.color, borderColor: s.color } : undefined}
                             >
                               {t.name}
@@ -212,7 +212,7 @@ export function RushSetup() {
           <div className="grid gap-5 px-4 pb-4 md:grid-cols-2">
             <Field label="Contas x teoria" hint="Em matéria sem conta (História, Português…) vem só teoria.">
               <div className="flex items-center gap-3">
-                <input type="range" min={0} max={100} step={10} value={d.mix} onChange={(e) => setD({ ...d, mix: Number(e.target.value) })} className="flex-1 accent-[#3e63f2]" />
+                <input type="range" min={0} max={100} step={10} value={d.mix} onChange={(e) => setD({ ...d, mix: Number(e.target.value) })} className="flex-1 accent-[#c4471d]" />
                 <span className="w-36 text-xs font-bold">
                   {d.mix}% contas · {100 - d.mix}% teoria
                 </span>
@@ -248,7 +248,7 @@ export function RushSetup() {
             </Field>
             <Field label="Checagem final" hint="Quando você acerta as revisões de um erro, volta mais uma questão daquela ideia umas 18 questões depois, para ver se fixou.">
               <Pill on={d.longReview} onClick={() => setD({ ...d, longReview: !d.longReview })}>
-                📌 Revisão espaçada {d.longReview ? 'ligada' : 'desligada'}
+                Revisão espaçada {d.longReview ? 'ligada' : 'desligada'}
               </Pill>
             </Field>
           </div>
@@ -257,7 +257,7 @@ export function RushSetup() {
 
       {err && <p className="mb-3 rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">{err}</p>}
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={(e) => go(e.currentTarget)} className="rk-shine-host flex items-center gap-2 rounded-2xl bg-brand px-8 py-4 font-display text-xl font-bold text-white shadow-[0_6px_0_#2a47c4] transition hover:brightness-110 active:translate-y-1 active:shadow-[0_2px_0_#2a47c4]">
+        <button type="button" onClick={(e) => go(e.currentTarget)} className="rk-shine-host flex items-center gap-2 rounded-2xl bg-brand px-8 py-4 font-display text-xl font-bold text-white shadow-[0_6px_0_#8f3413] transition hover:brightness-110 active:translate-y-1 active:shadow-[0_2px_0_#8f3413]">
           {S.started ? (
             <>
               Salvar e voltar <Save size={18} />
@@ -280,14 +280,14 @@ export function RushSetup() {
           <div className="mb-2 text-[11px] font-bold tracking-wider text-muted uppercase">Como a fila se mexe quando você erra</div>
           <div className="flex flex-wrap gap-1">
             {['✗', '+1', '+2', 'R1', '+4', '+5', '+6', 'R2', '+8', '+9', '+10', '+11', 'R3'].map((t, i) => (
-              <span key={i} className={`capi-pop grid h-8 w-9 place-items-center rounded-xl text-[11px] font-extrabold ${t === '✗' ? 'bg-rose-500 text-white' : t[0] === 'R' ? 'bg-amber-300 text-amber-900' : 'bg-[#f1f2f5] text-muted'}`} style={{ animationDelay: `${i * 50}ms` }}>
+              <span key={i} className={`capi-pop grid h-8 w-9 place-items-center rounded-xl text-[11px] font-extrabold ${t === '✗' ? 'bg-rose-500 text-white' : t[0] === 'R' ? 'bg-amber-300 text-amber-900' : 'bg-[#efefed] text-muted'}`} style={{ animationDelay: `${i * 50}ms` }}>
                 {t}
               </span>
             ))}
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted">
-            Errou ou apertou "Não sei": aparece a resolução na hora e 3 variações da mesma ideia (outra situação, a última um pouco mais difícil) entram na fila daqui a 3, 7 e 12 questões. Errou a revisão também? Vêm mais 2. Acertou no
-            chute? Tem um botão para mandar de novo. Os erros também vão para o seu Caderno de erros.
+            Errou ou não sabia: a resolução aparece na hora e três variações voltam daqui a 3, 7 e 12 questões.
+            Os erros também vão para o Caderno de erros.
           </p>
         </div>
       )}
@@ -299,7 +299,7 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   return (
     <section className="mb-6">
       <h3 className="mb-3 flex items-center gap-2.5 font-display text-lg font-bold">
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-brand text-sm text-white">{n}</span>
+        <span className="grid h-8 w-8 place-items-center rounded-md bg-brand text-sm text-white">{n}</span>
         {title}
       </h3>
       {children}
@@ -319,7 +319,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 
 export function Pill({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} aria-pressed={on} className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold transition ${on ? 'scale-105 border-brand bg-brand text-white shadow-[0_3px_0_#2a47c4]' : 'border-line bg-white hover:border-brand/50'}`}>
+    <button type="button" onClick={onClick} aria-pressed={on} className={`rounded-md border-2 px-4 py-1.5 text-sm font-bold transition ${on ? 'scale-105 border-brand bg-brand text-white shadow-[0_3px_0_#8f3413]' : 'border-line bg-white hover:border-brand/50'}`}>
       {children}
     </button>
   )

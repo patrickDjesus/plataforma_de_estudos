@@ -1,11 +1,11 @@
 import type { AreaId, Availability, ErrorReason, RetroTag, WeekRetro, WritingCategory } from '../db/types'
 
 export const RETRO_TAGS: { id: RetroTag; emoji: string; label: string }[] = [
-  { id: 'pouco-tempo', emoji: '⏳', label: 'Pouco tempo' },
-  { id: 'cansaco', emoji: '😴', label: 'Cansaço' },
-  { id: 'distracoes', emoji: '📱', label: 'Distrações' },
-  { id: 'materia-dificil', emoji: '🧗', label: 'Matéria difícil' },
-  { id: 'plano-irreal', emoji: '🎯', label: 'Plano irreal' },
+  { id: 'pouco-tempo', emoji: '', label: 'Pouco tempo' },
+  { id: 'cansaco', emoji: '', label: 'Cansaço' },
+  { id: 'distracoes', emoji: '', label: 'Distrações' },
+  { id: 'materia-dificil', emoji: '', label: 'Matéria difícil' },
+  { id: 'plano-irreal', emoji: '', label: 'Plano irreal' },
 ]
 
 export interface WeekStats {

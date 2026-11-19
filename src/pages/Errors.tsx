@@ -32,15 +32,15 @@ export function ErrorsSection() {
     <>
       <p className="mb-4 text-sm text-muted">Cada erro volta até você acertar 2 vezes seguidas.</p>
       <div className="mb-5 grid gap-3 sm:grid-cols-4">
-        <Stat label="Para revisar hoje" value={due.length} color="#ef4444" />
-        <Stat label="Em aberto" value={open.length} color="#f59e0b" />
-        <Stat label="Resolvidos" value={all.length - open.length} color="#10b981" />
+        <Stat label="Para revisar hoje" value={due.length} color="#b23a2a" />
+        <Stat label="Em aberto" value={open.length} color="#a8742a" />
+        <Stat label="Resolvidos" value={all.length - open.length} color="#4d7a57" />
         <Card className="p-4">
           <div className="text-xs font-semibold text-muted">Por que errou?</div>
-          <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs">
             {(Object.keys(REASON_LABEL) as ErrorReason[]).map((r) => (
-              <span key={r} title={REASON_LABEL[r].label}>
-                {REASON_LABEL[r].emoji} {byReason.get(r) ?? 0}
+              <span key={r}>
+                {REASON_LABEL[r].label} <b className="font-mono">{byReason.get(r) ?? 0}</b>
               </span>
             ))}
           </div>
@@ -64,7 +64,7 @@ export function ErrorsSection() {
         due.length === 0 ? (
           <Card className="flex flex-col items-center p-10 text-center">
             <Capybara pose={all.length ? 'relaxando' : 'pensando'} size={130} />
-            <p className="mt-2 text-sm font-semibold">{all.length ? 'Nenhum erro para revisar hoje. ✨' : 'Ainda não há erros. Eles chegam dos desafios, questões, flashcards difíceis e treinos de escrita.'}</p>
+            <p className="mt-2 text-sm font-semibold">{all.length ? 'Nenhum erro para revisar hoje.' : 'Ainda não há erros. Eles chegam dos desafios, questões, flashcards difíceis e treinos de escrita.'}</p>
           </Card>
         ) : (
           <ReviewCard key={due[Math.min(i, due.length - 1)].id} e={due[Math.min(i, due.length - 1)]} subjects={subjects} position={`${Math.min(i, due.length - 1) + 1} de ${due.length}`} onNext={() => setI((x) => x)} />
@@ -77,13 +77,13 @@ export function ErrorsSection() {
               const s = e.subjectId ? subjects.get(e.subjectId) : undefined
               return (
                 <div key={e.id} className="group flex items-center gap-3 px-3 py-2.5">
-                  {s ? <SubjectIcon subject={s} size={32} /> : <span className="grid h-8 w-8 place-items-center rounded-xl bg-sky-50 text-sm">✍️</span>}
+                  {s ? <SubjectIcon subject={s} size={32} /> : <span className="grid h-8 w-8 place-items-center rounded-md border border-line font-mono text-[10px] text-muted">TXT</span>}
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold">{e.question}</div>
                     <div className="text-[11px] text-muted">
                       {SOURCE_LABEL[e.source]}
                       {e.category ? ` · ${CATEGORY_LABEL[e.category]}` : ''}
-                      {e.reason ? ` · ${REASON_LABEL[e.reason].emoji} ${REASON_LABEL[e.reason].label}` : ''} · {e.resolved ? 'resolvido ✓' : `próxima: ${e.due.split('-').reverse().slice(0, 2).join('/')}`}
+                      {e.reason ? ` · ${REASON_LABEL[e.reason].label}` : ''} · {e.resolved ? 'resolvido ✓' : `próxima: ${e.due.split('-').reverse().slice(0, 2).join('/')}`}
                     </div>
                   </div>
                   <button onClick={() => deleteErrorEntry(e.id)} className="rounded-lg p-1.5 text-slate-300 opacity-0 group-hover:opacity-100 hover:text-rose-600" title="Excluir">
@@ -113,14 +113,14 @@ function Stat({ label, value, color }: { label: string; value: number; color: st
 export function ReviewCard({ e, subjects, position, onNext }: { e: ErrorEntry; subjects: ReturnType<typeof useSubjectMap>; position: string; onNext: () => void }) {
   const [shown, setShown] = useState(false)
   const s = e.subjectId ? subjects.get(e.subjectId) : undefined
-  const color = s?.color ?? '#0284c7'
+  const color = s?.color ?? '#2f5f7e'
   const answer = async (ok: boolean) => {
     await reviewErrorEntry(e.id, ok)
     onNext()
   }
   return (
     <div className="page-in mx-auto max-w-2xl">
-      <div className="overflow-hidden rounded-[28px] border border-line bg-white shadow-[0_24px_50px_-28px_rgba(16,24,40,0.4)]">
+      <div className="overflow-hidden rounded-xl border border-line bg-white">
         <div className="flex items-center justify-between gap-2 px-6 py-3 text-xs font-semibold" style={{ background: `${color}14`, color }}>
           <span className="flex items-center gap-2">
             {s && <SubjectIcon subject={s} size={22} />} {s?.name ?? 'Treino de escrita'} · {SOURCE_LABEL[e.source]}
@@ -148,14 +148,14 @@ export function ReviewCard({ e, subjects, position, onNext }: { e: ErrorEntry; s
                   <div className="font-semibold">{e.correctAnswer}</div>
                 </div>
               </div>
-              {e.explanation && <p className="text-sm text-slate-600">💬 {e.explanation}</p>}
+              {e.explanation && <p className="text-sm text-slate-600">{e.explanation}</p>}
               {!e.reason && (
                 <div>
                   <div className="mb-1.5 text-xs font-semibold text-muted">Por que você errou da primeira vez?</div>
                   <div className="flex flex-wrap gap-1.5">
                     {(Object.keys(REASON_LABEL) as ErrorReason[]).map((r) => (
-                      <button key={r} onClick={() => setErrorReason(e.id, r)} className="rounded-full bg-[#f1f2f5] px-3 py-1.5 text-xs font-semibold hover:bg-[#e8e9ee]">
-                        {REASON_LABEL[r].emoji} {REASON_LABEL[r].label}
+                      <button key={r} onClick={() => setErrorReason(e.id, r)} className="rounded-md bg-[#efefed] px-3 py-1.5 text-xs font-semibold hover:bg-[#e7e7e4]">
+                        {REASON_LABEL[r].label}
                       </button>
                     ))}
                   </div>

@@ -147,13 +147,13 @@ export function buildGraph(input: GraphInput): { nodes: GNode[]; edges: GEdge[] 
 
   const nodes: GNode[] = [
     ...subjects.map((s) => ({ id: sid(s.id), kind: 'subject' as const, refId: s.id, label: s.name, color: s.color, subjectId: s.id, ...at(sid(s.id)) })),
-    ...topics.map((t) => ({ id: tid(t.id), kind: 'topic' as const, refId: t.id, label: t.name, color: color.get(t.subjectId) ?? '#3e63f2', subjectId: t.subjectId, done: t.done, mastery: input.mastery?.get(t.id), byMastery: input.colorByMastery, ...at(tid(t.id)) })),
+    ...topics.map((t) => ({ id: tid(t.id), kind: 'topic' as const, refId: t.id, label: t.name, color: color.get(t.subjectId) ?? '#c4471d', subjectId: t.subjectId, done: t.done, mastery: input.mastery?.get(t.id), byMastery: input.colorByMastery, ...at(tid(t.id)) })),
     ...notes.map((n) => ({
       id: nid(n.id),
       kind: 'note' as const,
       refId: n.id,
       label: n.title,
-      color: color.get(n.subjectId) ?? '#3e63f2',
+      color: color.get(n.subjectId) ?? '#c4471d',
       subjectId: n.subjectId,
       focus: n.id === input.focusNoteId,
       ...at(nid(n.id)),
@@ -171,8 +171,8 @@ export function buildGraph(input: GraphInput): { nodes: GNode[]; edges: GEdge[] 
     const key = [a, b].sort().join('|')
     if (!present.has(a) || !present.has(b) || seen.has(key)) continue
     seen.add(key)
-    edges.push({ id: `c:${key}`, source: a, target: b, kind: 'citacao', color: '#3e63f2' })
+    edges.push({ id: `c:${key}`, source: a, target: b, kind: 'citacao', color: '#c4471d' })
   }
-  for (const l of input.links) if (present.has(l.source) && present.has(l.target)) edges.push({ id: `m:${l.id}`, source: l.source, target: l.target, kind: 'manual', color: '#f59e0b', linkId: l.id })
+  for (const l of input.links) if (present.has(l.source) && present.has(l.target)) edges.push({ id: `m:${l.id}`, source: l.source, target: l.target, kind: 'manual', color: '#a8742a', linkId: l.id })
   return { nodes, edges }
 }

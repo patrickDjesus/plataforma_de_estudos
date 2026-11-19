@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowRight, Calculator, Check, Clock3, Coffee, HelpCircle, Lightbulb, Play, Repeat, SkipForward, Sparkles, Target, X } from 'lucide-react'
+import { ArrowRight, Calculator, Check, Clock3, Coffee, Flame, HelpCircle, Lightbulb, Play, Repeat, SkipForward, Skull, Sparkles, Target, X } from 'lucide-react'
 import { MathText } from '../../components/MathText'
 import { Spinner } from '../../components/Voice'
 import { difInfo, fmtClock, qHeat, askPrompt, type Conf, type RushQ, type RushState } from '../../lib/rush'
@@ -18,7 +18,7 @@ function heatStyle(q: RushQ) {
   if (q.boss) return { border: '#b3122e', shadow: '0 30px 80px -20px rgba(0,0,0,.9), 0 0 0 1px rgba(255,40,50,.25)' }
   if (h >= 0.7) return { border: '#7a1020', shadow: '0 30px 70px -24px rgba(0,0,0,.85)' }
   if (h >= 0.45) return { border: '#3a3d47', shadow: '0 24px 60px -24px rgba(0,0,0,.7)' }
-  return { border: '#e3e6ee', shadow: '0 8px 0 #e6e8f0' }
+  return { border: '#e7e7e4', shadow: '0 8px 0 #e7e7e4' }
 }
 
 export function RushQuestion({ S }: { S: RushState }) {
@@ -29,7 +29,7 @@ export function RushQuestion({ S }: { S: RushState }) {
 function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
   const subjects = useSubjectMap()
   const sub = subjects.get(q.materia)
-  const color = sub?.color ?? '#3e63f2'
+  const color = sub?.color ?? '#c4471d'
   const ph = S.phase
   const L = S.last ?? {}
   const answered = ph === 'feedback' || ph === 'selfgrade'
@@ -149,13 +149,13 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
       id="rush-card"
       ref={card}
       key={shake}
-      className={`essential-motion relative rounded-[26px] border-[3px] bg-white p-5 sm:p-7 ${shake ? 'rush-shake' : 'rush-enter'} ${q.boss ? 'rush-boss' : ''} ${onFire ? 'rk-onfire2' : ''}`}
-      style={{ borderColor: ph === 'feedback' ? (L.correct ? '#22b573' : '#ff5c7a') : hs.border, boxShadow: ph === 'feedback' ? `0 8px 0 ${L.correct ? '#16915a' : '#e03a5a'}` : onFire ? `${hs.shadow}, 0 0 30px -6px rgba(255,120,30,.45)` : hs.shadow }}
+      className={`essential-motion relative rounded-xl border-[3px] bg-white p-5 sm:p-7 ${shake ? 'rush-shake' : 'rush-enter'} ${q.boss ? 'rush-boss' : ''} ${onFire ? 'rk-onfire2' : ''}`}
+      style={{ borderColor: ph === 'feedback' ? (L.correct ? '#4d7a57' : '#c2634d') : hs.border, boxShadow: ph === 'feedback' ? `0 8px 0 ${L.correct ? '#3e6447' : '#e03a5a'}` : onFire ? `${hs.shadow}, 0 0 30px -6px rgba(255,120,30,.45)` : hs.shadow }}
     >
       {/* faixa da matéria e número da questão */}
       <span className="absolute -top-[3px] right-28 left-8 h-[7px] rounded-b-lg" style={{ background: `linear-gradient(90deg, ${color}, color-mix(in srgb, ${color} 70%, #000))` }} />
-      <span className="absolute -top-4 left-6 z-[2] rounded-full px-3 py-0.5 font-display text-[13px] font-bold text-white" style={{ background: color, boxShadow: `0 3px 0 color-mix(in srgb, ${color} 70%, #000)` }}>
-        {onFire && <span className="rk-flame mr-1">🔥</span>}Q {S.stats.done + (answered ? 0 : 1)}
+      <span className="absolute -top-4 left-6 z-[2] rounded-md px-3 py-0.5 font-display text-[13px] font-bold text-white" style={{ background: color, boxShadow: `0 3px 0 color-mix(in srgb, ${color} 70%, #000)` }}>
+        {onFire && <Flame size={13} className="rk-flame mr-1 inline" />}Q {S.stats.done + (answered ? 0 : 1)}
       </span>
       {ph !== 'feedback' && (
         <div className="absolute -top-12 right-4 z-[3]">
@@ -165,7 +165,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
 
       {q.boss && (
         <div className="rush-enter mb-4 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-[#2a0409] via-[#8f0c22] to-[#2a0409] px-4 py-2.5 text-white">
-          <span className="text-2xl">💀</span>
+          <Skull size={26} />
           <div>
             <div className="font-display text-xl font-extrabold tracking-wide">QUESTÃO CHEFÃO</div>
             <div className="text-xs font-semibold opacity-85">Vale 3x os pontos. Respira fundo, lê duas vezes e vai com tudo.</div>
@@ -175,28 +175,28 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
 
       {/* meta */}
       <div className="mb-4 flex flex-wrap items-center gap-1.5 pr-20">
-        <span className={`flex items-center gap-2 rounded-full py-1 pr-3 pl-2 text-xs font-extrabold ${di.tier >= 4 ? 'bg-[#16181d] text-white' : 'bg-[#f1f2f5]'}`} title={`Dificuldade ${di.d} de 10`}>
+        <span className={`flex items-center gap-2 rounded-md py-1 pr-3 pl-2 text-xs font-extrabold ${di.tier >= 4 ? 'bg-[#18181b] text-white' : 'bg-[#efefed]'}`} title={`Dificuldade ${di.d} de 10`}>
           <span className="flex gap-[2px]">
             {Array.from({ length: 10 }, (_, i) => (
-              <i key={i} className="block h-2.5 w-1.5 rounded-[2px]" style={{ background: i < di.d ? (i < 4 ? '#94a3b8' : i < 6 ? '#f59e0b' : i < 8 ? '#ef4444' : '#b91c1c') : di.tier >= 4 ? 'rgba(255,255,255,.15)' : '#dfe3ea' }} />
+              <i key={i} className="block h-2.5 w-1.5 rounded-md" style={{ background: i < di.d ? (i < 4 ? '#94a3b8' : i < 6 ? '#a8742a' : i < 8 ? '#b23a2a' : '#b91c1c') : di.tier >= 4 ? 'rgba(255,255,255,.15)' : '#dfe3ea' }} />
             ))}
           </span>
-          {di.emoji} {di.d}/10 · {di.label}
+          {di.d}/10 · {di.label}
         </span>
-        <span className="rounded-full px-3 py-1 text-xs font-extrabold" style={{ background: tint(color, 0.14), color: `color-mix(in srgb, ${color} 75%, #000)` }}>
+        <span className="rounded-md px-3 py-1 text-xs font-extrabold" style={{ background: tint(color, 0.14), color: `color-mix(in srgb, ${color} 75%, #000)` }}>
           {sub?.name ?? 'Matéria'}
         </span>
         {q.kind === 'revisao' ? (
-          <span className="flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold text-amber-800">
+          <span className="flex items-center gap-1 rounded-md bg-amber-100 px-3 py-1 text-xs font-extrabold text-amber-800">
             <Repeat size={12} /> Revisão {q.revIdx}/{q.revOf}
           </span>
         ) : (
-          <span className="flex items-center gap-1 rounded-full bg-brand-soft px-3 py-1 text-xs font-extrabold text-brand">
+          <span className="flex items-center gap-1 rounded-md bg-brand-soft px-3 py-1 text-xs font-extrabold text-brand">
             <Sparkles size={12} /> Nova
           </span>
         )}
-        {q.topico && <span className="rounded-full bg-[#f1f2f5] px-3 py-1 text-xs font-bold text-muted">{q.topico}</span>}
-        <span className="flex items-center gap-1 rounded-full bg-[#f1f2f5] px-3 py-1 text-xs font-bold text-muted">
+        {q.topico && <span className="rounded-md bg-[#efefed] px-3 py-1 text-xs font-bold text-muted">{q.topico}</span>}
+        <span className="flex items-center gap-1 rounded-md bg-[#efefed] px-3 py-1 text-xs font-bold text-muted">
           {q.tipo === 'teoria' ? <Lightbulb size={12} /> : <Calculator size={12} />} {q.tipo === 'teoria' ? 'Teoria' : 'Conta'}
         </span>
         <span className={`ml-auto flex items-center gap-1.5 text-sm font-extrabold tabular-nums ${!answered && elapsed < 45000 ? 'text-amber-600' : 'text-muted'}`} title="Anel amarelo = bônus de velocidade (+25% em até 45s)">
@@ -204,8 +204,8 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
             <Clock3 size={15} />
           ) : (
             <svg width="18" height="18" viewBox="0 0 20 20" className="-rotate-90">
-              <circle cx="10" cy="10" r="8" fill="none" stroke="#e3e6ee" strokeWidth="4" />
-              <circle cx="10" cy="10" r="8" fill="none" stroke={fastLeft > 0 ? '#ffc93c' : '#e3e6ee'} strokeWidth="4" strokeLinecap="round" strokeDasharray="50.3" strokeDashoffset={50.3 * (1 - fastLeft)} className="transition-all duration-1000 ease-linear" />
+              <circle cx="10" cy="10" r="8" fill="none" stroke="#e7e7e4" strokeWidth="4" />
+              <circle cx="10" cy="10" r="8" fill="none" stroke={fastLeft > 0 ? '#d4ad60' : '#e7e7e4'} strokeWidth="4" strokeLinecap="round" strokeDasharray="50.3" strokeDashoffset={50.3 * (1 - fastLeft)} className="transition-all duration-1000 ease-linear" />
             </svg>
           )}
           {fmtClock(elapsed)}
@@ -237,10 +237,10 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
                     say('pick', undefined, { L: 'ABCDE'[i] })
                   }
                 }}
-                className={`rush-alt grid grid-cols-[34px_1fr] items-center gap-3 rounded-2xl border-[3px] px-3.5 py-2.5 text-left font-semibold transition active:translate-y-1 active:shadow-none ${gone ? 'pointer-events-none scale-[.98] opacity-30 line-through' : ''} ${right ? 'rk-right rk-shine-host border-emerald-500 bg-emerald-50 shadow-[0_4px_0_#22b573]' : wrong ? 'rk-wrong border-rose-400 bg-rose-50 shadow-[0_4px_0_#ff5c7a]' : sel ? 'shadow-[0_4px_0_var(--c)]' : 'border-line bg-white shadow-[0_4px_0_#e6e8f0] enabled:hover:-translate-y-0.5 enabled:hover:border-[var(--c)] enabled:hover:shadow-[0_6px_0_#e6e8f0]'}`}
+                className={`rush-alt grid grid-cols-[34px_1fr] items-center gap-3 rounded-2xl border-[3px] px-3.5 py-2.5 text-left font-semibold transition active:translate-y-1 active:shadow-none ${gone ? 'pointer-events-none scale-[.98] opacity-30 line-through' : ''} ${right ? 'rk-right rk-shine-host border-emerald-500 bg-emerald-50 shadow-[0_4px_0_#4d7a57]' : wrong ? 'rk-wrong border-rose-400 bg-rose-50 shadow-[0_4px_0_#c2634d]' : sel ? 'shadow-[0_4px_0_var(--c)]' : 'border-line bg-white shadow-[0_4px_0_#e7e7e4] enabled:hover:-translate-y-0.5 enabled:hover:border-[var(--c)] enabled:hover:shadow-[0_6px_0_#e7e7e4]'}`}
                 style={{ ['--c' as string]: color, animationDelay: `${i * 0.05}s`, ...(sel ? { borderColor: color, background: tint(color, 0.1) } : {}) }}
               >
-                <span className={`grid h-[34px] w-[34px] place-items-center rounded-full font-display text-base font-bold ${right ? 'bg-emerald-500 text-white' : wrong ? 'bg-rose-500 text-white' : sel ? 'text-white' : 'bg-[#f1f2f5]'}`} style={sel ? { background: color } : undefined}>
+                <span className={`grid h-[34px] w-[34px] place-items-center rounded-md font-display text-base font-bold ${right ? 'bg-emerald-500 text-white' : wrong ? 'bg-rose-500 text-white' : sel ? 'text-white' : 'bg-[#efefed]'}`} style={sel ? { background: color } : undefined}>
                   {'ABCDE'[i]}
                 </span>
                 <MathText as="span" text={a} className="break-words whitespace-pre-wrap" />
@@ -282,7 +282,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
         <>
           {hintUsed && q.dica && (
             <div className="rush-enter mt-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold">
-              <b>💡 Dica: </b>
+              <b>Dica: </b>
               <MathText as="span" text={q.dica} />
             </div>
           )}
@@ -290,9 +290,9 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
             <span className="text-[11px] font-bold tracking-wider text-muted uppercase">Confiança:</span>
             {(
               [
-                ['certeza', '✅ Certeza'],
-                ['acho', '🤔 Acho'],
-                ['chute', '🎲 Chute'],
+                ['certeza', 'Certeza'],
+                ['acho', 'Acho'],
+                ['chute', 'Chute'],
               ] as const
             ).map(([v, l]) => (
               <button
@@ -304,7 +304,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
                   sfx('pop')
                   say(v)
                 }}
-                className={`rounded-full border-2 px-3.5 py-1 text-sm font-bold transition ${conf === v ? 'scale-105 border-brand bg-brand text-white' : 'border-line bg-white hover:border-brand/50'}`}
+                className={`rounded-md border-2 px-3.5 py-1 text-sm font-bold transition ${conf === v ? 'scale-105 border-brand bg-brand text-white' : 'border-line bg-white hover:border-brand/50'}`}
               >
                 {l}
               </button>
@@ -321,11 +321,11 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
               Conferir <kbd className="rounded-md bg-white/25 px-1.5 text-[11px]">Enter</kbd>
             </button>
             {q.dica && !hintUsed && (
-              <button type="button" onClick={() => (setHintUsed(true), sfx('pop'), say('hint'))} className="flex items-center gap-1.5 rounded-2xl bg-amber-300 px-4 py-3 font-display text-sm font-bold text-amber-950 shadow-[0_5px_0_#e8a800] active:translate-y-1">
+              <button type="button" onClick={() => (setHintUsed(true), sfx('pop'), say('hint'))} className="flex items-center gap-1.5 rounded-2xl bg-amber-300 px-4 py-3 font-display text-sm font-bold text-amber-950 shadow-[0_5px_0_#bf8f3a] active:translate-y-1">
                 <Lightbulb size={16} /> Dica <kbd className="rounded-md bg-white/40 px-1.5 text-[11px]">H</kbd>
               </button>
             )}
-            <button type="button" onClick={() => finishAnswer(false, ctx, { naosei: true, erro: 'não sabia por onde começar' })} className="flex items-center gap-1.5 rounded-2xl border-2 border-line bg-white px-4 py-2.5 text-sm font-bold shadow-[0_4px_0_#e6e8f0] active:translate-y-1">
+            <button type="button" onClick={() => finishAnswer(false, ctx, { naosei: true, erro: 'não sabia por onde começar' })} className="flex items-center gap-1.5 rounded-2xl border-2 border-line bg-white px-4 py-2.5 text-sm font-bold shadow-[0_4px_0_#e7e7e4] active:translate-y-1">
               <HelpCircle size={16} /> Não sei
             </button>
             {q.formato === 'multipla' && S.items.fifty > 0 && !fifty.length && (
@@ -337,7 +337,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
                   setFifty(gone)
                   if (selected != null && gone.includes(selected)) setSelected(null)
                 }}
-                className="flex items-center gap-1.5 rounded-2xl border-2 border-line bg-white px-4 py-2.5 text-sm font-bold shadow-[0_4px_0_#e6e8f0] active:translate-y-1"
+                className="flex items-center gap-1.5 rounded-2xl border-2 border-line bg-white px-4 py-2.5 text-sm font-bold shadow-[0_4px_0_#e7e7e4] active:translate-y-1"
               >
                 <Target size={16} /> 50/50
               </button>
@@ -350,7 +350,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
             {q.formato === 'multipla' && <span className="hidden text-xs text-muted sm:inline">Teclas A–E escolhem.</span>}
           </div>
           {S.paused > 0 && (
-            <div className="absolute inset-0 z-[4] grid place-items-center content-center gap-2 rounded-[23px] bg-[#f3f4f7]/90 p-5 text-center backdrop-blur-md">
+            <div className="absolute inset-0 z-[4] grid place-items-center content-center gap-2 rounded-xl bg-[#ffffff]/90 p-5 text-center backdrop-blur-md">
               <RushCapi mood="sleepy" size={110} talk={false} />
               <h3 className="font-display text-3xl font-extrabold">
                 Pausado <Coffee className="inline" />
@@ -375,7 +375,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
           <p className="rounded-2xl bg-rose-50 px-4 py-2.5 text-sm font-bold text-rose-700">{errCopy(L.aiErr)} Compare você mesmo com o gabarito e diga se acertou.</p>
           <Solution q={q} interactive={false} />
           <div className="flex gap-2">
-            <button type="button" onClick={() => finishAnswer(true, ctx)} className="flex items-center gap-1.5 rounded-2xl bg-emerald-500 px-5 py-2.5 font-bold text-white shadow-[0_5px_0_#16915a]">
+            <button type="button" onClick={() => finishAnswer(true, ctx)} className="flex items-center gap-1.5 rounded-2xl bg-emerald-500 px-5 py-2.5 font-bold text-white shadow-[0_5px_0_#3e6447]">
               <Check size={16} /> Acertei
             </button>
             <button type="button" onClick={() => finishAnswer(false, ctx)} className="flex items-center gap-1.5 rounded-2xl border-2 border-line bg-white px-5 py-2.5 font-bold">
@@ -397,7 +397,7 @@ function Feedback({ S, q, color }: { S: RushState; q: RushQ; color: string }) {
   const [fresh] = useState(true)
   return (
     <div className="mt-6 grid gap-3.5">
-      <div data-verdict className={`rush-pop relative grid grid-cols-[86px_1fr] items-center gap-3.5 rounded-[22px] px-4 py-3.5 ${ok ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+      <div data-verdict className={`rush-pop relative grid grid-cols-[86px_1fr] items-center gap-3.5 rounded-xl px-4 py-3.5 ${ok ? 'bg-emerald-50' : 'bg-rose-50'}`}>
         <span className="relative isolate">
           {ok && <Ring color={S.current?.boss ? 'rgba(245,158,11,.6)' : 'rgba(34,181,115,.5)'} />}
           <RushCapi mood={ok ? 'happy' : 'sad'} size={86} side="right" />
@@ -405,10 +405,10 @@ function Feedback({ S, q, color }: { S: RushState; q: RushQ; color: string }) {
         <div className="min-w-0">
           <div className={`flex flex-wrap items-center gap-2 font-display text-3xl leading-none font-extrabold ${ok ? 'text-emerald-700' : 'text-rose-600'}`}>
             {word}
-            {ok && L.pts ? <span className="rk-pop-in rounded-full bg-[#16181d] px-2.5 py-0.5 font-sans text-sm text-amber-300">+{L.pts} pts</span> : null}
-            {ok && S.stats.streak >= 3 && <span className="rush-bump rounded-full bg-orange-100 px-2.5 py-0.5 font-sans text-sm text-orange-700">🔥 combo x{(1 + Math.min(S.stats.streak - 1, 9) / 10).toFixed(1)}</span>}
-            {ok && L.fast && <span className="rounded-full bg-amber-100 px-2.5 py-0.5 font-sans text-xs text-amber-800">⚡ rápido +25%</span>}
-            {L.shielded && <span className="rounded-full bg-blue-100 px-2.5 py-0.5 font-sans text-xs text-blue-700">🛡️ escudo segurou o combo</span>}
+            {ok && L.pts ? <span className="rk-pop-in rounded-md bg-[#18181b] px-2.5 py-0.5 font-sans text-sm text-amber-300">+{L.pts} pts</span> : null}
+            {ok && S.stats.streak >= 3 && <span className="rush-bump rounded-md bg-orange-100 px-2.5 py-0.5 font-sans text-sm text-orange-700">combo x{(1 + Math.min(S.stats.streak - 1, 9) / 10).toFixed(1)}</span>}
+            {ok && L.fast && <span className="rounded-md bg-amber-100 px-2.5 py-0.5 font-sans text-xs text-amber-800">rápido +25%</span>}
+            {L.shielded && <span className="rounded-md bg-blue-100 px-2.5 py-0.5 font-sans text-xs text-blue-700">escudo segurou o combo</span>}
           </div>
           {L.comment ? <MathText as="p" text={L.comment} className="mt-1.5 font-semibold whitespace-pre-wrap" /> : !ok ? <p className="mt-1.5 font-semibold">Olha a resolução aqui embaixo. Essa ideia vai voltar daqui a pouco.</p> : null}
         </div>
@@ -428,7 +428,7 @@ function Feedback({ S, q, color }: { S: RushState; q: RushQ; color: string }) {
           Próxima <ArrowRight size={17} /> <kbd className="rounded-md bg-white/25 px-1.5 text-[11px]">Enter</kbd>
         </button>
         {ok && !L.doubt && !L.overridden && (
-          <button type="button" onClick={markDoubt} className="flex items-center gap-1.5 rounded-2xl bg-amber-300 px-4 py-3 text-sm font-bold text-amber-950 shadow-[0_5px_0_#e8a800] active:translate-y-1">
+          <button type="button" onClick={markDoubt} className="flex items-center gap-1.5 rounded-2xl bg-amber-300 px-4 py-3 text-sm font-bold text-amber-950 shadow-[0_5px_0_#bf8f3a] active:translate-y-1">
             <HelpCircle size={16} /> Fiquei em dúvida, manda de novo
           </button>
         )}
@@ -449,7 +449,7 @@ function SpawnLine({ S }: { S: RushState }) {
   if (sp.status === 'skip')
     return (
       <p className="text-sm font-bold">
-        <span className="mr-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs text-amber-800">🔁 Na fila</span> Essa ideia já tem revisões esperando na fila.
+        <span className="mr-1.5 rounded-md bg-amber-100 px-2.5 py-0.5 text-xs text-amber-800">Na fila</span> Essa ideia já tem revisões esperando na fila.
       </p>
     )
   const quando = (() => {
@@ -465,7 +465,7 @@ function SpawnLine({ S }: { S: RushState }) {
           </>
         ) : sp.status === 'pronto' ? (
           <>
-            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs text-amber-800">📌 Checagem final</span> Daqui a 19 questões vem mais uma dessa ideia, para ver se fixou.
+            <span className="rounded-md bg-amber-100 px-2.5 py-0.5 text-xs text-amber-800">Checagem final</span> Daqui a 19 questões vem mais uma dessa ideia, para ver se fixou.
           </>
         ) : null}
       </p>
@@ -479,12 +479,12 @@ function SpawnLine({ S }: { S: RushState }) {
       )}
       {sp.status === 'pronto' && (
         <>
-          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs text-amber-800">🔁 Na fila</span> {sp.n} {sp.n > 1 ? 'variações entraram' : 'variação entrou'}: daqui a {quando} questões.
+          <span className="rounded-md bg-amber-100 px-2.5 py-0.5 text-xs text-amber-800">Na fila</span> {sp.n} {sp.n > 1 ? 'variações entraram' : 'variação entrou'}: daqui a {quando} questões.
         </>
       )}
       {sp.status === 'erro' && (
         <>
-          <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs text-rose-700">Ops</span> Não deu para criar as revisões agora. {errCopy(sp.err)}
+          <span className="rounded-md bg-rose-100 px-2.5 py-0.5 text-xs text-rose-700">Ops</span> Não deu para criar as revisões agora. {errCopy(sp.err)}
         </>
       )}
     </p>
@@ -505,17 +505,17 @@ function Solution({ q, interactive }: { q: RushQ; interactive: boolean }) {
   const [shown, setShown] = useState(stepMode ? 1 : lines.length)
   return (
     <>
-      <div className="rush-enter grid gap-1 rounded-2xl bg-[#f6f7f9] px-4 py-3">
+      <div className="rush-enter grid gap-1 rounded-2xl bg-[#f4f4f2] px-4 py-3">
         <span className="text-[11px] font-bold tracking-wider text-muted uppercase">Gabarito</span>
         <MathText text={q.gabarito} className="font-display text-xl font-bold text-emerald-700" />
       </div>
       {lines.length > 0 && (
-        <div className="rush-enter grid gap-2 rounded-2xl bg-[#f6f7f9] px-4 py-3">
+        <div className="rush-enter grid gap-2 rounded-2xl bg-[#f4f4f2] px-4 py-3">
           <span className="text-[11px] font-bold tracking-wider text-muted uppercase">Resolução passo a passo</span>
           <ol className="grid gap-2">
             {lines.slice(0, shown).map((l, i) => (
               <li key={i} className={`rush-enter grid grid-cols-[28px_1fr] items-start gap-2.5 rounded-xl bg-white px-3 py-2 leading-relaxed ${stepMode && i === shown - 1 && shown < lines.length ? 'ring-2 ring-brand' : ''}`}>
-                <span className="grid h-[26px] w-[26px] place-items-center rounded-full bg-brand font-display text-sm font-bold text-white">{i + 1}</span>
+                <span className="grid h-[26px] w-[26px] place-items-center rounded-md bg-brand font-display text-sm font-bold text-white">{i + 1}</span>
                 <MathText as="span" text={l} className="break-words" />
               </li>
             ))}
@@ -537,7 +537,7 @@ function Solution({ q, interactive }: { q: RushQ; interactive: boolean }) {
       )}
       {q.ideia && (
         <div className="rush-enter rounded-2xl bg-amber-50 px-4 py-3 text-sm">
-          <b>💡 Ideia-chave: </b>
+          <b>Ideia-chave: </b>
           <MathText as="span" text={q.ideia} />
         </div>
       )}
@@ -568,16 +568,16 @@ function AskBox({ q, S, ok }: { q: RushQ; S: RushState; ok: boolean }) {
     }
   }
   const chips: [string, string][] = [
-    ['🧒 Explica mais simples', 'Explica de um jeito bem mais simples, como se eu tivesse 12 anos, com um exemplo do dia a dia.'],
-    ['🧠 Me dá um macete', 'Me dá um macete ou um jeito fácil de lembrar disso na prova.'],
-    ...(q.formato === 'multipla' ? ([['❓ Por que as outras estão erradas?', 'Explica rapidinho por que cada uma das outras alternativas está errada.']] as [string, string][]) : []),
-    ...(!ok ? ([['🔍 Onde eu errei?', 'Olhando minha resposta, onde exatamente eu errei e como não errar de novo?']] as [string, string][]) : []),
+    ['Explica mais simples', 'Explica de um jeito bem mais simples, como se eu tivesse 12 anos, com um exemplo do dia a dia.'],
+    ['Me dá um macete', 'Me dá um macete ou um jeito fácil de lembrar disso na prova.'],
+    ...(q.formato === 'multipla' ? ([['Por que as outras estão erradas?', 'Explica rapidinho por que cada uma das outras alternativas está errada.']] as [string, string][]) : []),
+    ...(!ok ? ([['Onde eu errei?', 'Olhando minha resposta, onde exatamente eu errei e como não errar de novo?']] as [string, string][]) : []),
   ]
   return (
     <div className="grid gap-2 border-t-2 border-dotted border-line pt-3">
       <div className="flex flex-wrap gap-1.5">
         {chips.map(([l, t]) => (
-          <button key={l} type="button" onClick={() => (setDoubt(t), ask(t))} className="rounded-full border-2 border-line bg-white px-3 py-1 text-[13px] font-bold transition hover:-translate-y-0.5 hover:border-brand">
+          <button key={l} type="button" onClick={() => (setDoubt(t), ask(t))} className="rounded-md border-2 border-line bg-white px-3 py-1 text-[13px] font-bold transition hover:border-brand">
             {l}
           </button>
         ))}

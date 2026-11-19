@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { ensureSeed } from '../db/repo'
+import { ensureSeed, muteSubjectColors } from '../db/repo'
 import { useSyncStatus } from '../lib/cloud'
 
 /**
@@ -12,7 +12,9 @@ export function SeedRunner() {
   useEffect(() => {
     if (sync === 'carregando' || done.current) return
     done.current = true
-    ensureSeed().catch(() => {
+    ensureSeed()
+      .then(() => muteSubjectColors())
+      .catch(() => {
       done.current = false
     })
   }, [sync])

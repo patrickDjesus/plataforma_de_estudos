@@ -32,15 +32,15 @@ function Frame({ title, subtitle, icon, onClose, children }: { title: string; su
     return () => window.removeEventListener('keydown', k)
   }, [onClose])
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[#0b1026]/45 p-3 backdrop-blur-[3px] sm:items-center">
-      <div className="capi-pop my-6 w-full max-w-2xl rounded-[28px] bg-white shadow-[0_40px_80px_-24px_rgba(11,16,38,0.55)]">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[#18181b]/45 p-3 backdrop-blur-[3px] sm:items-center">
+      <div className="capi-pop my-6 w-full max-w-2xl rounded-xl bg-white">
         <header className="flex items-center gap-3 border-b border-line px-6 py-4">
           {icon}
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-lg font-bold">{title}</h2>
             {subtitle && <p className="truncate text-xs text-muted">{subtitle}</p>}
           </div>
-          <button onClick={onClose} className="rounded-full p-2 text-muted hover:bg-slate-100" aria-label="Fechar">
+          <button onClick={onClose} className="rounded-md p-2 text-muted hover:bg-slate-100" aria-label="Fechar">
             <X size={18} />
           </button>
         </header>

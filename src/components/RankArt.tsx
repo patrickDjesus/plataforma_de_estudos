@@ -12,7 +12,7 @@ const PAL: Record<TierId, { rim: [string, string, string]; field: [string, strin
   prata: { rim: ['#ffffff', '#b9c4d2', '#5d6a7c'], field: ['#7d8ca1', '#2c384c'], gem: ['#ffffff', '#a9bdd6', '#465c7c'] },
   ouro: { rim: ['#fff4b8', '#e2a51c', '#7a4f00'], field: ['#b0740a', '#4f2f00'], gem: ['#ffc2c2', '#e0283c', '#5e000d'] },
   platina: { rim: ['#e6fffa', '#4fd1b8', '#0f5e52'], field: ['#1c8a7a', '#083832'], gem: ['#dcfff4', '#2fe0a8', '#04573f'] },
-  diamante: { rim: ['#f2f7ff', '#7ea6ff', '#1f3aa6'], field: ['#2f4fd0', '#0d1a5a'], gem: ['#ffffff', '#c4e3ff', '#3f78ff'] },
+  diamante: { rim: ['#f7efe6', '#7ea6ff', '#1f3aa6'], field: ['#2f4fd0', '#0d1a5a'], gem: ['#ffffff', '#c4e3ff', '#3f78ff'] },
   mestre: { rim: ['#f7e9ff', '#b47aff', '#3f1189'], field: ['#5a21b4', '#1a0842'], gem: ['#ffe8ff', '#e05cff', '#5c0096'] },
 }
 

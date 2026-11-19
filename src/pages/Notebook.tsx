@@ -87,13 +87,13 @@ export function NotebookPage() {
     <>
     <PageHeader
       icon={<BookOpen size={28} />}
-      color="#0ea5e9"
+      color="#2f5f7e"
       title="Caderno"
       subtitle="Use [[Nome]] para ligar notas entre matérias."
       stats={
         <>
-          <HeroStat tile={<TileIcon color="#0ea5e9"><FileText size={22} /></TileIcon>} value={written} label={written === 1 ? 'nota escrita' : 'notas escritas'} />
-          <HeroStat tile={<TileIcon color="#8b5cf6"><Link2 size={22} /></TileIcon>} value={linkCount} label={linkCount === 1 ? 'ligação entre notas' : 'ligações entre notas'} />
+          <HeroStat tile={<TileIcon color="#2f5f7e"><FileText size={22} /></TileIcon>} value={written} label={written === 1 ? 'nota escrita' : 'notas escritas'} />
+          <HeroStat tile={<TileIcon color="#6b5a8a"><Link2 size={22} /></TileIcon>} value={linkCount} label={linkCount === 1 ? 'ligação entre notas' : 'ligações entre notas'} />
         </>
       }
       actions={
@@ -297,7 +297,7 @@ function ConnList({ title, notes, subjects }: { title: string; notes: Note[]; su
         {notes.map((n) => {
           const s = subjects.find((x) => x.id === n.subjectId)
           return (
-            <Link key={n.id} to={`/caderno/${n.id}`} className="rounded-full px-3 py-1 text-xs font-semibold" style={{ background: tint(s?.color ?? '#3e63f2'), color: s?.color }}>
+            <Link key={n.id} to={`/caderno/${n.id}`} className="rounded-md px-3 py-1 text-xs font-semibold" style={{ background: tint(s?.color ?? '#c4471d'), color: s?.color }}>
               {n.title}
             </Link>
           )

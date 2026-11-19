@@ -24,7 +24,7 @@ export function applyRating(r: Review, rating: ReviewRating, today: string): Rev
 }
 
 export const RATING_LABEL: Record<ReviewRating, { emoji: string; label: string }> = {
-  dificil: { emoji: '😣', label: 'Difícil' },
-  ok: { emoji: '🙂', label: 'Ok' },
-  facil: { emoji: '😎', label: 'Fácil' },
+  dificil: { emoji: '', label: 'Difícil' },
+  ok: { emoji: '', label: 'Ok' },
+  facil: { emoji: '', label: 'Fácil' },
 }

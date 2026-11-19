@@ -107,7 +107,7 @@ export function NoteEditor({ note, subject, allTitles, reloadToken = 0 }: { note
   }
 
   if (!editor) return null
-  const color = subject?.color ?? '#3e63f2'
+  const color = subject?.color ?? '#c4471d'
   const btn = (active: boolean | undefined) =>
     `rounded-lg p-2 transition ${active ? 'text-white' : 'text-slate-600 hover:bg-slate-100'}`
   const activeStyle = (active: boolean | undefined) => (active ? { background: color } : undefined)
@@ -147,7 +147,7 @@ export function NoteEditor({ note, subject, allTitles, reloadToken = 0 }: { note
           <button
             key={c}
             onClick={() => editor.chain().focus().toggleHighlight({ color: c }).run()}
-            className="h-6 w-6 rounded-full border-2 border-white shadow ring-1 ring-line transition hover:scale-110"
+            className="h-6 w-6 rounded-md border-2 border-white shadow ring-1 ring-line transition hover:scale-110"
             style={{ background: c }}
             title="Destacar"
           />

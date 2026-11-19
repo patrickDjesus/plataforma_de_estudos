@@ -7,14 +7,14 @@ export function Spinner({ size = 18, color = 'currentColor' }: { size?: number; 
   return (
     <span className="essential-motion inline-flex items-center gap-[3px]" style={{ height: size }} role="status" aria-label="Carregando">
       {[0, 1, 2].map((i) => (
-        <span key={i} className="spinner-dot rounded-full" style={{ width: size / 3.2, height: size / 3.2, background: color, animationDelay: `${i * 0.15}s` }} />
+        <span key={i} className="spinner-dot rounded-md" style={{ width: size / 3.2, height: size / 3.2, background: color, animationDelay: `${i * 0.15}s` }} />
       ))}
     </span>
   )
 }
 
 /** Botão de microfone: o que você fala vira texto (anexado ao campo). */
-export function MicButton({ onFinal, onPartial, color = '#3e63f2', className = '' }: { onFinal: (t: string) => void; onPartial?: (t: string) => void; color?: string; className?: string }) {
+export function MicButton({ onFinal, onPartial, color = '#c4471d', className = '' }: { onFinal: (t: string) => void; onPartial?: (t: string) => void; color?: string; className?: string }) {
   const [engine, setEngine] = useState<VoiceEngine | null>(null)
   const [on, setOn] = useState(false)
   const [msg, setMsg] = useState('')
@@ -46,8 +46,8 @@ export function MicButton({ onFinal, onPartial, color = '#3e63f2', className = '
       <button
         type="button"
         onClick={toggle}
-        className={`essential-motion relative grid h-10 w-10 place-items-center rounded-full text-white shadow-md transition hover:scale-105 ${on ? 'mic-live' : ''}`}
-        style={{ background: on ? '#ef4444' : color }}
+        className={`essential-motion relative grid h-10 w-10 place-items-center rounded-md text-white shadow-md transition hover:scale-105 ${on ? 'mic-live' : ''}`}
+        style={{ background: on ? '#b23a2a' : color }}
         title={on ? 'Parar de ditar' : 'Falar em vez de digitar'}
         aria-label={on ? 'Parar de ditar' : 'Ditar por voz'}
       >
@@ -75,7 +75,7 @@ export function VoiceTextarea({ value, onValue, color, ...rest }: Omit<TextareaH
           onValue(cur + (cur && !/\s$/.test(cur) ? ' ' : '') + t)
         }}
       />
-      {partial && <p className="mt-1 text-xs text-muted italic">🎙️ {partial}…</p>}
+      {partial && <p className="mt-1 text-xs text-muted italic">{partial}…</p>}
     </div>
   )
 }

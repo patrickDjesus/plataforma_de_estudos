@@ -8,9 +8,9 @@ const AREA_HUES: Record<AreaId, number[]> = {
 }
 
 export const AREA_COLOR: Record<AreaId, string> = {
-  faculdade: '#3e63f2',
-  ensino: '#f97316',
-  idiomas: '#10b981',
+  faculdade: '#2f4b6e',
+  ensino: '#a8742a',
+  idiomas: '#4d7a57',
 }
 
 function hslToHex(h: number, s: number, l: number): string {
@@ -27,11 +27,34 @@ export function autoColor(areaId: AreaId, index: number): string {
   const hues = AREA_HUES[areaId]
   const hue = hues[index % hues.length]
   const light = index >= hues.length ? 44 : 52
-  return hslToHex(hue, 78, light)
+  return hslToHex(hue, 40, light - 10)
 }
 
 /** Fundo claro (tinta) da cor, para chips e destaques. */
 export function tint(hex: string, alpha = 0.14): string {
   const n = parseInt(hex.slice(1), 16)
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`
+}
+
+function hexToHsl(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1), 16)
+  const r = ((n >> 16) & 255) / 255
+  const g = ((n >> 8) & 255) / 255
+  const b = (n & 255) / 255
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const l = (max + min) / 2
+  if (max === min) return [0, 0, l * 100]
+  const d = max - min
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+  const h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4
+  return [h * 60, s * 100, l * 100]
+}
+
+/** Versão sóbria de uma cor viva (tons de tinta, não de neon). Cores já sóbrias voltam iguais. */
+export function mute(hex: string): string {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex
+  const [h, s, l] = hexToHsl(hex)
+  if (s <= 50) return hex
+  return hslToHex(Math.round(h), 42, Math.max(32, Math.min(44, l - 6)))
 }

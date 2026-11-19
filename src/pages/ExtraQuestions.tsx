@@ -17,11 +17,11 @@ function Stepper({ value, onChange, label, max }: { value: number; onChange: (n:
   const clamp = (n: number) => Math.max(0, Math.min(max ?? 999, Number.isFinite(n) ? Math.round(n) : 0))
   return (
     <div className="flex items-center gap-2">
-      <button type="button" onClick={() => onChange(clamp(value - 1))} className="grid h-10 w-10 place-items-center rounded-xl bg-[#f1f2f5] hover:bg-[#e6e8ee]" aria-label={`Menos ${label}`}>
+      <button type="button" onClick={() => onChange(clamp(value - 1))} className="grid h-10 w-10 place-items-center rounded-xl bg-[#efefed] hover:bg-[#e7e7e4]" aria-label={`Menos ${label}`}>
         <Minus size={18} />
       </button>
       <input type="number" inputMode="numeric" min={0} value={value} onChange={(e) => onChange(clamp(Number(e.target.value)))} onFocus={(e) => e.target.select()} aria-label={label} className="h-12 w-20 rounded-xl border border-line text-center font-display text-2xl font-extrabold outline-none focus:border-brand" />
-      <button type="button" onClick={() => onChange(clamp(value + 1))} className="grid h-10 w-10 place-items-center rounded-xl bg-[#f1f2f5] hover:bg-[#e6e8ee]" aria-label={`Mais ${label}`}>
+      <button type="button" onClick={() => onChange(clamp(value + 1))} className="grid h-10 w-10 place-items-center rounded-xl bg-[#efefed] hover:bg-[#e7e7e4]" aria-label={`Mais ${label}`}>
         <Plus size={18} />
       </button>
     </div>
@@ -53,7 +53,7 @@ export function ExtraQuestions() {
     setNote('')
     showMascot({
       pose: 'comemorando',
-      title: `${count} ${count === 1 ? 'questão registrada' : 'questões registradas'}! 📝`,
+      title: `${count} ${count === 1 ? 'questão registrada' : 'questões registradas'}!`,
       text: `${withCorrect && count ? `${Math.round((correct / count) * 100)}% de acerto. ` : ''}Já entrou no seu total de questões${subject ? ` de ${subject.name}` : ''} e no rank.`,
       autoHideMs: 6000,
     })
@@ -67,7 +67,7 @@ export function ExtraQuestions() {
             <Capybara pose="estudando" size={76} />
             <div>
               <h2 className="font-display text-2xl font-extrabold">Registrar questões extras</h2>
-              <p className="text-sm text-muted">Fez questões no livro, numa lista ou num simulado? Conta aqui para entrar nas suas estatísticas, no rank e no domínio.</p>
+              <p className="text-sm text-muted">Livro, lista, simulado de papel: conta tudo.</p>
             </div>
           </div>
 
@@ -77,7 +77,7 @@ export function ExtraQuestions() {
               <Stepper value={count} onChange={(n) => (setCount(n), setCorrect((c) => Math.min(c, n)))} label="questões feitas" />
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {QUICK.map((n) => (
-                  <button key={n} type="button" onClick={() => (setCount(n), setCorrect((c) => Math.min(c, n)))} className={`rounded-full px-3 py-1 text-xs font-bold transition ${count === n ? 'bg-brand text-white' : 'bg-[#f1f2f5] text-slate-600 hover:bg-[#e6e8ee]'}`}>
+                  <button key={n} type="button" onClick={() => (setCount(n), setCorrect((c) => Math.min(c, n)))} className={`rounded-md px-3 py-1 text-xs font-bold transition ${count === n ? 'bg-brand text-white' : 'bg-[#efefed] text-slate-600 hover:bg-[#e7e7e4]'}`}>
                     {n}
                   </button>
                 ))}
@@ -124,7 +124,7 @@ export function ExtraQuestions() {
 
             <div className="rounded-2xl border border-line p-3">
               <label className="flex cursor-pointer items-center gap-2 text-sm font-bold">
-                <input type="checkbox" checked={withCorrect} onChange={(e) => setWithCorrect(e.target.checked)} className="h-4 w-4 accent-[#3e63f2]" />
+                <input type="checkbox" checked={withCorrect} onChange={(e) => setWithCorrect(e.target.checked)} className="h-4 w-4 accent-[#c4471d]" />
                 Quero informar os acertos
               </label>
               <p className="mt-1 pl-6 text-[11px] text-muted">Com os acertos e um tópico, as questões também contam no domínio do tópico.</p>
@@ -144,7 +144,7 @@ export function ExtraQuestions() {
                     [today, 'Hoje'],
                     [addDays(today, -1), 'Ontem'],
                   ].map(([d, l]) => (
-                    <button key={d} type="button" onClick={() => setDate(d)} className={`rounded-xl px-3 py-2 text-xs font-bold ${date === d ? 'bg-brand text-white' : 'bg-[#f1f2f5]'}`}>
+                    <button key={d} type="button" onClick={() => setDate(d)} className={`rounded-xl px-3 py-2 text-xs font-bold ${date === d ? 'bg-brand text-white' : 'bg-[#efefed]'}`}>
                       {l}
                     </button>
                   ))}
@@ -157,7 +157,7 @@ export function ExtraQuestions() {
               </label>
             </div>
 
-            <button type="button" disabled={saving || !count} onClick={save} className="w-full rounded-2xl bg-brand py-3.5 font-display text-lg font-bold text-white shadow-[0_6px_0_#2a47c4] transition hover:brightness-110 active:translate-y-1 disabled:opacity-40 sm:w-auto sm:px-8">
+            <button type="button" disabled={saving || !count} onClick={save} className="w-full rounded-2xl bg-brand py-3.5 font-display text-lg font-bold text-white transition hover:brightness-110 active:translate-y-1 disabled:opacity-40 sm:w-auto sm:px-8">
               Registrar {count} {count === 1 ? 'questão' : 'questões'}
             </button>
           </div>

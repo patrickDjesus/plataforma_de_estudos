@@ -25,7 +25,7 @@ const C = {
   earIn: '#5a3820',
   eye: '#2b1a0f',
   blush: '#ff8f7e',
-  brand: '#3e63f2',
+  brand: '#c4471d',
 }
 
 type Eyes = 'normal' | 'feliz' | 'fechado' | 'cima' | 'determinado' | 'piscando' | 'triste'
@@ -183,7 +183,7 @@ export function Capybara({ pose = 'acenando', size = 120, className = '', alive 
           <circle cx="160" cy="34" r="22" fill="#fff" stroke="#e3e6ee" strokeWidth="2" />
           <circle cx="140" cy="62" r="6" fill="#fff" stroke="#e3e6ee" strokeWidth="2" />
           <circle cx="132" cy="74" r="3.5" fill="#fff" stroke="#e3e6ee" strokeWidth="2" />
-          <text x="160" y="44" textAnchor="middle" fontSize="28" fontWeight="800" fill={C.brand} fontFamily="Sora, sans-serif">
+          <text x="160" y="44" textAnchor="middle" fontSize="28" fontWeight="800" fill={C.brand} fontFamily="Fraunces, serif">
             ?
           </text>
         </g>
@@ -192,11 +192,11 @@ export function Capybara({ pose = 'acenando', size = 120, className = '', alive 
         <g className="capi-confetti">
           <rect x="22" y="40" width="8" height="4" rx="1" fill="#ffb648" transform="rotate(30 26 42)" />
           <rect x="168" y="58" width="8" height="4" rx="1" fill="#2fd89a" transform="rotate(-20 172 60)" />
-          <rect x="30" y="100" width="7" height="4" rx="1" fill="#5b7cff" transform="rotate(60 33 102)" />
+          <rect x="30" y="100" width="7" height="4" rx="1" fill="#d2643a" transform="rotate(60 33 102)" />
           <rect x="172" y="110" width="7" height="4" rx="1" fill="#ff5d8f" transform="rotate(15 175 112)" />
           <circle cx="44" cy="20" r="3" fill="#ff5d8f" />
           <circle cx="156" cy="18" r="3" fill="#ffb648" />
-          <circle cx="182" cy="84" r="2.5" fill="#5b7cff" />
+          <circle cx="182" cy="84" r="2.5" fill="#d2643a" />
           <circle cx="16" cy="72" r="2.5" fill="#2fd89a" />
         </g>
       )}
@@ -223,7 +223,7 @@ export function Capybara({ pose = 'acenando', size = 120, className = '', alive 
             <path d="M100 150 L62 144 L62 186 L100 192 Z" fill={C.brand} />
             <path d="M100 150 L138 144 L138 186 L100 192 Z" fill="#2f4fd0" />
             <path d="M100 153 L67 148 L67 182 L100 187 Z" fill="#fff" />
-            <path d="M100 153 L133 148 L133 182 L100 187 Z" fill="#f3f5ff" />
+            <path d="M100 153 L133 148 L133 182 L100 187 Z" fill="#fbf5f1" />
             <path d="M74 158 L94 161 M74 166 L94 169 M74 174 L90 176 M106 161 L126 158 M106 169 L126 166" stroke="#c5ccea" strokeWidth="2" strokeLinecap="round" />
           </g>
         )}
@@ -294,11 +294,11 @@ export function Capybara({ pose = 'acenando', size = 120, className = '', alive 
         )}
         {pose === 'dormindo' && (
           <g>
-            <path d="M58 44 Q100 -8 146 44 Q100 30 58 44 Z" fill="#5b7cff" />
-            <path d="M138 30 Q170 34 172 66" fill="none" stroke="#5b7cff" strokeWidth="10" strokeLinecap="round" />
+            <path d="M58 44 Q100 -8 146 44 Q100 30 58 44 Z" fill="#d2643a" />
+            <path d="M138 30 Q170 34 172 66" fill="none" stroke="#d2643a" strokeWidth="10" strokeLinecap="round" />
             <circle cx="172" cy="70" r="8" fill="#fff" />
             <path d="M58 44 Q100 30 146 44" fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" />
-            <g className="capi-z" fill="#5b7cff" fontFamily="Sora, sans-serif" fontWeight="800">
+            <g className="capi-z" fill="#d2643a" fontFamily="Fraunces, serif" fontWeight="800">
               <text x="160" y="10" fontSize="20">
                 Z
               </text>

@@ -248,7 +248,7 @@ export function newId(S: RushState) {
 }
 
 export const DIF_LABELS = ['Moleza', 'Moleza', 'Tranquila', 'Tranquila', 'Média', 'Média', 'Puxada', 'Puxada', 'Brava', 'Brava', 'Impossível']
-export const DIF_EMOJI = ['😌', '😌', '🙂', '🙂', '🤔', '🤔', '🔥', '🔥', '😤', '😤', '💀']
+export const DIF_EMOJI = ['', '', '', '', '', '', '', '', '', '', '']
 export function difInfo(d: number) {
   const v = Math.max(0, Math.min(10, Math.round(d)))
   return { d: v, label: DIF_LABELS[v], emoji: DIF_EMOJI[v], tier: v <= 1 ? 1 : v <= 3 ? 2 : v <= 5 ? 3 : v <= 7 ? 4 : 5 }

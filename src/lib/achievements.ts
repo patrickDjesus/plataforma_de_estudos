@@ -106,18 +106,18 @@ const H = 3600
 
 export function achievements(s: Stats): Achievement[] {
   const list: Omit<Achievement, 'unlocked'>[] = [
-    { id: 'primeiro-passo', title: 'Primeiro passo', description: 'Conclua seu primeiro bloco de estudo.', icon: 'footprints', color: '#3e63f2', value: s.doneBlocks, target: 1 },
-    { id: 'foco-capivara', title: 'Foco de capivara', description: 'Faça uma sessão de 50 minutos sem parar.', icon: 'timer', color: '#8b5cf6', value: Math.floor(s.longestSession / 60), target: 50 },
-    { id: 'pegando-ritmo', title: 'Pegando o ritmo', description: 'Estude 3 dias seguidos.', icon: 'flame', color: '#f97316', value: s.longestStreak, target: 3 },
-    { id: 'semana-de-ferro', title: 'Semana de ferro', description: 'Estude 7 dias seguidos.', icon: 'flame', color: '#ef4444', value: s.longestStreak, target: 7 },
-    { id: 'plano-cumprido', title: 'Plano cumprido', description: 'Feche uma semana com 100% dos blocos feitos.', icon: 'calendar', color: '#10b981', value: s.perfectWeeks, target: 1 },
-    { id: 'maratonista', title: 'Maratonista', description: 'Some 10 horas de estudo.', icon: 'mountain', color: '#0ea5e9', value: Math.floor(s.totalSeconds / H), target: 10 },
-    { id: 'universitario', title: 'Universitário de verdade', description: 'Some 100 horas de Faculdade.', icon: 'graduation', color: '#3e63f2', value: Math.floor(s.secondsByArea.faculdade / H), target: 100 },
-    { id: 'poliglota', title: 'Poliglota', description: 'Some 5 horas de Idiomas.', icon: 'languages', color: '#10b981', value: Math.floor(s.secondsByArea.idiomas / H), target: 5 },
-    { id: 'memoria-capivara', title: 'Memória de capivara', description: 'Registre 10 revisões.', icon: 'brain', color: '#ec4899', value: s.reviewsDone, target: 10 },
-    { id: 'cartografo', title: 'Cartógrafo', description: 'Crie 10 ligações [[…]] entre notas.', icon: 'link', color: '#f59e0b', value: s.citations, target: 10 },
-    { id: 'escritor', title: 'Escritor', description: 'Escreva em 20 notas do caderno.', icon: 'pen', color: '#14b8a6', value: s.notesCount, target: 20 },
-    { id: 'madrugador', title: 'Madrugador', description: 'Estude 15 min antes das 8h.', icon: 'sunrise', color: '#f59e0b', value: s.earlyBird ? 1 : 0, target: 1 },
+    { id: 'primeiro-passo', title: 'Primeiro passo', description: 'Conclua seu primeiro bloco de estudo.', icon: 'footprints', color: '#c4471d', value: s.doneBlocks, target: 1 },
+    { id: 'foco-capivara', title: 'Foco de capivara', description: 'Faça uma sessão de 50 minutos sem parar.', icon: 'timer', color: '#6b5a8a', value: Math.floor(s.longestSession / 60), target: 50 },
+    { id: 'pegando-ritmo', title: 'Pegando o ritmo', description: 'Estude 3 dias seguidos.', icon: 'flame', color: '#b5612a', value: s.longestStreak, target: 3 },
+    { id: 'semana-de-ferro', title: 'Semana de ferro', description: 'Estude 7 dias seguidos.', icon: 'flame', color: '#b23a2a', value: s.longestStreak, target: 7 },
+    { id: 'plano-cumprido', title: 'Plano cumprido', description: 'Feche uma semana com 100% dos blocos feitos.', icon: 'calendar', color: '#4d7a57', value: s.perfectWeeks, target: 1 },
+    { id: 'maratonista', title: 'Maratonista', description: 'Some 10 horas de estudo.', icon: 'mountain', color: '#2f5f7e', value: Math.floor(s.totalSeconds / H), target: 10 },
+    { id: 'universitario', title: 'Universitário de verdade', description: 'Some 100 horas de Faculdade.', icon: 'graduation', color: '#c4471d', value: Math.floor(s.secondsByArea.faculdade / H), target: 100 },
+    { id: 'poliglota', title: 'Poliglota', description: 'Some 5 horas de Idiomas.', icon: 'languages', color: '#4d7a57', value: Math.floor(s.secondsByArea.idiomas / H), target: 5 },
+    { id: 'memoria-capivara', title: 'Memória de capivara', description: 'Registre 10 revisões.', icon: 'brain', color: '#9a4a6a', value: s.reviewsDone, target: 10 },
+    { id: 'cartografo', title: 'Cartógrafo', description: 'Crie 10 ligações [[…]] entre notas.', icon: 'link', color: '#a8742a', value: s.citations, target: 10 },
+    { id: 'escritor', title: 'Escritor', description: 'Escreva em 20 notas do caderno.', icon: 'pen', color: '#3f7a73', value: s.notesCount, target: 20 },
+    { id: 'madrugador', title: 'Madrugador', description: 'Estude 15 min antes das 8h.', icon: 'sunrise', color: '#a8742a', value: s.earlyBird ? 1 : 0, target: 1 },
     { id: 'coruja', title: 'Coruja', description: 'Estude 15 min depois das 22h.', icon: 'moon', color: '#6366f1', value: s.nightOwl ? 1 : 0, target: 1 },
   ]
   return list.map((a) => ({ ...a, value: Math.min(a.value, a.target), unlocked: a.value >= a.target }))

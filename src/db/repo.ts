@@ -1,6 +1,6 @@
 import { db, uid } from './db'
 import type { AreaId, AreaPercents, Availability, Block, Challenge, ErrorReason, Flashcard, Writing, Note, ReviewRating, Session, Settings, Subject, TimerState, Topic, Week } from './types'
-import { autoColor } from '../lib/colors'
+import { autoColor, mute } from '../lib/colors'
 import { addDays, minutesNow, toISODate, weekIdOf } from '../lib/dates'
 import { applyRating, newReview, nextInterval, RATING_LABEL } from '../lib/review'
 import { errorsFromChallenge, reviewError } from '../lib/errors'
@@ -118,7 +118,7 @@ export async function rateReview(topicId: string, rating: ReviewRating, blockId?
   const when = next.intervalDays === 1 ? 'amanhã' : `daqui a ${next.intervalDays} dias`
   showMascot({
     pose: rating === 'dificil' ? 'pensando' : rating === 'facil' ? 'formado' : 'comemorando',
-    title: `${RATING_LABEL[rating].emoji} Revisão registrada`,
+    title: `Revisão registrada`,
     text: `${topic?.name ?? 'Tópico'}: próxima revisão ${when}.${rating === 'dificil' ? ' Vamos reforçar isso logo!' : ''}`,
     autoHideMs: 6000,
   })
@@ -344,7 +344,7 @@ async function celebrateBlock(b: Pick<Block, 'id' | 'kind' | 'topicId' | 'subjec
       title: `Revisão feita! +${xp} XP`,
       text: `Como foi revisar ${topic.name}?`,
       actions: (['dificil', 'ok', 'facil'] as ReviewRating[]).map((r) => ({
-        label: `${RATING_LABEL[r].emoji} ${RATING_LABEL[r].label}`,
+        label: `${RATING_LABEL[r].label}`,
         primary: r === 'ok',
         run: () => rateReview(topic.id, r, b.id),
       })),
@@ -363,7 +363,7 @@ async function celebrateBlock(b: Pick<Block, 'id' | 'kind' | 'topicId' | 'subjec
           primary: true,
           run: async () => {
             await setTopicDone(topic.id, true)
-            showMascot({ pose: 'estudando', title: 'Tópico concluído ✅', text: `Agendei a primeira revisão de ${topic.name} para amanhã. Revisar é o que faz ficar na cabeça!`, autoHideMs: 7000 })
+            showMascot({ pose: 'estudando', title: 'Tópico concluído', text: `Agendei a primeira revisão de ${topic.name} para amanhã. Revisar é o que faz ficar na cabeça!`, autoHideMs: 7000 })
           },
         },
         { label: 'Ainda falta' },
@@ -371,7 +371,7 @@ async function celebrateBlock(b: Pick<Block, 'id' | 'kind' | 'topicId' | 'subjec
     })
     return
   }
-  showMascot({ pose: 'comemorando', title, text: `Você concluiu ${what}. +${xp} XP pra você! 🎉`, autoHideMs: 6000 })
+  showMascot({ pose: 'comemorando', title, text: `Você concluiu ${what}. +${xp} XP pra você!`, autoHideMs: 6000 })
 }
 
 // ---------- Cronômetro ----------
@@ -601,4 +601,13 @@ export async function ensureSeed() {
   const s = await getSettings()
   if ((s.seedVersion ?? 0) >= SEED_VERSION) return 0
   return applySeed()
+}
+
+/** Deixa sóbrias as cores vivas das matérias (paleta antiga). Não mexe nas que já são sóbrias. */
+export async function muteSubjectColors() {
+  const all = await db.subjects.toArray()
+  for (const s of all) {
+    const c = mute(s.color)
+    if (c !== s.color) await db.subjects.update(s.id, { color: c })
+  }
 }

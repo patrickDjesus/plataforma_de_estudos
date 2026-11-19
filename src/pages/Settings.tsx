@@ -115,7 +115,7 @@ export function SettingsPage() {
               />
             </Field>
             <label className="block max-w-sm">
-              <span className="mb-1.5 block text-sm font-bold">Prova alvo (opcional)</span>
+              <span className="mb-1.5 block font-mono text-[11px] tracking-wider text-muted uppercase">Prova alvo (opcional)</span>
               <input
                 defaultValue={settings.targetExam ?? ''}
                 key={`exam-${settings.targetExam ?? ''}`}
@@ -123,7 +123,7 @@ export function SettingsPage() {
                 placeholder="Ex.: ENEM, Fuvest, Unicamp"
                 className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm outline-none focus:border-brand"
               />
-              <span className="mt-1 block text-[11px] text-muted">O Rush, o Simulado e as listas passam a imitar o estilo dessa prova. Vazio = nível ENEM/vestibular em geral.</span>
+              <span className="mt-1 block text-[11px] text-muted">Rush, simulado e listas imitam essa prova.</span>
             </label>
           </div>
         </Card>
@@ -131,13 +131,13 @@ export function SettingsPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold">Conheça o Capi</h2>
-              <p className="text-sm text-muted">A capivara que te dá boas-vindas, faz perguntas e comemora com você. Clique nele no canto da tela para conversar.</p>
+              <p className="text-sm text-muted">Clique no Capi, no canto da tela, para conversar.</p>
             </div>
             <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
               <input
                 id="mascot-welcome"
                 type="checkbox"
-                className="h-4 w-4 accent-[#3e63f2]"
+                className="h-4 w-4 accent-[#c4471d]"
                 checked={settings.mascotWelcome !== false}
                 onChange={(e) => updateSettings({ mascotWelcome: e.target.checked })}
               />
@@ -149,7 +149,7 @@ export function SettingsPage() {
               <button
                 key={p}
                 onClick={() => showMascot({ pose: p, title: POSE_TITLE[p], text: POSE_TEXT[p], autoHideMs: 5000 })}
-                className="flex flex-col items-center rounded-2xl bg-[#f6f7f9] px-2 pt-3 pb-2 transition hover:bg-brand-soft"
+                className="flex flex-col items-center rounded-2xl bg-[#f4f4f2] px-2 pt-3 pb-2 transition hover:bg-brand-soft"
               >
                 <Capybara pose={p} size={86} />
                 <span className="mt-1 text-xs font-semibold capitalize">{p}</span>
@@ -179,7 +179,7 @@ export function SettingsPage() {
               </Field>
             ))}
           </div>
-          <p className="mt-4 text-xs text-muted">As mudanças valem na próxima vez que o plano for gerado (check-in ou “Regerar plano”).</p>
+          <p className="mt-4 text-xs text-muted">Vale a partir do próximo plano gerado.</p>
         </Card>
 
       )}
@@ -188,7 +188,7 @@ export function SettingsPage() {
         <Card>
           <h2 className="mb-1 text-lg font-bold">Backup</h2>
           <p className="mb-4 text-sm text-muted">
-            Aberto pelo claude.ai, o Mendonça salva tudo na sua área privada da nuvem e sincroniza entre seus dispositivos (veja o selo ao lado do cronômetro). O backup é uma cópia extra, guardada por você.
+            A nuvem já guarda tudo. O backup é uma cópia extra, sua.
           </p>
           <div className="flex flex-wrap gap-2">
             <Btn variant="primary" onClick={doExport}>
@@ -234,7 +234,7 @@ export function SettingsPage() {
             <div className="max-w-xl">
               <h2 className="text-lg font-bold">Conteúdos padrão</h2>
               <p className="text-sm text-muted">
-                O Mendonça já vem com as matérias do Ensino Médio e o Inglês, com todos os tópicos e um documento pronto no caderno para cada um. Se você apagou algum e quer de volta, restaure aqui. Só o que estiver faltando é recriado; o que você editou fica como está.
+                Recria o que faltar do Ensino Médio e do Inglês. O que você editou fica.
               </p>
             </div>
             <Btn
@@ -254,7 +254,7 @@ export function SettingsPage() {
             <div className="max-w-xl">
               <h2 className="text-lg font-bold text-rose-700">Reiniciar todos os dados</h2>
               <p className="text-sm text-muted">
-                Apaga matérias, tópicos, notas, semanas, histórico, revisões, mapa, conquistas e ajustes, neste navegador e na nuvem (os outros dispositivos também são limpos). Não dá para desfazer: exporte um backup antes se quiser guardar algo.
+                Apaga tudo, aqui e na nuvem. Não tem volta.
               </p>
             </div>
             <Btn

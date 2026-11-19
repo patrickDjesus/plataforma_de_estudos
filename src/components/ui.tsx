@@ -2,9 +2,10 @@ import { useEffect, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { tint } from '../lib/colors'
 
+/** Folha de papel com borda fina. Dentro de outra folha, vira só conteúdo (sem caixa dentro de caixa). */
 export function Card({ children, className = '', style }: { children: ReactNode; className?: string; style?: React.CSSProperties }) {
   return (
-    <div className={`card rounded-[22px] border border-line bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_-12px_rgba(16,24,40,0.08)] ${className}`} style={style}>
+    <div className={`card rounded-lg border border-line bg-paper p-5 ${className}`} style={style}>
       {children}
     </div>
   )
@@ -12,49 +13,44 @@ export function Card({ children, className = '', style }: { children: ReactNode;
 
 type BtnVariant = 'primary' | 'ghost' | 'soft' | 'danger' | 'dark' | 'muted'
 const VARIANTS: Record<BtnVariant, string> = {
-  primary: 'bg-brand text-white shadow-[0_6px_16px_-6px_rgba(62,99,242,0.7)] hover:brightness-110',
-  ghost: 'bg-white border border-line text-ink hover:bg-slate-50',
-  soft: 'bg-brand-soft text-brand hover:brightness-95',
-  danger: 'bg-rose-50 text-rose-700 hover:bg-rose-100',
-  dark: 'bg-[#16181d] text-white hover:bg-black',
-  muted: 'bg-[#f1f2f5] text-ink hover:bg-[#e8e9ee]',
+  primary: 'bg-brand text-white hover:bg-[#a83a15]',
+  ghost: 'border border-line bg-transparent text-ink hover:border-ink',
+  soft: 'border border-brand/40 text-brand hover:bg-brand-soft',
+  danger: 'border border-rose-300/70 text-rose-800 hover:bg-rose-50',
+  dark: 'bg-ink text-paper hover:bg-black',
+  muted: 'bg-[#efefed] text-ink hover:bg-[#e7e7e4]',
 }
 
 export function Btn({ variant = 'ghost', className = '', ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: BtnVariant }) {
   return (
     <button
       {...props}
-      className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition focus-visible:ring-4 focus-visible:ring-brand/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-md px-3.5 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-45 ${VARIANTS[variant]} ${className}`}
     />
   )
 }
 
-/** Etiqueta com fundo pastel e borda na cor (como a legenda de matérias). */
+/** Etiqueta: fundo levíssimo e um traço na cor à esquerda. */
 export function Chip({ color, children, className = '' }: { color: string; children: ReactNode; className?: string }) {
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${className}`}
-      style={{ background: tint(color, 0.1), borderColor: tint(color, 0.35), color: `color-mix(in srgb, ${color} 80%, #000)` }}
-    >
+    <span className={`inline-flex items-center gap-1.5 rounded-sm border-l-2 px-2 py-0.5 text-xs font-medium text-ink ${className}`} style={{ background: tint(color, 0.08), borderColor: color }}>
       {children}
     </span>
   )
 }
 
+/** Abas sublinhadas, só texto. */
 export function Tabs<T extends string>({ value, onChange, items }: { value: T; onChange: (v: T) => void; items: { id: T; label: string; icon?: ReactNode }[] }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-x-5 border-b border-line">
       {items.map((it) => {
         const active = it.id === value
         return (
           <button
             key={it.id}
             onClick={() => onChange(it.id)}
-            className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition ${
-              active ? 'bg-brand text-white shadow-[0_6px_14px_-6px_rgba(62,99,242,0.8)]' : 'border border-line bg-white text-slate-600 hover:bg-slate-50'
-            }`}
+            className={`-mb-px border-b-2 pt-1 pb-2 text-sm font-semibold transition-colors ${active ? 'border-brand text-ink' : 'border-transparent text-muted hover:text-ink'}`}
           >
-            {it.icon}
             {it.label}
           </button>
         )
@@ -72,11 +68,11 @@ export function Modal({ open, onClose, title, children, width = 'max-w-md' }: { 
   }, [open, onClose])
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1026]/40 p-4 backdrop-blur-[2px]" onMouseDown={onClose}>
-      <div className={`thin-scroll max-h-[90vh] w-full overflow-y-auto ${width} rounded-[24px] bg-white p-6 shadow-2xl`} onMouseDown={(e) => e.stopPropagation()}>
-        <div className="mb-5 flex items-center justify-between gap-4">
-          <h2 className="text-lg font-bold">{title}</h2>
-          <button onClick={onClose} className="rounded-full p-1.5 text-muted hover:bg-slate-100" aria-label="Fechar">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#18181b]/35 p-4" onMouseDown={onClose}>
+      <div className={`thin-scroll max-h-[90vh] w-full overflow-y-auto ${width} rounded-lg border border-line bg-paper p-6 shadow-2xl`} onMouseDown={(e) => e.stopPropagation()}>
+        <div className="mb-5 flex items-start justify-between gap-4 border-b border-line pb-3">
+          <h2 className="text-xl">{title}</h2>
+          <button onClick={onClose} className="rounded-md p-1 text-muted hover:text-ink" aria-label="Fechar">
             <X size={18} />
           </button>
         </div>
@@ -89,25 +85,25 @@ export function Modal({ open, onClose, title, children, width = 'max-w-md' }: { 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-semibold text-muted">{label}</span>
+      <span className="mb-1.5 block font-mono text-[11px] tracking-wider text-muted uppercase">{label}</span>
       {children}
     </label>
   )
 }
 
-export const inputCls =
-  'w-full rounded-xl border border-line bg-[#f8f9fb] px-3 py-2.5 text-sm outline-none transition focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10'
+export const inputCls = 'w-full rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none transition-colors focus:border-ink'
 
-/** Anel de progresso circular. */
-export function Ring({ value, size = 150, stroke = 12, color = '#3e63f2', children }: { value: number; size?: number; stroke?: number; color?: string; children?: ReactNode }) {
-  const r = (size - stroke) / 2
+/** Anel de progresso: traço fino, sem brilho. */
+export function Ring({ value, size = 150, stroke = 6, color = '#18181b', children }: { value: number; size?: number; stroke?: number; color?: string; children?: ReactNode }) {
+  const sw = Math.min(stroke, 7)
+  const r = (size - sw) / 2
   const c = 2 * Math.PI * r
   const v = Math.max(0, Math.min(1, value))
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eef0f4" strokeWidth={stroke} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - v)} style={{ transition: 'stroke-dashoffset .6s ease' }} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e7e7e4" strokeWidth={sw} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={sw} strokeLinecap="butt" strokeDasharray={c} strokeDashoffset={c * (1 - v)} style={{ transition: 'stroke-dashoffset .6s ease' }} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">{children}</div>
     </div>

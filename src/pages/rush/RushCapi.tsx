@@ -49,9 +49,9 @@ export function RushCapi({ mood, size = 86, talk = true, side = 'left', heat = 0
           sfx('pop')
           say('click')
         }}
-        className="essential-motion relative block transition hover:-translate-y-0.5"
+        className="essential-motion relative block transition"
       >
-        {hot && <span className="rk-pulse absolute inset-2 rounded-full bg-[radial-gradient(circle,rgba(255,80,40,.45),transparent_70%)]" />}
+        {hot && <span className="rk-pulse absolute inset-2 rounded-md bg-[radial-gradient(circle,rgba(255,80,40,.45),transparent_70%)]" />}
         <span key={squish} className={squish ? 'rush-squish inline-block' : 'inline-block'}>
           <Capybara pose={POSE[mood]} size={size} className={mood === 'idle' || mood === 'cool' ? 'capi-bob' : ''} />
         </span>

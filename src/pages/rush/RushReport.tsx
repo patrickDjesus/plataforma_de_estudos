@@ -8,7 +8,7 @@ import { RushCapi } from './RushCapi'
 import { diagnose, errCopy, subjectName } from './actions'
 import { generatingFor, rush } from './store'
 
-const accColor = (p: number) => (p < 50 ? '#ff5c7a' : p < 75 ? '#f5b400' : '#22b573')
+const accColor = (p: number) => (p < 50 ? '#c2634d' : p < 75 ? '#bf8f3a' : '#4d7a57')
 
 function AccChart({ H }: { H: HistoryItem[] }) {
   const W = 600
@@ -31,25 +31,25 @@ function AccChart({ H }: { H: HistoryItem[] }) {
   const area = line + ` L${xs(N - 1).toFixed(1)} ${ys(0)} L${xs(0).toFixed(1)} ${ys(0)} Z`
   const last = pts[N - 1]
   return (
-    <svg viewBox={`0 0 ${W} ${Hh}`} className="block h-auto w-full rounded-2xl bg-[#f6f7f9]" role="img" aria-label={`Acerto das últimas 10 questões: ${Math.round(last * 100)}%`}>
+    <svg viewBox={`0 0 ${W} ${Hh}`} className="block h-auto w-full rounded-2xl bg-[#f4f4f2]" role="img" aria-label={`Acerto das últimas 10 questões: ${Math.round(last * 100)}%`}>
       {[0, 0.5, 1].map((v) => (
         <g key={v}>
           <line x1={l} x2={W - r} y1={ys(v)} y2={ys(v)} stroke="#dfe3ec" strokeDasharray={v === 0 ? undefined : '4 5'} />
-          <text x={l - 8} y={ys(v) + 4} textAnchor="end" fontSize="12" fill="#7a8194" fontWeight="700">
+          <text x={l - 8} y={ys(v) + 4} textAnchor="end" fontSize="12" fill="#6b6b66" fontWeight="700">
             {v * 100}%
           </text>
         </g>
       ))}
-      <text x={l} y={Hh - 8} fontSize="12" fill="#7a8194" fontWeight="700">
+      <text x={l} y={Hh - 8} fontSize="12" fill="#6b6b66" fontWeight="700">
         questão 1
       </text>
-      <text x={W - r} y={Hh - 8} textAnchor="end" fontSize="12" fill="#7a8194" fontWeight="700">
+      <text x={W - r} y={Hh - 8} textAnchor="end" fontSize="12" fill="#6b6b66" fontWeight="700">
         questão {N}
       </text>
-      <path d={area} fill="#3e63f2" opacity=".12" />
-      <path d={line} fill="none" stroke="#3e63f2" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={xs(N - 1)} cy={ys(last)} r="7" fill="#fff" stroke="#3e63f2" strokeWidth="3.5" />
-      <text x={Math.min(xs(N - 1), W - r - 30)} y={Math.max(ys(last) - 14, 14)} textAnchor="middle" fontSize="14" fontWeight="800" fill="#2a47c4">
+      <path d={area} fill="#c4471d" opacity=".12" />
+      <path d={line} fill="none" stroke="#c4471d" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={xs(N - 1)} cy={ys(last)} r="7" fill="#fff" stroke="#c4471d" strokeWidth="3.5" />
+      <text x={Math.min(xs(N - 1), W - r - 30)} y={Math.max(ys(last) - 14, 14)} textAnchor="middle" fontSize="14" fontWeight="800" fill="#8f3413">
         {Math.round(last * 100)}%
       </text>
     </svg>
@@ -63,8 +63,8 @@ function Bar({ label, right, pct, color }: { label: React.ReactNode; right: stri
         <span className="min-w-0 truncate">{label}</span>
         <span className="shrink-0 text-muted">{right}</span>
       </div>
-      <div className="h-3 overflow-hidden rounded-full bg-[#eef0f4]">
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: color }} />
+      <div className="h-3 overflow-hidden rounded-full bg-[#ececea]">
+        <div className="h-full rounded-md transition-all duration-700" style={{ width: `${pct}%`, background: color }} />
       </div>
     </div>
   )
@@ -146,10 +146,10 @@ export function RushReport({ S }: { S: RushState }) {
 
   const tot = cnt.pend + cnt.trein + cnt.rec + cnt.dom
   const segs: [keyof typeof cnt, string, string][] = [
-    ['pend', '#ff5c7a', 'pendentes'],
-    ['trein', '#ffc93c', 'treinando'],
+    ['pend', '#c2634d', 'pendentes'],
+    ['trein', '#d4ad60', 'treinando'],
     ['rec', '#8ee0b6', 'recuperados'],
-    ['dom', '#22b573', 'dominados'],
+    ['dom', '#4d7a57', 'dominados'],
   ]
   const tail = H.slice(-240)
 
@@ -193,7 +193,7 @@ ${errs}`,
       <p className="text-sm text-muted">Como está indo o Rush até agora.</p>
       <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
         {tiles.map(([lb, v], i) => (
-          <div key={lb} className="rush-enter grid gap-0.5 rounded-2xl bg-[#f6f7f9] px-3.5 py-3" style={{ animationDelay: `${i * 60}ms` }}>
+          <div key={lb} className="rush-enter grid gap-0.5 rounded-2xl bg-[#f4f4f2] px-3.5 py-3" style={{ animationDelay: `${i * 60}ms` }}>
             <b className="font-display text-2xl leading-tight tabular-nums">{v}</b>
             <span className="text-[11px] font-bold tracking-wider text-muted uppercase">{lb}</span>
           </div>
@@ -211,9 +211,9 @@ ${errs}`,
           ))}
         </div>
         <div className="flex flex-wrap gap-4 text-xs font-bold text-muted">
-          <span>🟩 acertou</span>
-          <span>🟥 errou</span>
-          <span>🟨 contorno = revisão</span>
+          <span className="flex items-center gap-1.5"><i className="block h-3 w-3 rounded bg-emerald-500" /> acertou</span>
+          <span className="flex items-center gap-1.5"><i className="block h-3 w-3 rounded bg-rose-400" /> errou</span>
+          <span className="flex items-center gap-1.5"><i className="block h-3 w-3 rounded outline-2 outline-amber-400" /> revisão</span>
         </div>
       </Sec>
 
@@ -223,7 +223,7 @@ ${errs}`,
             .filter(([, b]) => b.done)
             .map(([id, b]) => {
               const p = Math.round((100 * b.correct) / b.done)
-              return <Bar key={id} label={subjectName(id)} right={`${p}% · ${b.correct}/${b.done}`} pct={p} color={subjects.get(id)?.color ?? '#3e63f2'} />
+              return <Bar key={id} label={subjectName(id)} right={`${p}% · ${b.correct}/${b.done}`} pct={p} color={subjects.get(id)?.color ?? '#c4471d'} />
             })}
         </div>
       </Sec>
@@ -245,9 +245,9 @@ ${errs}`,
         <div className="grid gap-2.5">
           {(
             [
-              ['certeza', '✅ Com certeza', '#3e63f2'],
-              ['acho', '🤔 Achando', '#3d8bff'],
-              ['chute', '🎲 No chute', '#ff8a3d'],
+              ['certeza', 'Com certeza', '#c4471d'],
+              ['acho', 'Achando', '#2f5f7e'],
+              ['chute', 'No chute', '#ff8a3d'],
             ] as const
           ).map(([k, lb, c]) => (
             <Bar key={k} label={lb} right={cf[k].n ? `${cp(k)}% · ${cf[k].c}/${cf[k].n}` : 'nenhuma'} pct={cp(k)} color={c} />
@@ -257,7 +257,7 @@ ${errs}`,
 
       {tot > 0 && (
         <Sec title="Dos erros ao domínio" hint={`${tot} conceito${tot > 1 ? 's' : ''} errados ou com dúvida neste Rush. Eles também estão no seu Caderno de erros.`}>
-          <div className="flex h-6 overflow-hidden rounded-full bg-[#eef0f4]">
+          <div className="flex h-6 overflow-hidden rounded-md bg-[#ececea]">
             {segs.map(([k, c]) => (
               <i key={k} className="block h-full transition-all" style={{ width: `${(100 * cnt[k]) / tot}%`, background: c }} />
             ))}
@@ -274,7 +274,7 @@ ${errs}`,
 
       <Sec title="Diagnóstico" hint="A IA olha seus números e erros e diz o que estudar primeiro. Só usa a IA se você clicar.">
         <div>
-          <button disabled={busy} onClick={runDiag} className="flex items-center gap-2 rounded-2xl bg-brand px-5 py-2.5 font-bold text-white shadow-[0_5px_0_#2a47c4] disabled:opacity-50">
+          <button disabled={busy} onClick={runDiag} className="flex items-center gap-2 rounded-2xl bg-brand px-5 py-2.5 font-bold text-white shadow-[0_5px_0_#8f3413] disabled:opacity-50">
             <Brain size={17} /> Pedir diagnóstico da IA
           </button>
         </div>

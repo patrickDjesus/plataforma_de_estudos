@@ -1,14 +1,68 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Sora", "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-ink: #121826;
-  --color-muted: #6b7385;
-  --color-line: #eceef3;
-  --color-canvas: #f3f4f7;
-  --color-brand: #3e63f2;
-  --color-brand-soft: #edf1ff;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-ink: #18181b;
+  --color-muted: #6b6b66;
+  --color-line: #e7e7e4;
+  --color-canvas: #ffffff;
+  --color-paper: #ffffff;
+  --color-white: #ffffff;
+  --color-brand: #c4471d;
+  --color-brand-soft: #f8e6dd;
+  --color-slate-50: #f7f7f5;
+  --color-slate-100: #f1f1ef;
+  --color-slate-200: #e7e7e4;
+  --color-slate-300: #cfcfca;
+  --color-slate-400: #a1a19b;
+  --color-slate-500: #82827c;
+  --color-slate-600: #66665f;
+  --color-slate-700: #4f4f4a;
+  --color-slate-800: #38383a;
+  --color-slate-900: #232325;
+  --color-emerald-50: #eef3ec;
+  --color-emerald-100: #dbe7d8;
+  --color-emerald-200: #bcd2b7;
+  --color-emerald-300: #93b48d;
+  --color-emerald-400: #6a9465;
+  --color-emerald-500: #4d7a57;
+  --color-emerald-600: #3e6447;
+  --color-emerald-700: #33503a;
+  --color-emerald-800: #2a4130;
+  --color-emerald-900: #1f3124;
+  --color-rose-50: #f9eeea;
+  --color-rose-100: #f2dbd3;
+  --color-rose-200: #e6b8aa;
+  --color-rose-300: #d48d7a;
+  --color-rose-400: #c2634d;
+  --color-rose-500: #b23a2a;
+  --color-rose-600: #952f22;
+  --color-rose-700: #79271d;
+  --color-rose-800: #5f2019;
+  --color-rose-900: #451813;
+  --color-amber-50: #f8f1e3;
+  --color-amber-100: #f0e2c4;
+  --color-amber-200: #e3c991;
+  --color-amber-300: #d4ad60;
+  --color-amber-400: #bf8f3a;
+  --color-amber-500: #a8742a;
+  --color-amber-600: #8a5d22;
+  --color-amber-700: #6d491c;
+  --color-amber-800: #553917;
+  --color-amber-900: #3f2a12;
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 5px;
+  --radius-2xl: 6px;
+  --radius-3xl: 8px;
+  --shadow-sm: 0 1px 0 rgba(31, 28, 23, .05);
+  --shadow-md: 0 1px 0 rgba(31, 28, 23, .06);
+  --shadow-lg: 0 2px 0 rgba(31, 28, 23, .06);
+  --shadow-xl: 0 12px 30px -18px rgba(31, 28, 23, .35);
+  --shadow-2xl: 0 24px 60px -28px rgba(31, 28, 23, .45);
 }
 
 html, body, #root { height: 100%; }
@@ -18,7 +72,9 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
-h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
+@layer base {
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.015em; }
+}
 
 /* Editor do caderno */
 .prose-note { outline: none; min-height: 50vh; font-size: 1rem; line-height: 1.7; }
@@ -51,26 +107,16 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 
 /* Barra de rolagem discreta */
 .thin-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
-.thin-scroll::-webkit-scrollbar-thumb { background: #d6dbe7; border-radius: 99px; }
+.thin-scroll::-webkit-scrollbar-thumb { background: #d9d9d5; border-radius: 99px; }
 
-/* Ícones de matéria com volume (efeito 3D) */
-.subject-icon {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  box-shadow: inset 0 -4px 0 rgba(0,0,0,.14), inset 0 2px 0 rgba(255,255,255,.35);
-}
-.subject-icon::after {
-  content: "";
-  position: absolute;
-  inset: 3px 3px 50% 3px;
-  border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0));
-  pointer-events: none;
-}
-.subject-icon svg { position: relative; z-index: 1; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
+/* Ícone de matéria: traço na cor, sem volume */
+.subject-icon { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+
+/* Folha dentro de folha vira só conteúdo */
+.card .card { border-color: transparent; background: transparent; padding: 0; }
+
+/* Seleção e foco com a cor da tinta */
+::selection { background: #f8e6dd; }
 
 @media (prefers-reduced-motion: reduce) {
   :where(*):not(.essential-motion, .essential-motion *), *::before, *::after { animation: none !important; transition: none !important; }
@@ -152,7 +198,7 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 .rush-toast-out { animation: rush-toast-out .4s ease forwards; }
 .rush-mega { animation: rush-mega 1.8s cubic-bezier(.3, 1.6, .5, 1) forwards; }
 .rush-delay-in { animation: rush-fade .4s 2.4s both; }
-.rush-stripes { background: repeating-linear-gradient(-45deg, #3e63f2 0 12px, #7c8cff 12px 24px); background-size: 34px 34px; animation: rush-stripes 1s linear infinite; }
+.rush-stripes { background: repeating-linear-gradient(-45deg, #c4471d 0 12px, #d2643a 12px 24px); background-size: 34px 34px; animation: rush-stripes 1s linear infinite; }
 
 /* Rush gamificado: arena, partículas, flashes, raios e bordas de fogo */
 @property --rk-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
@@ -190,7 +236,7 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 .rk-glow-pulse { animation: rk-glow-pulse 1.4s ease-in-out infinite; }
 .rk-right { animation: rk-right .5s cubic-bezier(.3, 1.6, .5, 1); }
 .rk-wrong { animation: rk-wrong .45s ease; }
-.rk-title { background: linear-gradient(90deg, #3e63f2, #9b6bff, #ff5fa2, #ff9a3d, #3e63f2); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: rk-title 6s ease-in-out infinite; }
+.rk-title { background: linear-gradient(90deg, #c4471d, #9b6bff, #ff5fa2, #ff9a3d, #c4471d); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: rk-title 6s ease-in-out infinite; }
 .rk-breathe { animation: rk-breathe 2.4s ease-in-out infinite; }
 .rk-onfire { border-color: transparent !important; background: linear-gradient(#fff, #fff) padding-box, conic-gradient(from var(--rk-a), #ff5f1f, #ffd000, #ff2d75, #9b6bff, #ff5f1f) border-box !important; animation: rk-angle 2.6s linear infinite; }
 @keyframes rk-out { 0%, 85% { opacity: 1 } 100% { opacity: 0 } }
@@ -231,8 +277,3 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
   .home-panel .grid:not([class*=" grid-cols-"]):not([class^="grid-cols-"]) { grid-template-columns: minmax(0, 1fr); }
   .home-panel .grid > * { min-width: 0; }
 }
-
-/* Dentro do painel com barra lateral, cartões viram caixas de borda fina (como no Início) */
-.dash-body .card { box-shadow: none; border-radius: 18px; }
-.dash-flush > * { flex: 1; }
-.dash-flush [data-arena] { border-radius: 0; min-height: 100%; }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Crown, Layers, Settings, BarChart3, BookOpen, RotateCcw, CalendarCheck2, Check, ChevronRight, Clock3, Flame, Globe2, Medal, Play, Target, Trophy, Zap } from 'lucide-react'
+import { ArrowRight, BarChart3, BookOpen, RotateCcw, CalendarCheck2, Check, ChevronRight, Clock3, Flame, Medal, Play, Target, Trophy, Zap } from 'lucide-react'
 import { db } from '../db/db'
 import { AREAS, useSessions, useSettings, useSubjectMap, useTimer, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
 import { currentWeekId, rateReview } from '../db/repo'
@@ -23,8 +23,8 @@ import { ChallengeModal } from '../components/ChallengeModal'
 import { useMastery } from '../db/mastery'
 import { masteryColor, masteryLabel } from '../lib/mastery'
 import { ratingFromScore } from '../lib/challenge'
-import { Card, Ring, Tabs } from '../components/ui'
-import { ActionBox, HeroStat, Panel as DashPanel, SideItem, TileIcon } from '../components/dash'
+import { Btn, Ring, Tabs } from '../components/ui'
+import { ActionBox, DashShell, HeroStat, Kicker, Panel as DashPanel, SideItem } from '../components/dash'
 
 type Section = 'geral' | 'resultados' | 'metas' | 'conquistas' | 'rank'
 type Scope = 'hoje' | 'semana'
@@ -105,107 +105,73 @@ export function HomePage() {
   const themeSubject = themeId ? subjects.get(themeId) : undefined
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Cabeçalho */}
-      <Card className="flex flex-wrap items-center gap-x-6 gap-y-5 px-6 py-5">
-        <div className="flex min-w-0 flex-1 basis-56 items-center gap-3">
-          <button onClick={() => setSection('rank')} title="Ver seu rank" className="transition hover:-translate-y-0.5 hover:scale-105">
-            <RankFrame pos={shownRank?.pos ?? 0} size={74}>
-              <RankEmblem pos={shownRank?.pos ?? 0} size={62} />
-            </RankFrame>
-          </button>
-          <div className="min-w-0">
-            <h1 className="truncate text-xl font-bold">Olá, {name}! 👋</h1>
-            <p className="text-xs text-muted">{shownRank ? <RankLine rank={shownRank} /> : '…'}</p>
-            <p className="text-[11px] text-muted first-letter:uppercase">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}</p>
-          </div>
-        </div>
-
-        {/* Nível e XP */}
-        <div className="flex w-56 items-center gap-3 rounded-2xl bg-gradient-to-r from-[#3e63f2] to-[#5b7cff] px-3 py-2.5 text-white shadow-[0_10px_24px_-12px_rgba(62,99,242,0.9)]">
-          <div className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#ffb648] to-[#ff7a2f] shadow-inner">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-white font-display text-base font-extrabold text-[#3e63f2]">{lvl.level}</span>
-          </div>
-          <div className="flex-1">
-            <div className="mb-1.5 flex items-baseline justify-end gap-1 text-sm font-bold tabular-nums">
-              {lvl.inLevel} <span className="text-xs font-semibold text-white/70">/ {lvl.needed} XP</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-white/25">
-              <div className="h-full rounded-full bg-white" style={{ width: `${lvl.progress * 100}%` }} />
+      <header className="border-b-2 border-ink pb-5">
+        <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-5">
+          <div className="flex min-w-0 items-end gap-4">
+            <button onClick={() => setSection('rank')} title="Ver seu rank" className="shrink-0">
+              <RankFrame pos={shownRank?.pos ?? 0} size={70}>
+                <RankEmblem pos={shownRank?.pos ?? 0} size={58} />
+              </RankFrame>
+            </button>
+            <div className="min-w-0">
+              <Kicker>{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</Kicker>
+              <h1 className="mt-1 truncate text-[40px] leading-[1.02] sm:text-[46px]">Olá, {name}.</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+                <span>{shownRank ? <RankLine rank={shownRank} /> : '…'}</span>
+                <span className="flex items-center gap-2 font-mono text-xs tabular-nums">
+                  nível {lvl.level}
+                  <span className="inline-block h-[3px] w-20 bg-line">
+                    <span className="block h-full bg-brand" style={{ width: `${lvl.progress * 100}%` }} />
+                  </span>
+                  {lvl.inLevel}/{lvl.needed} xp
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-
-        <HeroStat tile={<TileIcon color="#ff5d6c"><CalendarCheck2 size={22} /></TileIcon>} value={`${studyDays.size}`} accent="#3e63f2" label="dias estudados" />
-        <HeroStat tile={<TileIcon color="#ff8a1f"><Flame size={22} /></TileIcon>} value={`${streak}`} accent="#ff8a1f" label={streak === 1 ? 'dia seguido' : 'dias seguidos'} />
-        {themeSubject ? (
-          <HeroStat tile={<SubjectIcon subject={themeSubject} size={48} />} caption="🎯 Semana de" value={themeSubject.name} />
-        ) : (
-          <HeroStat
-            tile={<TileIcon color={AREA_COLOR[focusArea.id]}><span className="font-display text-lg font-extrabold">{focusArea.name[0]}</span></TileIcon>}
-            caption="Foco da semana"
-            value={focusArea.name}
-          />
-        )}
-        <button onClick={() => startBlock(nextBlock)} className="group hidden items-center gap-3 text-left sm:flex">
-          <TileIcon color="#ef2b3f">
-            <span className="h-5 w-5 rounded-full bg-gradient-to-b from-white/90 to-white/40 shadow transition group-hover:scale-110" />
-          </TileIcon>
-          <div>
-            <div className="text-sm font-bold">{timer ? 'Estudando agora' : 'Comece por aqui'}</div>
-            <div className="text-xs text-muted">{nextBlock ? 'Aperte o botão' : 'Monte sua semana'}</div>
+          <div className="flex flex-wrap items-end gap-x-6 gap-y-4">
+            <div className="flex flex-wrap divide-x divide-line">
+              <HeroStat value={studyDays.size} label="dias estudados" />
+              <HeroStat value={streak} label={streak === 1 ? 'dia seguido' : 'dias seguidos'} accent={streak > 0 ? '#c4471d' : undefined} />
+              <HeroStat value={themeSubject ? themeSubject.name : focusArea.name} label={themeSubject ? 'tema da semana' : 'foco da semana'} />
+            </div>
+            {!phone && (
+              <Btn variant="primary" onClick={() => startBlock(nextBlock)}>
+                {timer ? 'Voltar ao estudo' : nextBlock ? 'Começar o próximo bloco' : 'Montar a semana'} <ArrowRight size={15} />
+              </Btn>
+            )}
           </div>
-        </button>
-      </Card>
+        </div>
+      </header>
 
       {subjects.size > 0 && ![...subjects.values()].some((s) => s.areaId === 'faculdade') && (
-        <Card className="hidden flex-wrap items-center gap-3 border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900 sm:flex">
-          <Capybara pose="pensando" size={44} />
-          <span className="min-w-0 flex-1">
-            <b>A Faculdade está sem matérias.</b> Cadastre as do semestre para o planejador reservar os 2/3 do tempo e a semana temática ter um tema de Faculdade.
-          </span>
-          <button onClick={() => navigate('/materias')} className="rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-bold text-white hover:bg-amber-600">
-            Cadastrar matérias
-          </button>
-        </Card>
-      )}
-      {/* Painel com barra lateral escura */}
-      {/* Altura fixa: a barra escura não muda de tamanho ao trocar de seção; o conteúdo rola por dentro */}
-      {phone && (
-        <div className="thin-scroll -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-          {(
-            [
-              ['geral', 'Geral'],
-              ['resultados', 'Resultados'],
-              ['metas', 'Metas'],
-              ['conquistas', 'Conquistas'],
-              ['rank', 'Rank'],
-            ] as [Section, string][]
-          ).map(([id, label]) => (
-            <button key={id} onClick={() => setSection(id)} className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold ${section === id ? 'bg-brand text-white' : 'bg-white text-slate-600'}`}>
-              {label}
-            </button>
-          ))}
+        <div className="hidden flex-wrap items-center gap-x-4 gap-y-1 border-l-2 border-brand bg-brand-soft/50 px-4 py-2.5 text-sm sm:flex">
+          <span className="min-w-0 flex-1">A Faculdade ainda não tem matérias, então o plano da semana fica sem ela.</span>
+          <ActionBox className="" label="Cadastrar" onClick={() => navigate('/materias')} />
         </div>
       )}
-      <div
-        className="flex overflow-hidden rounded-[22px] border border-line bg-white shadow-[0_8px_24px_-12px_rgba(16,24,40,0.08)]"
-        style={phone ? undefined : { height: 'max(620px, calc(100vh - 290px))' }}
-      >
-        <aside className="thin-scroll hidden w-[84px] shrink-0 flex-col items-center gap-1 overflow-y-auto bg-[#1c1d22] py-4 sm:flex">
-          <SideItem active={section === 'geral'} onClick={() => setSection('geral')} icon={<Globe2 size={22} />} label="Geral" />
-          <SideItem active={section === 'resultados'} onClick={() => setSection('resultados')} icon={<BarChart3 size={22} />} label="Resultados" />
-          <SideItem active={section === 'metas'} onClick={() => setSection('metas')} icon={<Target size={22} />} label="Metas" />
-          <SideItem active={section === 'conquistas'} onClick={() => setSection('conquistas')} icon={<Trophy size={22} />} label="Conquistas" />
-          <SideItem active={section === 'rank'} onClick={() => setSection('rank')} icon={<Crown size={22} />} label="Rank" />
-          {/* Atalhos para páginas que saíram do topo */}
-          <div className="mt-auto flex w-full flex-col items-center gap-1 border-t border-white/10 pt-3">
-            <SideItem active={false} onClick={() => navigate('/materias')} icon={<Layers size={20} />} label="Matérias" />
-            <SideItem active={false} onClick={() => navigate('/config')} icon={<Settings size={20} />} label="Ajustes" />
-          </div>
-        </aside>
 
-        <div key={section} className={`home-panel thin-scroll min-w-0 flex-1 p-4 sm:p-5 ${phone ? '' : 'overflow-y-auto'}`}>
+      <DashShell<Section>
+        value={section}
+        onChange={setSection}
+        items={[
+          { id: 'geral', label: 'Geral' },
+          { id: 'resultados', label: 'Resultados' },
+          { id: 'metas', label: 'Metas' },
+          { id: 'conquistas', label: 'Conquistas' },
+          { id: 'rank', label: 'Rank' },
+        ]}
+        footer={
+          phone ? undefined : (
+            <>
+              <SideItem onClick={() => navigate('/materias')} label="Matérias" />
+              <SideItem onClick={() => navigate('/config')} label="Ajustes" />
+            </>
+          )
+        }
+      >
+        <div className="home-panel min-w-0">
           {section === 'geral' && (
             <>
               <div className="mb-5">
@@ -229,14 +195,14 @@ export function HomePage() {
                 <DashPanel className="sm:min-h-[440px]" title={scope === 'hoje' ? 'XP do dia' : 'XP da semana'} icon={<Medal size={18} />}>
                   <div className="flex flex-col items-center pt-1">
                     <Ring value={scopeGoal ? scopeXp / scopeGoal : 0} size={168} stroke={13}>
-                      <span className="mb-1 rounded-full bg-brand px-2.5 py-0.5 text-xs font-bold text-white">{scopeGoal ? Math.round((scopeXp / scopeGoal) * 100) : 0}%</span>
+                      <span className="mb-1 rounded-md bg-brand px-2.5 py-0.5 text-xs font-bold text-white">{scopeGoal ? Math.round((scopeXp / scopeGoal) * 100) : 0}%</span>
                       <span className="font-display text-3xl font-extrabold tabular-nums">
                         {scopeXp}
                         <span className="text-sm font-semibold text-muted">/{scopeGoal}</span>
                       </span>
                       <span className="text-xs text-muted">{scope === 'hoje' ? 'Sua XP hoje' : 'Sua XP na semana'}</span>
                     </Ring>
-                    <h3 className="mt-5 text-xl font-bold">{scopeXp === 0 ? 'Hora de começar!' : scopeXp >= scopeGoal && scopeGoal > 0 ? 'Meta batida! 🏆' : 'Continue assim!'}</h3>
+                    <h3 className="mt-5 text-xl font-bold">{scopeXp === 0 ? 'Hora de começar!' : scopeXp >= scopeGoal && scopeGoal > 0 ? 'Meta batida!' : 'Continue assim!'}</h3>
                     <p className="mt-1 text-sm text-muted">
                       {scopeGoal > scopeXp ? (
                         <>
@@ -258,7 +224,7 @@ export function HomePage() {
                     {scoped.length === 0 && (
                       <div className="flex flex-col items-center py-4 text-center">
                         <Capybara pose="relaxando" size={96} />
-                        <p className="mt-1 text-sm text-muted">Nenhum bloco de estudo {scope === 'hoje' ? 'hoje' : 'nesta semana'}. Dia de capivara. 🍊</p>
+                        <p className="mt-1 text-sm text-muted">Nenhum bloco de estudo {scope === 'hoje' ? 'hoje' : 'nesta semana'}. Dia de capivara.</p>
                       </div>
                     )}
                     {scoped.map((b) => {
@@ -279,13 +245,13 @@ export function HomePage() {
                             </div>
                           </div>
                           {b.done ? (
-                            <span className="grid h-8 w-8 place-items-center rounded-full bg-emerald-50 text-emerald-600">
+                            <span className="grid h-8 w-8 place-items-center rounded-md bg-emerald-50 text-emerald-600">
                               <Check size={16} />
                             </span>
                           ) : running ? (
                             <span className="text-xs font-bold text-emerald-600">● agora</span>
                           ) : (
-                            <button onClick={() => startBlock(b)} className="hidden h-8 w-8 place-items-center rounded-full bg-brand-soft text-brand opacity-70 transition group-hover:opacity-100 sm:grid" title="Começar">
+                            <button onClick={() => startBlock(b)} className="hidden h-8 w-8 place-items-center rounded-md bg-brand-soft text-brand opacity-70 transition group-hover:opacity-100 sm:grid" title="Começar">
                               <Play size={14} />
                             </button>
                           )}
@@ -299,15 +265,15 @@ export function HomePage() {
                 {/* Metas */}
                 <DashPanel className="sm:min-h-[440px]" title="Metas" icon={<Target size={18} />}>
                   <div className="flex-1 space-y-6 pt-1">
-                    <Goal icon={<Check size={16} />} color="#3e63f2" value={scoped.filter((b) => b.done).length} total={scoped.length} label="Blocos concluídos" />
+                    <Goal icon={<Check size={16} />} color="#c4471d" value={scoped.filter((b) => b.done).length} total={scoped.length} label="Blocos concluídos" />
                     <Goal
                       icon={<Clock3 size={16} />}
-                      color="#ec4899"
+                      color="#9a4a6a"
                       value={Math.round(scopeSeconds / 60)}
                       total={scoped.reduce((a, b) => a + b.end - b.start, 0)}
                       label="Minutos estudados"
                     />
-                    <Goal icon={<Zap size={16} />} color="#14b8a6" value={scopeSessions.length} total={Math.max(scoped.length, scopeSessions.length)} label="Sessões de foco" />
+                    <Goal icon={<Zap size={16} />} color="#3f7a73" value={scopeSessions.length} total={Math.max(scoped.length, scopeSessions.length)} label="Sessões de foco" />
                   </div>
                 </DashPanel>
               </div>
@@ -326,7 +292,7 @@ export function HomePage() {
           {section === 'conquistas' && <AchievementsSection />}
           {section === 'rank' && <RankSection />}
         </div>
-      </div>
+      </DashShell>
     </div>
   )
 }
@@ -341,7 +307,7 @@ function Goal({ icon, color, value, total, label }: { icon: ReactNode; color: st
       </div>
       <div className="mt-0.5 text-sm font-medium">{label}</div>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full" style={{ background: tint(color, 0.12) }}>
-        <div className="h-full rounded-full" style={{ width: `${total ? Math.min(100, (value / total) * 100) : 0}%`, background: color }} />
+        <div className="h-full rounded-md" style={{ width: `${total ? Math.min(100, (value / total) * 100) : 0}%`, background: color }} />
       </div>
     </div>
   )
@@ -362,7 +328,7 @@ function Results({ weekId }: { weekId: string }) {
   return (
     <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
       <QuestionsSummary />
-      <div className="rounded-[18px] border border-line p-5">
+      <div className="rounded-lg border border-line p-5">
         <h3 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold">
           <BarChart3 size={18} /> Tempo por matéria nesta semana
         </h3>
@@ -377,14 +343,14 @@ function Results({ weekId }: { weekId: string }) {
                   <span className="text-muted tabular-nums">{fmtDuration(secs)}</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full" style={{ background: tint(s.color, 0.12) }}>
-                  <div className="h-full rounded-full" style={{ width: `${(secs / max) * 100}%`, background: s.color }} />
+                  <div className="h-full rounded-md" style={{ width: `${(secs / max) * 100}%`, background: s.color }} />
                 </div>
               </div>
             </div>
           ))}
         </div>
       </div>
-      <div className="rounded-[18px] border border-line p-5">
+      <div className="rounded-lg border border-line p-5">
         <h3 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold">
           <Clock3 size={18} /> Constância da semana
         </h3>
@@ -392,8 +358,8 @@ function Results({ weekId }: { weekId: string }) {
           {perDay.map((secs, i) => (
             <div key={i} className="flex flex-1 flex-col items-center gap-2">
               <span className="text-[10px] text-muted tabular-nums">{secs ? fmtDuration(secs) : ''}</span>
-              <div className="w-full rounded-lg bg-[#eef0f4]" style={{ height: 140 }}>
-                <div className="w-full rounded-lg bg-gradient-to-t from-[#3e63f2] to-[#7c8cff]" style={{ height: `${(secs / maxDay) * 100}%`, marginTop: `${140 - (secs / maxDay) * 140}px` }} />
+              <div className="w-full rounded-lg bg-[#ececea]" style={{ height: 140 }}>
+                <div className="w-full bg-ink" style={{ height: `${(secs / maxDay) * 100}%`, marginTop: `${140 - (secs / maxDay) * 140}px` }} />
               </div>
               <span className="text-[11px] font-bold text-muted">{DAY_SHORT[i]}</span>
             </div>
@@ -414,7 +380,7 @@ function WeekGoals({ weekId }: { weekId: string }) {
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       <WeakPoints />
-      <div className="rounded-[18px] border border-line p-5">
+      <div className="rounded-lg border border-line p-5">
         <h3 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold">
           <Target size={18} /> Plano da semana por área
         </h3>
@@ -432,14 +398,14 @@ function WeekGoals({ weekId }: { weekId: string }) {
                   </span>
                 </div>
                 <div className="h-3 overflow-hidden rounded-full" style={{ background: tint(AREA_COLOR[a.id], 0.12) }}>
-                  <div className="h-full rounded-full" style={{ width: `${planned ? (done / planned) * 100 : 0}%`, background: AREA_COLOR[a.id] }} />
+                  <div className="h-full rounded-md" style={{ width: `${planned ? (done / planned) * 100 : 0}%`, background: AREA_COLOR[a.id] }} />
                 </div>
               </div>
             )
           })}
         </div>
       </div>
-      <div className="rounded-[18px] border border-line p-5">
+      <div className="rounded-lg border border-line p-5">
         <h3 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold">
           <Trophy size={18} /> Tópicos concluídos
         </h3>
@@ -477,12 +443,12 @@ function ReviewsPanel() {
   const [challenge, setChallenge] = useState<(typeof reviews)[number] | null>(null)
   const topicName = (id: string) => topics.find((t) => t.id === id)?.name ?? 'Tópico'
   return (
-    <div className="rounded-[18px] border border-line p-5">
+    <div className="rounded-lg border border-line p-5">
       <h3 className="mb-1 flex items-center gap-2 font-sans text-sm font-semibold">
         <RotateCcw size={18} /> Revisões pendentes
-        {due.length > 0 && <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-bold text-white">{due.length}</span>}
+        {due.length > 0 && <span className="rounded-md bg-rose-500 px-2 py-0.5 text-[11px] font-bold text-white">{due.length}</span>}
       </h3>
-      <p className="mb-3 text-xs text-muted">Revise o tópico e diga como foi. Difícil volta logo; fácil espaça mais.</p>
+      <p className="mb-3 text-xs text-muted">Difícil volta logo; fácil espaça.</p>
       {cardsDue > 0 && (
         <button onClick={() => navigate('/recuperacao')} className="mb-3 flex w-full items-center justify-between rounded-2xl bg-brand-soft px-4 py-2.5 text-left text-sm font-bold text-brand hover:brightness-95">
           <span>🃏 {cardsDue} flashcard{cardsDue === 1 ? '' : 's'} para revisar hoje</span>
@@ -490,12 +456,12 @@ function ReviewsPanel() {
         </button>
       )}
       {reviews.length === 0 && (
-        <div className="flex items-center gap-3 rounded-2xl bg-[#f6f7f9] p-4 text-sm text-muted">
+        <div className="flex items-center gap-3 rounded-2xl bg-[#f4f4f2] p-4 text-sm text-muted">
           <Capybara pose="estudando" size={64} />
-          Quando você concluir um tópico, as revisões aparecem aqui (amanhã, em 7 dias e em 30 dias).
+          Tópicos concluídos voltam aqui em 1, 7 e 30 dias.
         </div>
       )}
-      {reviews.length > 0 && due.length === 0 && <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">Tudo revisado por hoje! ✨</p>}
+      {reviews.length > 0 && due.length === 0 && <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">Tudo revisado por hoje!</p>}
       <div className="divide-y divide-line">
         {due.map((r) => {
           const s = subjects.get(r.subjectId)
@@ -510,17 +476,17 @@ function ReviewsPanel() {
                 </div>
               </div>
               <div className="flex gap-1.5">
-                <button onClick={() => setChallenge(r)} className="hidden rounded-xl px-2.5 py-1.5 text-xs font-bold text-white sm:block" style={{ background: s?.color ?? '#3e63f2' }} title="Teste sua memória: a nota define a próxima revisão">
-                  ⚔️ Desafio
+                <button onClick={() => setChallenge(r)} className="hidden rounded-xl px-2.5 py-1.5 text-xs font-bold text-white sm:block" style={{ background: s?.color ?? '#c4471d' }} title="Teste sua memória: a nota define a próxima revisão">
+                  Desafio
                 </button>
                 {(['dificil', 'ok', 'facil'] as ReviewRating[]).map((k) => (
                   <button
                     key={k}
                     onClick={() => rateReview(r.topicId, k)}
-                    className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition ${k === 'ok' ? 'bg-brand-soft text-brand' : 'bg-[#f1f2f5] text-ink'} hover:brightness-95`}
+                    className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition ${k === 'ok' ? 'bg-brand-soft text-brand' : 'bg-[#efefed] text-ink'} hover:brightness-95`}
                     title={RATING_LABEL[k].label}
                   >
-                    {RATING_LABEL[k].emoji} {RATING_LABEL[k].label}
+                    {RATING_LABEL[k].label}
                   </button>
                 ))}
               </div>
@@ -533,7 +499,7 @@ function ReviewsPanel() {
           <div className="mb-1.5 text-xs font-semibold text-muted">Próximas</div>
           <div className="flex flex-wrap gap-2">
             {upcoming.map((r) => (
-              <button key={r.topicId} onClick={() => navigate('/calendario')} className="rounded-full bg-[#f6f7f9] px-3 py-1 text-xs font-semibold text-slate-600">
+              <button key={r.topicId} onClick={() => navigate('/calendario')} className="rounded-md bg-[#f4f4f2] px-3 py-1 text-xs font-semibold text-slate-600">
                 {topicName(r.topicId)} · em {daysUntil(r.due)}d
               </button>
             ))}
@@ -558,11 +524,11 @@ function RecentNotes() {
   const notes = useLiveQuery(() => db.notes.orderBy('updatedAt').reverse().limit(5).toArray(), [], [])
   const subjects = useSubjectMap()
   return (
-    <div className="rounded-[18px] border border-line p-5">
+    <div className="rounded-lg border border-line p-5">
       <h3 className="mb-3 flex items-center gap-2 font-sans text-sm font-semibold">
         <BookOpen size={18} /> Notas recentes
       </h3>
-      {notes.length === 0 && <p className="rounded-2xl bg-[#f6f7f9] px-4 py-3 text-sm text-muted">Nenhuma nota ainda. Anote o que aprendeu depois de cada bloco.</p>}
+      {notes.length === 0 && <p className="rounded-2xl bg-[#f4f4f2] px-4 py-3 text-sm text-muted">Nenhuma nota ainda. Anote o que aprendeu depois de cada bloco.</p>}
       <div className="space-y-1">
         {notes.map((n) => {
           const s = subjects.get(n.subjectId)
@@ -596,11 +562,11 @@ function YearHeatmap() {
   const firstMonday = addDays(weekDates(currentWeekId())[0], -52 * 7)
   const weeks = Array.from({ length: 53 }, (_, w) => Array.from({ length: 7 }, (_, d) => addDays(firstMonday, w * 7 + d)))
   const level = (secs: number) => (secs === 0 ? 0 : secs < 30 * 60 ? 1 : secs < 60 * 60 ? 2 : secs < 2 * 3600 ? 3 : 4)
-  const COLORS = ['#eef0f4', '#c7d3ff', '#8ea6ff', '#5b7cff', '#3e63f2']
+  const COLORS = ['#ececea', '#c7d3ff', '#8ea6ff', '#d2643a', '#c4471d']
   const totalDays = [...perDay.keys()].filter((d) => d >= firstMonday).length
   const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
   return (
-    <div className="rounded-[18px] border border-line p-5 lg:col-span-2">
+    <div className="rounded-lg border border-line p-5 lg:col-span-2">
       <h3 className="mb-1 flex items-center gap-2 font-sans text-sm font-semibold">
         <Flame size={18} /> Seu ano de estudos
       </h3>
@@ -613,7 +579,7 @@ function YearHeatmap() {
               {days.map((d) => (
                 <div
                   key={d}
-                  className="h-3 w-3 rounded-[3px]"
+                  className="h-3 w-3 rounded-md"
                   style={{ background: d > end ? 'transparent' : COLORS[level(perDay.get(d) ?? 0)] }}
                   title={d > end ? '' : `${d.split('-').reverse().join('/')}: ${fmtDuration(perDay.get(d) ?? 0)}`}
                 />
@@ -625,7 +591,7 @@ function YearHeatmap() {
       <div className="mt-3 flex items-center justify-end gap-1 text-[10px] text-muted">
         menos
         {COLORS.map((c) => (
-          <span key={c} className="h-3 w-3 rounded-[3px]" style={{ background: c }} />
+          <span key={c} className="h-3 w-3 rounded-md" style={{ background: c }} />
         ))}
         mais
       </div>
@@ -642,7 +608,7 @@ function WeakPoints() {
   const weak = [...mastery.topics.entries()].sort((a, b) => a[1].value - b[1].value).slice(0, 6)
   const subjectAvgs = [...mastery.subjects.entries()].sort((a, b) => a[1] - b[1])
   return (
-    <div className="rounded-[18px] border border-line p-5 lg:col-span-2">
+    <div className="rounded-lg border border-line p-5 lg:col-span-2">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 font-sans text-sm font-semibold">
           <Target size={18} /> Pontos fracos
@@ -651,7 +617,7 @@ function WeakPoints() {
       </div>
       <p className="mb-4 text-xs text-muted">O planejador já dá prioridade a esses tópicos. Um desafio rápido ajuda a subir o domínio.</p>
       {weak.length === 0 ? (
-        <div className="flex items-center gap-3 rounded-2xl bg-[#f6f7f9] p-4 text-sm text-muted">
+        <div className="flex items-center gap-3 rounded-2xl bg-[#f4f4f2] p-4 text-sm text-muted">
           <Capybara pose="pensando" size={60} />
           Ainda não há dados de domínio. Faça desafios, revisões e use o modo foco: o domínio de cada tópico aparece aqui.
         </div>
@@ -671,15 +637,15 @@ function WeakPoints() {
                       {m.value}%
                     </span>
                   </div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#eef0f4]">
-                    <div className="h-full rounded-full" style={{ width: `${Math.max(4, m.value)}%`, background: c }} />
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#ececea]">
+                    <div className="h-full rounded-md" style={{ width: `${Math.max(4, m.value)}%`, background: c }} />
                   </div>
                   <div className="mt-0.5 text-[10px] text-muted">
                     {s?.name} · {masteryLabel(m.value)}
                   </div>
                 </div>
-                <button onClick={() => navigate(`/desafio?materia=${t?.subjectId}&topico=${id}`)} className="hidden shrink-0 rounded-xl px-2.5 py-1.5 text-xs font-bold text-white sm:block" style={{ background: s?.color ?? '#3e63f2' }}>
-                  ⚔️ Desafio
+                <button onClick={() => navigate(`/desafio?materia=${t?.subjectId}&topico=${id}`)} className="hidden shrink-0 rounded-xl px-2.5 py-1.5 text-xs font-bold text-white sm:block" style={{ background: s?.color ?? '#c4471d' }}>
+                  Desafio
                 </button>
               </div>
             )
@@ -689,7 +655,7 @@ function WeakPoints() {
       {subjectAvgs.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-1.5 border-t border-line pt-3">
           {subjectAvgs.map(([id, v]) => (
-            <span key={id} className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: tint(masteryColor(v), 0.14), color: `color-mix(in srgb, ${masteryColor(v)} 75%, #000)` }}>
+            <span key={id} className="rounded-md px-2.5 py-1 text-[11px] font-bold" style={{ background: tint(masteryColor(v), 0.14), color: `color-mix(in srgb, ${masteryColor(v)} 75%, #000)` }}>
               {subjects.get(id)?.name}: {v}%
             </span>
           ))}
