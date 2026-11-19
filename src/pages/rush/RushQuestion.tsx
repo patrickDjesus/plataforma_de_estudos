@@ -149,7 +149,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
       id="rush-card"
       ref={card}
       key={shake}
-      className={`essential-motion relative rounded-[26px] border-[3px] bg-white p-5 sm:p-7 ${shake ? 'rush-shake' : 'rush-enter'} ${q.boss ? 'rush-boss' : ''} ${onFire ? 'rk-onfire2' : ''}`}
+      className={`essential-motion relative rounded-[26px] border-[3px] bg-white p-5 sm:p-7 ${shake ? 'rush-shake' : 'rush-enter'} ${q.boss ? 'rush-boss' : ''}`}
       style={{ borderColor: ph === 'feedback' ? (L.correct ? '#22b573' : '#ff5c7a') : hs.border, boxShadow: ph === 'feedback' ? `0 8px 0 ${L.correct ? '#16915a' : '#e03a5a'}` : onFire ? `${hs.shadow}, 0 0 30px -6px rgba(255,120,30,.45)` : hs.shadow }}
     >
       {/* faixa da matéria e número da questão */}

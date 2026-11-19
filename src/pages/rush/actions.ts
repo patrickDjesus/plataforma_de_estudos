@@ -201,7 +201,7 @@ export async function fill(n = 5) {
   const plan = rush.update((S) => planBatch(S, n, names.topic))
   try {
     const raw = rawList(await aiJSON(genPrompt(rush.get(), plan, names.subject), 'default'))
-    const added = rush.update((S) => addBatch(S, plan, raw))
+    const added = rush.update((S) => addBatch(S, plan, raw, names.subject))
     if (!added) throw new AIError('empty', errCopy('empty'))
     runtime.update({ fillError: null })
   } catch (e) {

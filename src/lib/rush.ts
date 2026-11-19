@@ -578,13 +578,41 @@ export function normQ(S: RushState, x: Record<string, unknown>, materia: string)
 }
 
 /** Aplica uma leva gerada à fila. */
-export function addBatch(S: RushState, plan: PlanSlot[], raw: Record<string, unknown>[]): number {
+const plain = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+
+/**
+ * Junta cada questão devolvida pela IA ao pedido certo. Usa a matéria que a própria IA escreveu
+ * na questão (ela às vezes devolve em outra ordem); a posição na lista só vale como reserva.
+ */
+export function addBatch(S: RushState, plan: PlanSlot[], raw: Record<string, unknown>[], name?: (id: string) => string): number {
+  const used = new Set<number>()
+  const slotFor = (x: Record<string, unknown>, i: number): number => {
+    const said = typeof x.materia === 'string' ? plain(x.materia) : ''
+    if (said && name) {
+      const sameSubject = (j: number) => {
+        const n = plain(name(plan[j].s.id))
+        return !!n && (n === said || said.includes(n) || n.includes(said))
+      }
+      // primeiro, a mesma posição se a matéria bate; senão, o próximo pedido livre daquela matéria
+      if (plan[i] && !used.has(i) && sameSubject(i)) return i
+      const k = plan.findIndex((_, j) => !used.has(j) && sameSubject(j))
+      if (k >= 0) return k
+      const any = plan.findIndex((_, j) => sameSubject(j))
+      if (any >= 0) return -1 - any // matéria certa, mas sem pedido livre: usa a matéria sem os detalhes do pedido
+    }
+    if (plan[i] && !used.has(i)) return i
+    return plan.findIndex((_, j) => !used.has(j))
+  }
   const list = raw
     .map((x, i) => {
-      const p = plan[i] ?? plan[0]
+      let k = slotFor(x, i)
+      const subjectOnly = k < 0
+      if (subjectOnly) k = -1 - k
+      if (!subjectOnly && k >= 0) used.add(k)
+      const p = plan[k] ?? plan[0]
       const q = normQ(S, x, p.s.id)
       if (!q) return null
-      if (plan[i]) {
+      if (plan[k] && !subjectOnly) {
         q.dificuldade = Math.abs(q.dificuldade - p.d) <= 1 ? q.dificuldade : p.d
         q.boss = p.boss
         if (p.focus) {

@@ -78,6 +78,16 @@ describe('fila e dificuldade', () => {
     expect(S.queue[0].topicId).toBe('t1')
     expect(S.queue[0].materia).toBe('fis')
   })
+  it('usa a matéria que a IA escreveu, mesmo se ela devolver fora de ordem', () => {
+    const S = stateWith('fis', 'bio')
+    const plan = planBatch(S, 2, topicName)
+    const nm = (id: string) => (id === 'fis' ? 'Física' : 'Biologia')
+    const order = plan.map((p) => p.s.id)
+    // a IA devolve as duas questões na ordem invertida
+    const raw = [...order].reverse().map((id) => rawQ({ materia: nm(id), conceito: `c-${id}` }))
+    addBatch(S, plan, raw, nm)
+    for (const q of S.queue) expect(q.conceito).toBe(`c-${q.materia}`)
+  })
   it('acertar sobe a dificuldade; errar desce e pede 3 variações', () => {
     const S = stateWith('fis')
     addBatch(S, planBatch(S, 2, topicName), [rawQ(), rawQ()])
