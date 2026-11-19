@@ -1,213 +1,391 @@
-import { useId, type ReactNode } from 'react'
+import { useId, type CSSProperties, type ReactNode } from 'react'
 import { TIERS, divisionOf, tierOf } from '../lib/rank'
 
-/* Arte dos ranks no estilo dos ícones de matéria (quadradinho arredondado, cor chapada com leve
- * relevo, desenho branco), mas com símbolo próprio por rank e animações que crescem com ele:
- * brilho passando (Bronze+), faíscas (Ouro+), luz correndo na moldura (Prata+), fogo no Mestre. */
+/* Emblemas dos ranks em vetor chapado com facetas (luz vindo de cima à esquerda), cada um com
+ * símbolo e ornamentos próprios: Ferro (elmo), Bronze (estrela e louros), Prata (livro e asas),
+ * Ouro (troféu e louros), Platina (coroa e cristais), Diamante (diamante e estilhaços),
+ * Mestre (coroa, cristais e anel orbitando). Todos se mexem um pouco; os ranks altos, mais. */
 
 type TierId = (typeof TIERS)[number]['id']
+/** [luz, médio, sombra, fundo] */
+type Pal = [string, string, string, string]
 
-const COLOR: Record<TierId, { base: string; light: string }> = {
-  ferro: { base: '#7b8290', light: '#c3c8cf' },
-  bronze: { base: '#c0703a', light: '#f0b583' },
-  prata: { base: '#8f9db3', light: '#eef2f7' },
-  ouro: { base: '#e0a21a', light: '#ffe8a3' },
-  platina: { base: '#14a898', light: '#a6f2e6' },
-  diamante: { base: '#3e63f2', light: '#c4d6ff' },
-  mestre: { base: '#8b5cf6', light: '#e3d0ff' },
+const PAL: Record<TierId, Pal> = {
+  ferro: ['#e2e5ea', '#a7adb7', '#6d737e', '#3c414b'],
+  bronze: ['#f8c49b', '#dc8a52', '#a9592c', '#5c2c13'],
+  prata: ['#f6f8fb', '#cdd4de', '#909aab', '#4a5262'],
+  ouro: ['#ffeaa3', '#f7bf2f', '#c98a10', '#6e4a06'],
+  platina: ['#d2fcff', '#62e2ee', '#1fa5bf', '#0c5566'],
+  diamante: ['#d5e4ff', '#6fa3ff', '#2f60e8', '#16307a'],
+  mestre: ['#efdcff', '#b884ff', '#7c3aed', '#3a1476'],
+}
+const FIELD = '#1b1e29'
+
+/** Cor principal de um rank. */
+export const tierColor = (pos: number) => PAL[tierOf(pos).id][1]
+
+type Pt = [number, number]
+const pts = (p: Pt[]) => p.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
+const rad = (a: number) => (a * Math.PI) / 180
+const hexPts = (cx: number, cy: number, r: number): Pt[] => [-90, -30, 30, 90, 150, 210].map((a) => [cx + Math.cos(rad(a)) * r, cy + Math.sin(rad(a)) * r])
+const mirror = (p: Pt[]): Pt[] => p.map(([x, y]) => [120 - x, y])
+
+/** Escolhe o tom de uma faceta pela direção dela (luz de cima à esquerda). */
+function shade(angle: number, p: Pal) {
+  const b = Math.cos(rad(angle + 120))
+  return b > 0.5 ? p[0] : b > -0.1 ? p[1] : b > -0.7 ? p[2] : p[3]
 }
 
-/** Cor base de um rank. */
-export const tierColor = (pos: number) => COLOR[tierOf(pos).id].base
-
-const SHIELD = 'M50 22 L71 29 V48 C71 63 62 72 50 78 C38 72 29 63 29 48 V29 Z'
-
-/** Estrelinha de 4 pontas que pisca. */
-function Twinkle({ x, y, r, delay = 0, color = '#fff' }: { x: number; y: number; r: number; delay?: number; color?: string }) {
+/** Moldura hexagonal facetada com miolo escuro. */
+function HexFrame({ p, r = 40, w = 9, cy = 60 }: { p: Pal; r?: number; w?: number; cy?: number }) {
+  const o = hexPts(60, cy, r)
+  const i = hexPts(60, cy, r - w)
   return (
-    <path
-      className="rk-twinkle"
-      style={{ animationDelay: `${delay}s` }}
-      d={`M${x} ${y - r} Q${x + r * 0.18} ${y - r * 0.18} ${x + r} ${y} Q${x + r * 0.18} ${y + r * 0.18} ${x} ${y + r} Q${x - r * 0.18} ${y + r * 0.18} ${x - r} ${y} Q${x - r * 0.18} ${y - r * 0.18} ${x} ${y - r} Z`}
-      fill={color}
-    />
-  )
-}
-
-/** Folhinhas de louro (chapadas) num arco de um lado. */
-function Leaves({ side }: { side: 1 | -1 }) {
-  return (
-    <g fill="#fff" opacity="0.9" transform={side === -1 ? 'translate(100 0) scale(-1 1)' : undefined}>
-      {[
-        [24, 66, -35],
-        [20, 56, -10],
-        [20, 45, 15],
-      ].map(([x, y, a]) => (
-        <ellipse key={y} cx={x} cy={y} rx="3.2" ry="6.5" transform={`rotate(${a} ${x} ${y})`} />
-      ))}
+    <g>
+      {o.map((_, k) => {
+        const n = (k + 1) % 6
+        return <polygon key={k} points={pts([o[k], o[n], i[n], i[k]])} fill={shade(-60 + k * 60, p)} />
+      })}
+      <polygon points={pts(i)} fill={FIELD} />
+      <polygon points={pts(hexPts(60, cy, r - w - 2.5))} fill="none" stroke={p[3]} strokeOpacity="0.9" strokeWidth="1.5" />
+      <polygon points={pts(o)} fill="none" stroke={p[0]} strokeOpacity="0.55" strokeWidth="1" />
     </g>
   )
 }
 
-/** Asinha chapada (Prata e Mestre). */
-function Wing({ side }: { side: 1 | -1 }) {
+/** Estrela de 4 pontas facetada. */
+function Star4({ x, y, r, p, cls, style }: { x: number; y: number; r: number; p: Pal; cls?: string; style?: CSSProperties }) {
+  const k = r * 0.24
   return (
-    <path
-      d="M30 40 C20 38 13 33 10 26 C16 28 21 28 25 27 C18 25 14 21 13 16 C19 20 25 22 30 23 Z"
-      fill="#fff"
-      opacity="0.92"
-      transform={side === -1 ? 'translate(100 0) scale(-1 1)' : undefined}
-    />
+    <g className={cls} style={style}>
+      <polygon points={pts([[x, y - r], [x + k, y - k], [x, y], [x - k, y - k]])} fill={p[0]} />
+      <polygon points={pts([[x + r, y], [x + k, y - k], [x, y], [x + k, y + k]])} fill={p[1]} />
+      <polygon points={pts([[x, y + r], [x + k, y + k], [x, y], [x - k, y + k]])} fill={p[2]} />
+      <polygon points={pts([[x - r, y], [x - k, y - k], [x, y], [x - k, y + k]])} fill={p[1]} />
+    </g>
   )
 }
 
-/** Desenho branco de cada rank: começa simples e vai ganhando detalhes. */
-function Glyph({ tier, light }: { tier: TierId; light: string }) {
+/** Brilhinho que pisca. */
+function Twinkle({ x, y, r, delay = 0, color = '#fff' }: { x: number; y: number; r: number; delay?: number; color?: string }) {
+  const k = r * 0.2
+  return <polygon className="rk-twinkle" style={{ animationDelay: `${delay}s` }} points={pts([[x, y - r], [x + k, y - k], [x + r, y], [x + k, y + k], [x, y + r], [x - k, y + k], [x - r, y], [x - k, y - k]])} fill={color} />
+}
+
+/** Folhas angulosas de louro num arco dos dois lados. */
+function Laurel({ p, n, r, from, to, size, cy = 64 }: { p: Pal; n: number; r: number; from: number; to: number; size: number; cy?: number }) {
+  const leaves = Array.from({ length: n }, (_, i) => {
+    const a = from + ((to - from) * i) / (n - 1)
+    return { x: 60 + Math.cos(rad(a)) * r, y: cy + Math.sin(rad(a)) * r, rot: a + 158 }
+  })
+  const leaf = (s: number): Pt[] => [[0, 0], [s * 0.38, -s * 0.5], [0, -s * 1.2], [-s * 0.38, -s * 0.5]]
+  const one = (flip: boolean) => (
+    <g transform={flip ? 'translate(120 0) scale(-1 1)' : undefined}>
+      {leaves.map(({ x, y, rot }, i) => (
+        <g key={i} transform={`translate(${x} ${y}) rotate(${rot})`}>
+          <polygon points={pts(leaf(size))} fill={i % 2 ? p[1] : p[2]} />
+          <polygon points={pts([[0, 0], [0, -size * 1.2], [-size * 0.38, -size * 0.5]])} fill={p[0]} opacity="0.75" />
+        </g>
+      ))}
+    </g>
+  )
+  return { left: one(false), right: one(true) }
+}
+
+/** Estilhaço de cristal: duas faces (clara e escura) a partir de uma base. */
+function Shard({ base, tip, w, p, light = 0, dark = 2 }: { base: Pt; tip: Pt; w: number; p: Pal; light?: number; dark?: number }) {
+  const dx = tip[0] - base[0]
+  const dy = tip[1] - base[1]
+  const len = Math.hypot(dx, dy)
+  const nx = (-dy / len) * w
+  const ny = (dx / len) * w
+  const mid: Pt = [base[0] + dx * 0.55, base[1] + dy * 0.55]
+  return (
+    <g>
+      <polygon points={pts([base, [mid[0] + nx, mid[1] + ny], tip])} fill={p[light]} />
+      <polygon points={pts([base, tip, [mid[0] - nx, mid[1] - ny]])} fill={p[dark]} />
+    </g>
+  )
+}
+
+/** Leque de estilhaços: lado esquerdo e o espelho dele. */
+function shardWings(p: Pal, list: [Pt, Pt, number][]) {
+  const side = (flip: boolean) => (
+    <g>
+      {list.map(([b, t, w], i) => (
+        <Shard key={i} base={flip ? mirror([b])[0] : b} tip={flip ? mirror([t])[0] : t} w={w} p={p} light={flip ? 1 : 0} dark={flip ? 3 : 2} />
+      ))}
+    </g>
+  )
+  return { left: side(false), right: side(true) }
+}
+
+/** Grupo que balança em torno de um ponto (asas, louros). */
+function Sway({ on, x, y, deg, children }: { on: boolean; x: number; y: number; deg: number; children: ReactNode }) {
+  return (
+    <g className={on ? 'rk-flap' : undefined} style={{ transformOrigin: `${x}px ${y}px`, ['--rk-a' as string]: `${deg}deg` } as CSSProperties}>
+      {children}
+    </g>
+  )
+}
+
+function Emblem({ tier, id, animated }: { tier: TierId; id: string; animated: boolean }) {
+  const p = PAL[tier]
+  const a = (cls: string) => (animated ? cls : undefined)
+  const defs = (clip: ReactNode) => (
+    <defs>
+      <linearGradient id={`s${id}`} x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stopColor="#fff" stopOpacity="0" />
+        <stop offset="0.5" stopColor="#fff" stopOpacity="0.6" />
+        <stop offset="1" stopColor="#fff" stopOpacity="0" />
+      </linearGradient>
+      <radialGradient id={`g${id}`}>
+        <stop offset="0" stopColor={p[1]} stopOpacity="0.5" />
+        <stop offset="1" stopColor={p[1]} stopOpacity="0" />
+      </radialGradient>
+      <clipPath id={`c${id}`}>{clip}</clipPath>
+    </defs>
+  )
+  const shine = animated && (
+    <g clipPath={`url(#c${id})`}>
+      <rect className="rk-shine" style={{ animationDuration: '5.5s' }} x="20" y="0" width="16" height="130" fill={`url(#s${id})`} />
+    </g>
+  )
+  const glow = (r: number, cy = 62) => animated && <circle className="rk-pulse" cx="60" cy={cy} r={r} fill={`url(#g${id})`} />
+  const hexClip = <polygon points={pts(hexPts(60, 60, 40))} />
+
   switch (tier) {
     case 'ferro':
       return (
         <g>
-          <path d={SHIELD} fill="#fff" />
-          <rect x="47.5" y="33" width="5" height="34" rx="2.5" fill="#000" opacity="0.12" />
+          {defs(hexClip)}
+          {[false, true].map((f) => {
+            const plate: Pt[] = [[30, 64], [18, 72], [20, 96], [36, 102], [40, 88]]
+            const edge: Pt[] = [[30, 64], [40, 88], [36, 102]]
+            return (
+              <g key={String(f)}>
+                <polygon points={pts(f ? mirror(plate) : plate)} fill={f ? p[2] : p[1]} />
+                <polygon points={pts(f ? mirror(edge) : edge)} fill={p[3]} />
+              </g>
+            )
+          })}
+          <HexFrame p={p} />
+          {hexPts(60, 60, 35.5).map(([x, y], k) => (
+            <circle key={k} cx={x} cy={y} r="1.6" fill={p[3]} />
+          ))}
+          {/* elmo */}
+          <g className={a('rk-bob')}>
+            <path d="M60 41 C49 41 44 49 44 59 V72 L51 77 V68 H57 V79 H63 V68 H69 V77 L76 72 V59 C76 49 71 41 60 41 Z" fill={p[0]} />
+            <path d="M60 41 C71 41 76 49 76 59 V72 L69 77 V68 H63 V79 H60 Z" fill={p[1]} />
+            <rect x="47" y="58" width="26" height="5" rx="1.5" fill={FIELD} />
+            <rect x="57.5" y="58" width="5" height="16" fill={FIELD} />
+            <path d="M60 41 V52" stroke={p[2]} strokeWidth="2.4" strokeLinecap="round" />
+          </g>
+          {shine}
         </g>
       )
-    case 'bronze':
+
+    case 'bronze': {
+      const l = Laurel({ p, n: 5, r: 40, from: 100, to: 200, size: 15, cy: 62 })
       return (
         <g>
-          <path d={SHIELD} fill="#fff" />
-          <path d="M38 44 L50 52 L62 44" fill="none" stroke="#000" strokeOpacity="0.16" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+          {defs(hexClip)}
+          <Sway on={animated} x={30} y={94} deg={-4}>{l.left}</Sway>
+          <Sway on={animated} x={90} y={94} deg={4}>{l.right}</Sway>
+          <HexFrame p={p} />
+          <circle cx="60" cy="60" r="21" fill="none" stroke={p[1]} strokeWidth="3" />
+          <circle cx="60" cy="60" r="21" fill="none" stroke={p[0]} strokeOpacity="0.6" strokeWidth="1" />
+          <Star4 x={60} y={60} r={15} p={p} cls={a('rk-breathe')} />
+          {shine}
         </g>
       )
-    case 'prata':
+    }
+
+    case 'prata': {
+      const w = shardWings(p, [
+        [[30, 44], [6, 24], 5],
+        [[30, 56], [3, 46], 5],
+        [[32, 68], [7, 68], 4.5],
+        [[36, 80], [16, 88], 4],
+      ])
       return (
         <g>
-          <Wing side={1} />
-          <Wing side={-1} />
-          <path d={SHIELD} fill="#fff" />
-          <path d="M39 40 L50 47 L61 40 M39 51 L50 58 L61 51" fill="none" stroke="#000" strokeOpacity="0.16" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+          {defs(hexClip)}
+          <Sway on={animated} x={32} y={62} deg={-7}>{w.left}</Sway>
+          <Sway on={animated} x={88} y={62} deg={7}>{w.right}</Sway>
+          <HexFrame p={p} />
+          {/* livro aberto */}
+          <polygon points={pts([[43, 57], [59, 61], [59, 79], [43, 75]])} fill={p[0]} />
+          <polygon points={pts([[77, 57], [61, 61], [61, 79], [77, 75]])} fill={p[1]} />
+          <path d="M47 63 L56 65.5 M47 67.5 L56 70 M64 65.5 L73 63 M64 70 L73 67.5" stroke={p[2]} strokeWidth="1.3" strokeLinecap="round" />
+          <polygon points={pts([[43, 75], [59, 79], [61, 79], [77, 75], [77, 78], [60, 82], [43, 78]])} fill={p[2]} />
+          <Star4 x={60} y={46} r={6.5} p={p} cls={a('rk-breathe')} />
+          {shine}
         </g>
       )
-    case 'ouro':
+    }
+
+    case 'ouro': {
+      const l = Laurel({ p, n: 6, r: 41, from: 96, to: 215, size: 16, cy: 62 })
       return (
         <g>
-          <Leaves side={1} />
-          <Leaves side={-1} />
-          <path d={SHIELD} fill="#fff" />
-          <path d="M50 35 L53.6 43 L62 43.6 L55.6 49 L57.8 57.4 L50 52.8 L42.2 57.4 L44.4 49 L38 43.6 L46.4 43 Z" fill={light} stroke="#000" strokeOpacity="0.12" strokeWidth="1" />
+          {defs(hexClip)}
+          {glow(54)}
+          <Sway on={animated} x={28} y={96} deg={-5}>{l.left}</Sway>
+          <Sway on={animated} x={92} y={96} deg={5}>{l.right}</Sway>
+          <HexFrame p={p} />
+          {/* troféu */}
+          <g className={a('rk-bob')}>
+            <path d="M51 66 C46 66 44 62 45 57 L49 57 M69 66 C74 66 76 62 75 57 L71 57" fill="none" stroke={p[2]} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M49 50 H71 V60 C71 68 66 72 60 72 C54 72 49 68 49 60 Z" fill={p[0]} />
+            <path d="M60 50 H71 V60 C71 68 66 72 60 72 Z" fill={p[1]} />
+            <rect x="57.5" y="72" width="5" height="6" fill={p[2]} />
+            <polygon points={pts([[52, 78], [68, 78], [70, 83], [50, 83]])} fill={p[1]} />
+            <polygon points={pts([[60, 78], [68, 78], [70, 83], [60, 83]])} fill={p[2]} />
+          </g>
+          {animated && <Twinkle x={60} y={42} r={4.5} color={p[0]} />}
+          {animated && <Twinkle x={96} y={28} r={4} delay={1.1} color={p[0]} />}
+          {shine}
         </g>
       )
-    case 'platina':
+    }
+
+    case 'platina': {
+      const w = shardWings(p, [
+        [[38, 70], [8, 30], 6],
+        [[40, 78], [8, 60], 6],
+        [[44, 86], [16, 90], 5],
+        [[42, 62], [24, 34], 4],
+      ])
+      const crown: Pt[] = [[38, 62], [44, 44], [52, 55], [60, 38], [68, 55], [76, 44], [82, 62], [80, 74], [40, 74]]
       return (
-        <g className="rk-bob">
-          {/* cristal alongado com facetas */}
-          <path d="M50 14 L64 30 V62 L50 84 L36 62 V30 Z" fill="#fff" />
-          <path d="M50 14 L64 30 L50 38 L36 30 Z" fill="#000" opacity="0.05" />
-          <path d="M64 30 V62 L50 84 V38 Z" fill="#000" opacity="0.13" />
-          <path d="M36 62 L50 84 L64 62" fill="none" stroke="#000" strokeOpacity="0.08" strokeWidth="1.2" />
-          <path d="M42 32 V54" stroke={light} strokeWidth="3" strokeLinecap="round" />
+        <g>
+          {defs(<polygon points={pts(crown)} />)}
+          {glow(56)}
+          <Sway on={animated} x={42} y={80} deg={-5}>{w.left}</Sway>
+          <Sway on={animated} x={78} y={80} deg={5}>{w.right}</Sway>
+          <polygon points={pts([[34, 46], [48, 32], [52, 36], [40, 48]])} fill={p[1]} />
+          <polygon points={pts([[86, 46], [72, 32], [68, 36], [80, 48]])} fill={p[2]} />
+          <g className={a('rk-bob')}>
+            <polygon points={pts(crown)} fill={p[1]} />
+            <polygon points={pts([[60, 38], [68, 55], [76, 44], [82, 62], [80, 74], [60, 74]])} fill={p[2]} />
+            <polygon points={pts([[38, 62], [44, 44], [52, 55], [60, 38], [60, 52]])} fill={p[0]} opacity="0.55" />
+            <polygon points={pts([[60, 57], [67, 64], [60, 71], [53, 64]])} fill={FIELD} />
+            <polygon points={pts([[60, 59.5], [64.5, 64], [60, 68.5], [55.5, 64]])} fill={p[0]} className={a('rk-breathe')} />
+          </g>
+          <polygon points={pts([[40, 80], [60, 94], [80, 80], [80, 86], [60, 100], [40, 86]])} fill={p[1]} />
+          <polygon points={pts([[60, 94], [80, 80], [80, 86], [60, 100]])} fill={p[2]} />
+          <Star4 x={60} y={20} r={8} p={p} cls={a('rk-breathe')} />
+          {animated && <Twinkle x={20} y={22} r={3.5} delay={0.6} color={p[0]} />}
+          {animated && <Twinkle x={100} y={40} r={3} delay={1.6} color={p[0]} />}
+          {shine}
         </g>
       )
-    case 'diamante':
+    }
+
+    case 'diamante': {
+      const w = shardWings(p, [
+        [[44, 86], [6, 40], 6],
+        [[46, 92], [10, 70], 6],
+        [[50, 96], [26, 98], 5],
+        [[42, 74], [20, 22], 5],
+      ])
       return (
-        <g className="rk-bob">
-          {/* brilhante lapidado */}
-          <path d="M31 36 L40 24 H60 L69 36 L50 78 Z" fill="#fff" />
-          <path d="M31 36 H69" stroke="#000" strokeOpacity="0.12" strokeWidth="1.2" />
-          <path d="M40 24 L45 36 L50 24 L55 36 L60 24" fill="none" stroke="#000" strokeOpacity="0.12" strokeWidth="1.2" />
-          <path d="M45 36 L50 78 L55 36 Z" fill="#000" opacity="0.06" />
-          <path d="M55 36 L69 36 L50 78 Z" fill="#000" opacity="0.13" />
-          <path d="M38 30 L42 26" stroke={light} strokeWidth="3" strokeLinecap="round" />
+        <g>
+          {defs(<polygon points={pts([[42, 44], [78, 44], [88, 56], [60, 92], [32, 56]])} />)}
+          {glow(58)}
+          <Sway on={animated} x={48} y={92} deg={-5}>{w.left}</Sway>
+          <Sway on={animated} x={72} y={92} deg={5}>{w.right}</Sway>
+          <g className={a('rk-bob')}>
+            <polygon points={pts([[42, 44], [52, 44], [48, 56], [32, 56]])} fill={p[0]} />
+            <polygon points={pts([[52, 44], [68, 44], [60, 56], [48, 56]])} fill={p[1]} />
+            <polygon points={pts([[52, 44], [60, 56], [48, 56]])} fill={p[0]} />
+            <polygon points={pts([[68, 44], [78, 44], [88, 56], [72, 56]])} fill={p[2]} />
+            <polygon points={pts([[68, 44], [72, 56], [60, 56]])} fill={p[1]} />
+            <polygon points={pts([[32, 56], [48, 56], [60, 92]])} fill={p[1]} />
+            <polygon points={pts([[48, 56], [60, 56], [60, 92]])} fill={p[0]} />
+            <polygon points={pts([[60, 56], [72, 56], [60, 92]])} fill={p[2]} />
+            <polygon points={pts([[72, 56], [88, 56], [60, 92]])} fill={p[3]} />
+          </g>
+          <Star4 x={60} y={26} r={8} p={p} cls={a('rk-breathe')} />
+          {animated && <Twinkle x={46} y={50} r={4} color="#fff" />}
+          {animated && <Twinkle x={100} y={30} r={3.5} delay={0.9} color={p[0]} />}
+          {animated && <Twinkle x={18} y={54} r={3} delay={1.7} color={p[0]} />}
+          {shine}
         </g>
       )
-    case 'mestre':
+    }
+
+    case 'mestre': {
+      const gold = PAL.ouro
+      const crystals: [Pt, Pt, number][] = [
+        [[46, 94], [28, 58], 7],
+        [[74, 94], [92, 58], 7],
+        [[52, 97], [43, 48], 8.5],
+        [[68, 97], [77, 48], 8.5],
+        [[60, 102], [60, 40], 11],
+      ]
+      const front = 'M20 70 A40 12 0 0 0 100 70'
+      const back = 'M20 70 A40 12 0 0 1 100 70'
       return (
-        <g className="rk-bob">
-          <Wing side={1} />
-          <Wing side={-1} />
-          {/* coroa */}
-          <path d="M30 64 L27 34 L40 46 L50 26 L60 46 L73 34 L70 64 Z" fill="#fff" />
-          <rect x="30" y="64" width="40" height="8" rx="3" fill="#fff" />
-          <path d="M50 64 V72 M40 64 V72 M60 64 V72" stroke="#000" strokeOpacity="0.1" strokeWidth="1.2" />
-          <circle cx="50" cy="54" r="4.4" fill={light} stroke="#000" strokeOpacity="0.15" />
-          <circle cx="38.5" cy="57" r="2.6" fill={light} />
-          <circle cx="61.5" cy="57" r="2.6" fill={light} />
-          <circle cx="27" cy="33" r="2.6" fill="#fff" />
-          <circle cx="50" cy="25" r="3" fill="#fff" />
-          <circle cx="73" cy="33" r="2.6" fill="#fff" />
+        <g>
+          {defs(<polygon points={pts([[60, 42], [67, 70], [60, 100], [53, 70]])} />)}
+          {glow(60, 64)}
+          <g transform="rotate(-14 60 70)">
+            <path d={back} fill="none" stroke={p[2]} strokeWidth="6" strokeLinecap="round" opacity="0.7" />
+          </g>
+          <g className={a('rk-breathe')}>
+            {crystals.map(([b, t, w], i) => (
+              <Shard key={i} base={b} tip={t} w={w} p={p} light={i === 4 ? 0 : 1} dark={i === 4 ? 1 : 2} />
+            ))}
+          </g>
+          <g transform="rotate(-14 60 70)">
+            <path d={front} fill="none" stroke={p[1]} strokeWidth="6" strokeLinecap="round" />
+            <path d={front} fill="none" stroke={p[0]} strokeWidth="2" strokeLinecap="round" opacity="0.8" />
+            {animated && <path className="rk-dash" style={{ animationDuration: '2.2s' }} d={front} fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" pathLength="100" strokeDasharray="12 88" />}
+          </g>
+          <g className={a('rk-bob')}>
+            <polygon points={pts([[42, 36], [40, 18], [50, 27], [60, 12], [70, 27], [80, 18], [78, 36]])} fill={gold[1]} />
+            <polygon points={pts([[60, 12], [70, 27], [80, 18], [78, 36], [60, 36]])} fill={gold[2]} />
+            <polygon points={pts([[42, 36], [40, 18], [50, 27], [60, 12], [60, 22]])} fill={gold[0]} opacity="0.6" />
+            <rect x="40" y="36" width="40" height="5" fill={gold[2]} />
+            <rect x="40" y="36" width="20" height="5" fill={gold[1]} />
+            <polygon points={pts([[60, 25], [63, 29], [60, 33], [57, 29]])} fill={p[1]} />
+          </g>
+          <Star4 x={60} y={4} r={6} p={p} cls={a('rk-breathe')} />
+          {animated &&
+            (
+              [
+                [14, 40, 0, 4],
+                [106, 36, 0.7, 4.5],
+                [100, 98, 1.3, 3.5],
+                [20, 100, 1.9, 3],
+                [88, 12, 2.4, 3],
+              ] as const
+            ).map(([x, y, d, r]) => <Twinkle key={`${x}${y}`} x={x} y={y} r={r} delay={d} color={p[0]} />)}
+          {shine}
         </g>
       )
+    }
   }
 }
 
-/** Emblema do rank. `animated` liga brilho e faíscas. */
+/** Emblema do rank. `animated` liga os movimentos (desligado nos ranks ainda não alcançados). */
 export function RankEmblem({ pos, size = 56, showDivision = true, animated = true }: { pos: number; size?: number; showDivision?: boolean; animated?: boolean }) {
   const id = useId().replace(/[^a-zA-Z0-9]/g, '')
   const tier = tierOf(pos)
-  const ti = TIERS.indexOf(tier)
-  const { base, light } = COLOR[tier.id]
+  const p = PAL[tier.id]
   const div = divisionOf(pos)
-  const badge = Math.max(14, Math.round(size * 0.3))
-  const dark = `color-mix(in srgb, ${base} 68%, #000)`
-
+  const h = Math.max(13, Math.round(size * 0.2))
   return (
     <span className="relative inline-flex shrink-0" style={{ width: size, height: size }} role="img" aria-label={`Rank ${tier.name}${div ? ` ${div}` : ''}`}>
-      <svg viewBox="0 0 100 100" width={size} height={size} className="essential-motion overflow-visible" aria-hidden>
-        <defs>
-          <linearGradient id={`bg${id}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor={base} />
-            <stop offset="1" stopColor={dark} />
-          </linearGradient>
-          <linearGradient id={`hl${id}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#fff" stopOpacity="0.38" />
-            <stop offset="1" stopColor="#fff" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id={`sh${id}`} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#fff" stopOpacity="0" />
-            <stop offset="0.5" stopColor="#fff" stopOpacity="0.55" />
-            <stop offset="1" stopColor="#fff" stopOpacity="0" />
-          </linearGradient>
-          <clipPath id={`cl${id}`}>
-            <rect x="4" y="4" width="92" height="92" rx="28" />
-          </clipPath>
-          <filter id={`ds${id}`} x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="1.5" stdDeviation="1.2" floodColor="#000" floodOpacity="0.25" />
-          </filter>
-        </defs>
-
-        {/* azulejo com o mesmo relevo dos ícones de matéria */}
-        <rect x="4" y="4" width="92" height="92" rx="28" fill={`url(#bg${id})`} />
-        <g clipPath={`url(#cl${id})`}>
-          <rect x="7" y="7" width="86" height="44" rx="25" fill={`url(#hl${id})`} />
-          <rect x="4" y="90" width="92" height="6" fill="#000" opacity="0.14" />
-          {/* brilho passando: do Bronze em diante, mais rápido nos ranks altos */}
-          {animated && ti >= 1 && (
-            <rect className="rk-shine" style={{ animationDuration: `${7 - ti * 0.7}s`, animationDelay: `${ti * 0.3}s` }} x="10" y="-10" width="18" height="120" fill={`url(#sh${id})`} />
-          )}
-        </g>
-
-        <g filter={`url(#ds${id})`}>
-          <Glyph tier={tier.id} light={light} />
-        </g>
-
-        {/* faíscas: do Ouro em diante */}
-        {animated &&
-          ti >= 3 &&
-          (
-            [
-              [16, 18, 0, 5],
-              [86, 22, 0.8, 4],
-              [84, 82, 1.5, 4.5],
-              [14, 78, 2.1, 3.5],
-            ] as const
-          )
-            .slice(0, ti === 3 ? 2 : ti === 6 ? 4 : 3)
-            .map(([x, y, d, r]) => <Twinkle key={`${x}${y}`} x={x} y={y} r={r} delay={d} color={ti === 6 ? light : '#fff'} />)}
+      <svg viewBox="0 0 120 120" width={size} height={size} className="essential-motion overflow-visible" aria-hidden>
+        <Emblem tier={tier.id} id={id} animated={animated} />
       </svg>
-
       {showDivision && div && (
         <span
-          className="absolute grid place-items-center rounded-full bg-white font-display font-extrabold tabular-nums shadow-[0_1px_3px_rgba(16,24,40,0.25)]"
-          style={{ right: -size * 0.06, bottom: -size * 0.06, minWidth: badge, height: badge, padding: `0 ${badge * 0.22}px`, fontSize: badge * 0.48, color: dark }}
+          className="absolute left-1/2 grid -translate-x-1/2 place-items-center rounded-full font-display font-extrabold tracking-wider text-white tabular-nums"
+          style={{ bottom: -h * 0.35, height: h, minWidth: h * 1.7, padding: `0 ${h * 0.35}px`, fontSize: h * 0.58, background: FIELD, boxShadow: `inset 0 0 0 1.5px ${p[1]}` }}
         >
           {div}
         </span>
@@ -216,101 +394,11 @@ export function RankEmblem({ pos, size = 56, showDivision = true, animated = tru
   )
 }
 
-const FLAME = 'M0 0 C -9 -2 -12 -14 -6 -24 C -5 -18 -2 -16 0 -13 C 0 -23 4 -31 2 -42 C 11 -31 15 -16 9 -5 C 6 -1 3 0 0 0 Z'
-
-/** Pontos ao longo do contorno de um quadrado arredondado (para fogo e brasas). */
-function edgePoints(n: number, inset: number): { x: number; y: number; a: number }[] {
-  const pts: { x: number; y: number; a: number }[] = []
-  const lo = inset
-  const hi = 200 - inset
-  const len = (hi - lo) * 4
-  for (let i = 0; i < n; i++) {
-    const d = (i / n) * len
-    const side = Math.floor(d / (hi - lo))
-    const t = (d % (hi - lo)) / (hi - lo)
-    const v = lo + t * (hi - lo)
-    if (side === 0) pts.push({ x: v, y: lo, a: 0 })
-    else if (side === 1) pts.push({ x: hi, y: v, a: 90 })
-    else if (side === 2) pts.push({ x: 200 - v, y: hi, a: 180 })
-    else pts.push({ x: lo, y: 200 - v, a: 270 })
-  }
-  return pts
-}
-
-/** Moldura em volta do emblema: fundo clarinho na cor do rank que ganha vida conforme sobe. */
-export function RankFrame({ pos, size, children }: { pos: number; size: number; children: ReactNode }) {
-  const id = useId().replace(/[^a-zA-Z0-9]/g, '')
-  const tier = tierOf(pos)
-  const ti = TIERS.indexOf(tier)
-  const { base, light } = COLOR[tier.id]
-
+/** Espaço em volta do emblema (o brilho já vem no próprio emblema). */
+export function RankFrame({ size, children }: { pos: number; size: number; children: ReactNode }) {
   return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg viewBox="0 0 200 200" width={size} height={size} className="essential-motion absolute inset-0 overflow-visible" aria-hidden>
-        <defs>
-          <linearGradient id={`fo${id}`} x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0" stopColor="#d10000" />
-            <stop offset="0.35" stopColor="#ff3d00" />
-            <stop offset="0.75" stopColor="#ff8a00" />
-            <stop offset="1" stopColor="#ffc93d" />
-          </linearGradient>
-          <linearGradient id={`fp${id}`} x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0" stopColor="#7c3aed" />
-            <stop offset="1" stopColor="#e879f9" stopOpacity="0.9" />
-          </linearGradient>
-        </defs>
-
-        {/* Mestre: fogo saindo das bordas */}
-        {ti === 6 && (
-          <g>
-            {edgePoints(24, 16).map(({ x, y, a }, i) => {
-              const s = a === 0 ? 0.95 : a === 180 ? 0.5 : 0.7
-              return (
-                <g key={i} transform={`translate(${x} ${y}) rotate(${a}) scale(${s})`}>
-                  <path className="rk-flame" style={{ animationDelay: `${(i * 0.13) % 0.9}s`, animationDuration: `${0.7 + (i % 4) * 0.12}s` }} d={FLAME} fill={i % 3 === 0 ? `url(#fp${id})` : `url(#fo${id})`} />
-                  <g transform="translate(1 -3) scale(0.5)">
-                    <path className="rk-flame" style={{ animationDelay: `${(i * 0.21) % 0.8}s` }} d={FLAME} fill="#ffe27a" />
-                  </g>
-                </g>
-              )
-            })}
-            {Array.from({ length: 9 }, (_, i) => (
-              <circle key={`e${i}`} className="rk-ember" style={{ animationDelay: `${(i * 0.37) % 2.2}s` }} cx={30 + i * 17} cy={14} r={1.6 + (i % 3) * 0.6} fill={i % 2 ? '#ffd34d' : '#ff8a00'} />
-            ))}
-          </g>
-        )}
-
-        {/* Aura que pulsa: do Ouro em diante */}
-        {ti >= 3 && <rect className="rk-pulse" x="6" y="6" width="188" height="188" rx="62" fill="none" stroke={base} strokeOpacity="0.35" strokeWidth="6" />}
-
-        {/* fundo clarinho + contorno */}
-        <rect x="12" y="12" width="176" height="176" rx="56" fill={`color-mix(in srgb, ${base} 12%, #fff)`} stroke={`color-mix(in srgb, ${base} 35%, #fff)`} strokeWidth="3" />
-
-        {/* contorno pontilhado que anda: Platina e Diamante */}
-        {(ti === 4 || ti === 5) && (
-          <rect className="rk-dash" style={{ animationDuration: '14s' }} x="5" y="5" width="190" height="190" rx="64" fill="none" stroke={base} strokeOpacity="0.55" strokeWidth="2.5" strokeLinecap="round" pathLength="100" strokeDasharray="0.6 2.4" />
-        )}
-
-        {/* luz correndo no contorno: da Prata em diante, mais rápida e longa nos ranks altos */}
-        {ti >= 2 && (
-          <rect
-            className="rk-dash"
-            style={{ animationDuration: `${Math.max(2.4, 6 - ti * 0.6)}s` }}
-            x="12"
-            y="12"
-            width="176"
-            height="176"
-            rx="56"
-            fill="none"
-            stroke={ti >= 5 ? '#fff' : light}
-            strokeWidth="5"
-            strokeLinecap="round"
-            pathLength="100"
-            strokeDasharray={`${ti >= 5 ? 14 : 9} ${ti >= 5 ? 86 : 91}`}
-          />
-        )}
-      </svg>
-      <div className="absolute inset-0 grid place-items-center">{children}</div>
+    <div className="relative grid shrink-0 place-items-center" style={{ width: size, height: size }}>
+      {children}
     </div>
   )
 }

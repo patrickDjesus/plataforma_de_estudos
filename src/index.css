@@ -122,6 +122,12 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 @keyframes rk-dash { to { stroke-dashoffset: -100 } }
 @keyframes rk-bob { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-2.5px) } }
 .rk-dash { animation: rk-dash 4s linear infinite; }
+@keyframes rk-flap { 0%, 100% { transform: rotate(0deg) } 50% { transform: rotate(var(--rk-a, -6deg)) } }
+@keyframes rk-breathe { 0%, 100% { transform: scale(1) } 50% { transform: scale(1.05) } }
+@keyframes rk-turn { to { transform: rotate(360deg) } }
+.rk-flap { animation: rk-flap 2.6s ease-in-out infinite; transform-box: view-box; }
+.rk-breathe { animation: rk-breathe 2.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.rk-turn { animation: rk-turn 9s linear infinite; transform-box: fill-box; transform-origin: center; }
 .rk-bob { animation: rk-bob 3s ease-in-out infinite; }
 .rk-spin { animation: rk-spin 5s linear infinite; transform-box: view-box; transform-origin: 100px 100px; }
 .rk-spin-rev { animation: rk-spin 30s linear infinite reverse; transform-box: view-box; transform-origin: 100px 100px; }
