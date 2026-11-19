@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react'
-import { GraduationCap, GripVertical, Languages, Layers, ListTree, Plus, School, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { GripVertical, Layers, Plus, Trash2 } from 'lucide-react'
 import { AREAS, useSubjects, useTopics } from '../db/hooks'
 import { addSubject, addTopic, deleteSubject, deleteTopic, reorderTopics, setTopicDone, updateSubject, updateTopic } from '../db/repo'
 import type { AreaId, Subject, Topic } from '../db/types'
@@ -9,50 +9,34 @@ import { askConfirm } from '../components/confirm'
 import { useMastery } from '../db/mastery'
 import { masteryColor, masteryLabel } from '../lib/mastery'
 import { SUBJECT_ICONS, SubjectIcon, guessIcon } from '../components/SubjectIcon'
-import { Btn, Card, Field, Modal, inputCls } from '../components/ui'
-import { DashShell, HeroStat, PageHeader, TileIcon } from '../components/dash'
+import { Btn, Card, Field, Modal, PageHeader, inputCls } from '../components/ui'
 
 export function SubjectsPage() {
   const subjects = useSubjects()
   const topics = useTopics()
   const [openId, setOpenId] = useState<string | null>(null)
   const open = subjects.find((s) => s.id === openId)
-  const [area, setArea] = useState<AreaId>('faculdade')
-  const current = AREAS.find((a) => a.id === area)!
-  const doneTopics = topics.filter((t) => t.done).length
   return (
     <>
-      <PageHeader
-        icon={<Layers size={28} />}
-        color="#3f7a73"
-        title="Matérias"
-        subtitle="O planejador usa peso, obrigatoriedade e prazo."
-        stats={
-          <>
-            <HeroStat tile={<TileIcon color="#3f7a73"><Layers size={22} /></TileIcon>} value={subjects.length} label="matérias cadastradas" />
-            <HeroStat tile={<TileIcon color="#c4471d"><ListTree size={22} /></TileIcon>} value={<>{doneTopics}<span className="text-sm text-muted">/{topics.length}</span></>} label="tópicos estudados" />
-          </>
-        }
-      />
-      <DashShell<AreaId>
-        value={area}
-        onChange={setArea}
-        items={AREAS.map((a) => ({ id: a.id, label: a.name, icon: AREA_ICON[a.id] }))}
-      >
-        <AreaSection bare areaId={current.id} name={current.name} subjects={subjects.filter((s) => s.areaId === current.id)} topics={topics} onOpen={setOpenId} />
-      </DashShell>
+      <PageHeader icon={<Layers size={24} />} title="Matérias" subtitle="Organize suas áreas, matérias e tópicos. O planejador usa peso, obrigatoriedade e prazo." />
+      <div className="space-y-6">
+        {AREAS.map((area) => (
+          <AreaSection
+            key={area.id}
+            areaId={area.id}
+            name={area.name}
+            subjects={subjects.filter((s) => s.areaId === area.id)}
+            topics={topics}
+            onOpen={setOpenId}
+          />
+        ))}
+      </div>
       {open && <SubjectModal subject={open} topics={topics.filter((t) => t.subjectId === open.id)} onClose={() => setOpenId(null)} />}
     </>
   )
 }
 
-const AREA_ICON: Record<AreaId, ReactNode> = {
-  faculdade: <GraduationCap size={20} />,
-  ensino: <School size={20} />,
-  idiomas: <Languages size={20} />,
-}
-
-function AreaSection({ areaId, name, subjects, topics, onOpen, bare = false }: { areaId: AreaId; name: string; subjects: Subject[]; topics: Topic[]; onOpen: (id: string) => void; bare?: boolean }) {
+function AreaSection({ areaId, name, subjects, topics, onOpen }: { areaId: AreaId; name: string; subjects: Subject[]; topics: Topic[]; onOpen: (id: string) => void }) {
   const mastery = useMastery()
   const [newName, setNewName] = useState('')
   const add = async () => {
@@ -62,7 +46,7 @@ function AreaSection({ areaId, name, subjects, topics, onOpen, bare = false }: {
     setNewName('')
   }
   return (
-    <Card className={bare ? 'border-0 p-0 shadow-none' : 'p-6'}>
+    <Card className="p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2.5 text-xl font-bold">
           <span className="h-3 w-3 rounded-full" style={{ background: AREA_COLOR[areaId], boxShadow: `0 0 0 4px ${tint(AREA_COLOR[areaId], 0.15)}` }} />
@@ -83,7 +67,7 @@ function AreaSection({ areaId, name, subjects, topics, onOpen, bare = false }: {
         </div>
       </div>
       {subjects.length === 0 ? (
-        <p className="rounded-2xl bg-[#f4f4f2] px-4 py-6 text-center text-sm text-muted">Nenhuma matéria ainda. Digite um nome acima, por exemplo “Cálculo I”.</p>
+        <p className="rounded-2xl bg-[#f6f7f9] px-4 py-6 text-center text-sm text-muted">Nenhuma matéria ainda. Digite um nome acima, por exemplo “Cálculo I”.</p>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-4">
           {subjects.map((s) => (
@@ -100,36 +84,36 @@ function SubjectCard({ subject: s, topics, mastery, onOpen }: { subject: Subject
   const pct = topics.length ? Math.round((done / topics.length) * 100) : 0
   const deadline = s.deadline ? daysUntil(s.deadline) : null
   return (
-    <button onClick={onOpen} className="group flex flex-col overflow-hidden rounded-lg border border-line bg-white text-left transition">
-      <div className="relative grid h-32 place-items-center overflow-hidden" style={{ background: tint(s.color, 0.07), borderBottom: `2px solid ${s.color}` }}>
-        <span className="absolute -top-6 -right-6 h-20 w-20 rounded-md" style={{ background: tint(s.color, 0.12) }} />
-        <span className="absolute bottom-3 left-4 h-2.5 w-2.5 rotate-45 rounded-md" style={{ background: tint(s.color, 0.45) }} />
+    <button onClick={onOpen} className="group flex flex-col overflow-hidden rounded-[18px] border border-line bg-white text-left transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_-16px_rgba(16,24,40,0.25)]">
+      <div className="relative grid h-32 place-items-center overflow-hidden" style={{ background: `radial-gradient(120% 90% at 50% 100%, ${tint(s.color, 0.22)}, ${tint(s.color, 0.05)})` }}>
+        <span className="absolute -top-6 -right-6 h-20 w-20 rounded-full" style={{ background: tint(s.color, 0.12) }} />
+        <span className="absolute bottom-3 left-4 h-2.5 w-2.5 rotate-45 rounded-[3px]" style={{ background: tint(s.color, 0.45) }} />
         <span className="absolute top-5 left-8 h-1.5 w-1.5 rounded-full" style={{ background: s.color }} />
         <span className="transition group-hover:scale-105 group-hover:-rotate-3">
           <SubjectIcon subject={s} size={70} />
         </span>
       </div>
-      <div className="h-1 bg-[#ececea]">
+      <div className="h-1 bg-[#eef0f4]">
         <div className="h-full" style={{ width: `${pct}%`, background: s.color }} />
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
         <div className="flex flex-wrap gap-1.5">
-          <span className="rounded-md bg-brand-soft px-2.5 py-0.5 text-[11px] font-semibold text-brand">Progresso: {pct}%</span>
+          <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-[11px] font-semibold text-brand">Progresso: {pct}%</span>
           {mastery !== undefined && (
-            <span className="rounded-md px-2.5 py-0.5 text-[11px] font-bold text-white" style={{ background: masteryColor(mastery) }} title="Média do domínio dos tópicos que você já praticou">
+            <span className="rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white" style={{ background: masteryColor(mastery) }} title="Média do domínio dos tópicos que você já praticou">
               Domínio: {mastery}%
             </span>
           )}
-          {s.mandatory && <span className="rounded-md bg-[#efefed] px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">Obrigatória</span>}
+          {s.mandatory && <span className="rounded-full bg-[#f1f2f5] px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">Obrigatória</span>}
           {deadline !== null && deadline >= 0 && (
-            <span className="rounded-md bg-rose-50 px-2.5 py-0.5 text-[11px] font-semibold text-rose-600">{deadline === 0 ? 'Prazo hoje' : `Prazo em ${deadline}d`}</span>
+            <span className="rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-semibold text-rose-600">{deadline === 0 ? 'Prazo hoje' : `Prazo em ${deadline}d`}</span>
           )}
         </div>
         <div className="font-display text-[15px] font-bold">{s.name}</div>
         <div className="text-xs text-muted">
           {topics.length} tópico(s) · peso {s.weight}
         </div>
-        <span className="mt-auto rounded-xl bg-[#efefed] py-2 text-center text-xs font-semibold text-ink transition group-hover:bg-brand-soft group-hover:text-brand">Ver tópicos e ajustes</span>
+        <span className="mt-auto rounded-xl bg-[#f1f2f5] py-2 text-center text-xs font-semibold text-ink transition group-hover:bg-brand-soft group-hover:text-brand">Ver tópicos e ajustes</span>
       </div>
     </button>
   )
@@ -166,7 +150,7 @@ function SubjectModal({ subject: s, topics, onClose }: { subject: Subject; topic
             id="subject-name"
             defaultValue={s.name}
             onBlur={(e) => e.target.value.trim() && e.target.value !== s.name && updateSubject(s.id, { name: e.target.value.trim() })}
-            className="w-full min-w-0 rounded-lg bg-transparent px-1 font-display text-lg font-bold outline-none focus:bg-[#f4f4f2]"
+            className="w-full min-w-0 rounded-lg bg-transparent px-1 font-display text-lg font-bold outline-none focus:bg-[#f6f7f9]"
             aria-label="Nome da matéria"
           />
         </span>
@@ -204,7 +188,7 @@ function SubjectModal({ subject: s, topics, onClose }: { subject: Subject; topic
                   key={w}
                   onClick={() => updateSubject(s.id, { weight: w })}
                   className="h-9 flex-1 rounded-xl text-sm font-bold transition"
-                  style={w <= s.weight ? { background: s.color, color: '#fff' } : { background: '#efefed', color: '#6b6b66' }}
+                  style={w <= s.weight ? { background: s.color, color: '#fff' } : { background: '#f1f2f5', color: '#6b7385' }}
                 >
                   {w}
                 </button>
@@ -215,11 +199,11 @@ function SubjectModal({ subject: s, topics, onClose }: { subject: Subject; topic
             <Field label="Obrigatória">
               <button
                 onClick={() => updateSubject(s.id, { mandatory: !s.mandatory })}
-                className={`flex h-[42px] w-full items-center justify-between rounded-xl px-3 text-sm font-semibold transition ${s.mandatory ? 'bg-brand-soft text-brand' : 'bg-[#efefed] text-muted'}`}
+                className={`flex h-[42px] w-full items-center justify-between rounded-xl px-3 text-sm font-semibold transition ${s.mandatory ? 'bg-brand-soft text-brand' : 'bg-[#f1f2f5] text-muted'}`}
               >
                 {s.mandatory ? 'Sim' : 'Não'}
-                <span className={`relative h-5 w-9 rounded-md transition ${s.mandatory ? 'bg-brand' : 'bg-slate-300'}`}>
-                  <span className={`absolute top-0.5 h-4 w-4 rounded-md bg-white transition-all ${s.mandatory ? 'left-[18px]' : 'left-0.5'}`} />
+                <span className={`relative h-5 w-9 rounded-full transition ${s.mandatory ? 'bg-brand' : 'bg-slate-300'}`}>
+                  <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${s.mandatory ? 'left-[18px]' : 'left-0.5'}`} />
                 </span>
               </button>
             </Field>
@@ -248,7 +232,7 @@ function SubjectModal({ subject: s, topics, onClose }: { subject: Subject; topic
               {topics.filter((t) => t.done).length}/{topics.length} concluídos
             </span>
           </div>
-          <div className="thin-scroll max-h-[340px] space-y-1 overflow-y-auto rounded-2xl bg-[#f4f4f2] p-2">
+          <div className="thin-scroll max-h-[340px] space-y-1 overflow-y-auto rounded-2xl bg-[#f6f7f9] p-2">
             {topics.length === 0 && <p className="px-2 py-6 text-center text-sm text-muted">Adicione o primeiro tópico abaixo.</p>}
             {topics.map((t) => (
               <div
@@ -257,7 +241,7 @@ function SubjectModal({ subject: s, topics, onClose }: { subject: Subject; topic
                 onDragStart={() => setDragId(t.id)}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => onDrop(t.id)}
-                className={`group flex items-center gap-2 rounded-xl bg-white px-2 py-2 ${dragId === t.id ? 'opacity-40' : ''}`}
+                className={`group flex items-center gap-2 rounded-xl bg-white px-2 py-2 shadow-[0_1px_2px_rgba(16,24,40,0.05)] ${dragId === t.id ? 'opacity-40' : ''}`}
               >
                 <GripVertical size={14} className="cursor-grab text-slate-300" />
                 <input id={`topic-done-${t.id}`} type="checkbox" checked={t.done} onChange={(e) => setTopicDone(t.id, e.target.checked)} style={{ accentColor: s.color }} className="h-4 w-4" />
@@ -269,7 +253,7 @@ function SubjectModal({ subject: s, topics, onClose }: { subject: Subject; topic
                 />
                 {t.studiedSeconds > 0 && <span className="text-xs text-muted">{fmtDuration(t.studiedSeconds)}</span>}
                 {mastery.topics.has(t.id) && (
-                  <span className="rounded-md px-1.5 py-0.5 text-[10px] font-extrabold text-white" style={{ background: masteryColor(mastery.topics.get(t.id)!.value) }} title={`Domínio: ${masteryLabel(mastery.topics.get(t.id)!.value)}`}>
+                  <span className="rounded-full px-1.5 py-0.5 text-[10px] font-extrabold text-white" style={{ background: masteryColor(mastery.topics.get(t.id)!.value) }} title={`Domínio: ${masteryLabel(mastery.topics.get(t.id)!.value)}`}>
                     {mastery.topics.get(t.id)!.value}%
                   </span>
                 )}

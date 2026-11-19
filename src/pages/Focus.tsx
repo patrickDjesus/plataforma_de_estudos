@@ -24,11 +24,11 @@ import { LogoMark } from '../components/Logo'
 type Step = 'antes' | 'durante' | 'depois'
 const GOALS = ['Entender o conceito', 'Fazer exercícios', 'Revisar minhas anotações', 'Criar flashcards', 'Resumir com minhas palavras']
 const CONFIDENCE = [
-  { v: 1, emoji: '', label: 'Perdido' },
-  { v: 2, emoji: '', label: 'Inseguro' },
-  { v: 3, emoji: '', label: 'Razoável' },
-  { v: 4, emoji: '', label: 'Confiante' },
-  { v: 5, emoji: '', label: 'Domino' },
+  { v: 1, emoji: '😵', label: 'Perdido' },
+  { v: 2, emoji: '😕', label: 'Inseguro' },
+  { v: 3, emoji: '🙂', label: 'Razoável' },
+  { v: 4, emoji: '😃', label: 'Confiante' },
+  { v: 5, emoji: '🤩', label: 'Domino' },
 ]
 
 function beep() {
@@ -93,7 +93,7 @@ export function FocusPage() {
   const block = data?.block
   const subject = data?.subject
   const topic = data?.topic
-  const color = subject?.color ?? '#c4471d'
+  const color = subject?.color ?? '#3e63f2'
   const total = block ? Math.max(10, block.end - block.start) : 50
   const phases = useMemo(() => buildPhases(total, settings.focusMinutes ?? 25, settings.focusPauseMinutes ?? 5), [total, settings.focusMinutes, settings.focusPauseMinutes])
   const phase = phases[phaseIdx]
@@ -190,7 +190,7 @@ export function FocusPage() {
       () =>
         showMascot({
           pose: 'comemorando',
-          title: 'Bloco concluído!',
+          title: 'Bloco concluído! 🎉',
           text: `${title}${confidence ? ` · confiança ${confidence}/5` : ''}.${topicDone ? ' Agendei a primeira revisão para amanhã.' : ''}`,
           autoHideMs: 7000,
         }),
@@ -208,13 +208,13 @@ export function FocusPage() {
       {step === 'antes' && (
         <div className="capi-pop mx-auto grid max-w-5xl items-center gap-10 px-6 py-10 lg:grid-cols-[280px_1fr]">
           <div className="flex flex-col items-center">
-            <div className="relative mb-3 rounded-lg border border-line bg-white px-5 py-3 text-center font-display text-lg font-bold shadow-sm">
+            <div className="relative mb-3 rounded-[20px] border border-line bg-white px-5 py-3 text-center font-display text-lg font-bold shadow-sm">
               O que você quer conseguir neste bloco?
               <span className="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 border-r border-b border-line bg-white" />
             </div>
             <Capybara pose="pensando" size={170} />
           </div>
-          <div className="rounded-xl border border-line bg-white p-8">
+          <div className="rounded-[28px] border border-line bg-white p-8 shadow-[0_20px_50px_-28px_rgba(16,24,40,0.35)]">
             <div className="mb-5 flex items-center gap-3">
               <SubjectIcon subject={subject} size={52} />
               <div>
@@ -238,18 +238,18 @@ export function FocusPage() {
               onValue={setGoal}
               rows={2}
               placeholder="Ex.: entender a diferença entre velocidade média e instantânea"
-              className="w-full resize-none rounded-2xl border border-line bg-[#f7f7f5] px-4 py-3 outline-none focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10"
+              className="w-full resize-none rounded-2xl border border-line bg-[#f8f9fb] px-4 py-3 outline-none focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10"
             />
             <div className="mt-2 flex flex-wrap gap-1.5">
               {GOALS.map((g) => (
-                <button key={g} onClick={() => setGoal(g)} className="rounded-md bg-[#efefed] px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-[#e7e7e4]">
+                <button key={g} onClick={() => setGoal(g)} className="rounded-full bg-[#f1f2f5] px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-[#e8e9ee]">
                   {g}
                 </button>
               ))}
             </div>
             <button
               onClick={begin}
-              className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-display text-lg font-bold text-white transition"
+              className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-display text-lg font-bold text-white transition hover:-translate-y-0.5"
               style={{ background: color, boxShadow: `0 16px 34px -14px ${color}` }}
             >
               <Play size={20} /> Começar foco
@@ -262,19 +262,19 @@ export function FocusPage() {
       {step === 'durante' && phase && (
         <div className={`mx-auto grid max-w-6xl gap-6 px-6 py-6 ${showNote && phase.kind === 'foco' ? 'lg:grid-cols-[360px_1fr]' : ''}`}>
           <div className="flex flex-col items-center">
-            <div className="text-xs font-bold tracking-widest uppercase" style={{ color: phase.kind === 'foco' ? color : '#4d7a57' }}>
+            <div className="text-xs font-bold tracking-widest uppercase" style={{ color: phase.kind === 'foco' ? color : '#10b981' }}>
               {phase.kind === 'foco' ? `Foco ${focusDone + 1} de ${focusTotal}` : 'Pausa'}
             </div>
             {/* anel do tempo */}
             <div className="relative my-4 grid h-64 w-64 place-items-center">
               <svg width="256" height="256" className="absolute inset-0 -rotate-90">
-                <circle cx="128" cy="128" r="116" fill="none" stroke="#e7e7e4" strokeWidth="14" />
+                <circle cx="128" cy="128" r="116" fill="none" stroke="#eceef3" strokeWidth="14" />
                 <circle
                   cx="128"
                   cy="128"
                   r="116"
                   fill="none"
-                  stroke={phase.kind === 'foco' ? color : '#4d7a57'}
+                  stroke={phase.kind === 'foco' ? color : '#10b981'}
                   strokeWidth="14"
                   strokeLinecap="round"
                   strokeDasharray={2 * Math.PI * 116}
@@ -292,7 +292,7 @@ export function FocusPage() {
             {phase.kind === 'pausa' && <Capybara pose="relaxando" size={120} />}
             {goal && phase.kind === 'foco' && (
               <div className="mb-3 max-w-xs rounded-2xl px-4 py-2 text-center text-sm" style={{ background: tint(color, 0.08), color: `color-mix(in srgb, ${color} 80%, #000)` }}>
-                {goal}
+                🎯 {goal}
               </div>
             )}
             <div className="flex flex-wrap justify-center gap-2">
@@ -321,12 +321,12 @@ export function FocusPage() {
             )}
             <div className="mt-4 flex gap-1.5">
               {phases.map((p, i) => (
-                <span key={i} className={`h-2 rounded-full ${p.kind === 'foco' ? 'w-8' : 'w-3'}`} style={{ background: i < phaseIdx ? (p.kind === 'foco' ? color : '#4d7a57') : i === phaseIdx ? tint(p.kind === 'foco' ? color : '#4d7a57', 0.5) : '#e7e7e4' }} />
+                <span key={i} className={`h-2 rounded-full ${p.kind === 'foco' ? 'w-8' : 'w-3'}`} style={{ background: i < phaseIdx ? (p.kind === 'foco' ? color : '#10b981') : i === phaseIdx ? tint(p.kind === 'foco' ? color : '#10b981', 0.5) : '#e3e6ee' }} />
               ))}
             </div>
           </div>
           {showNote && phase.kind === 'foco' && (
-            <div className="min-w-0 rounded-xl border border-line bg-white px-6 py-5 shadow-sm">
+            <div className="min-w-0 rounded-[24px] border border-line bg-white px-6 py-5 shadow-sm">
               {note ? (
                 <>
                   <div className="mb-2 text-xs font-semibold text-muted">Suas anotações · salvas automaticamente</div>
@@ -345,9 +345,9 @@ export function FocusPage() {
         <div className="capi-pop mx-auto max-w-3xl px-6 py-8">
           <div className="mb-6 flex items-end gap-3">
             <Capybara pose="comemorando" size={110} />
-            <div className="mb-6 rounded-lg border border-line bg-white px-5 py-3 font-display text-lg font-bold shadow-sm">Boa! Antes de fechar, como foi?</div>
+            <div className="mb-6 rounded-[20px] border border-line bg-white px-5 py-3 font-display text-lg font-bold shadow-sm">Boa! Antes de fechar, como foi?</div>
           </div>
-          <div className="space-y-5 rounded-xl border border-line bg-white p-7">
+          <div className="space-y-5 rounded-[28px] border border-line bg-white p-7 shadow-[0_20px_50px_-28px_rgba(16,24,40,0.35)]">
             <div className="text-sm text-muted">
               {title} · {studied} min de foco{goal ? ` · objetivo: ${goal}` : ''}
             </div>
@@ -378,7 +378,7 @@ export function FocusPage() {
               ) : (
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-sans text-sm font-bold">Desafio rápido (3 itens)</h3>
+                    <h3 className="font-sans text-sm font-bold">⚡ Desafio rápido (3 itens)</h3>
                     <p className="text-xs text-muted">{isReview ? 'Teste sua memória: o resultado define a próxima revisão.' : 'Teste agora o que ficou do bloco. Leva uns 2 minutos.'}</p>
                   </div>
                   <button onClick={() => setQuiz('aberto')} disabled={!block.subjectId} className="rounded-xl px-4 py-2 text-sm font-bold text-white disabled:opacity-50" style={{ background: color }}>
@@ -398,7 +398,7 @@ export function FocusPage() {
                     className={`rounded-2xl border py-2.5 text-center transition ${confidence === c.v ? 'border-transparent text-white' : 'border-line hover:bg-slate-50'}`}
                     style={confidence === c.v ? { background: color } : undefined}
                   >
-                    <div className="font-display text-2xl">{c.v}</div>
+                    <div className="text-2xl">{c.emoji}</div>
                     <div className="text-[11px] font-bold">{c.label}</div>
                   </button>
                 ))}
@@ -415,7 +415,7 @@ export function FocusPage() {
                 onValue={setRecall}
                 rows={5}
                 placeholder="O que eu lembro sobre o tópico…"
-                className="w-full rounded-2xl border border-line bg-[#f7f7f5] px-4 py-3 text-sm outline-none focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10"
+                className="w-full rounded-2xl border border-line bg-[#f8f9fb] px-4 py-3 text-sm outline-none focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10"
               />
               {recall.trim() && note && (
                 <button onClick={() => setCompare(!compare)} className="mt-2 text-xs font-bold text-brand">
@@ -424,7 +424,7 @@ export function FocusPage() {
               )}
               {compare && note && (
                 <div className="mt-2 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl bg-[#f4f4f2] p-3 text-sm whitespace-pre-wrap">
+                  <div className="rounded-2xl bg-[#f6f7f9] p-3 text-sm whitespace-pre-wrap">
                     <div className="mb-1 text-[11px] font-bold text-muted uppercase">O que lembrei</div>
                     {recall}
                   </div>
@@ -447,6 +447,7 @@ export function FocusPage() {
                       className={`rounded-2xl border py-2.5 text-center ${rating === r ? 'border-transparent text-white' : 'border-line hover:bg-slate-50'}`}
                       style={rating === r ? { background: color } : undefined}
                     >
+                      <div className="text-xl">{RATING_LABEL[r].emoji}</div>
                       <div className="text-xs font-bold">{RATING_LABEL[r].label}</div>
                     </button>
                   ))}
@@ -455,7 +456,7 @@ export function FocusPage() {
             ) : (
               topic &&
               !topic.done && (
-                <label className="flex cursor-pointer items-center gap-3 rounded-2xl bg-[#f4f4f2] px-4 py-3 text-sm font-semibold">
+                <label className="flex cursor-pointer items-center gap-3 rounded-2xl bg-[#f6f7f9] px-4 py-3 text-sm font-semibold">
                   <input type="checkbox" className="h-5 w-5" style={{ accentColor: color }} checked={topicDone} onChange={(e) => setTopicDoneState(e.target.checked)} />
                   Concluí o tópico "{topic.name}" (começa a revisão espaçada amanhã)
                 </label>
@@ -465,7 +466,7 @@ export function FocusPage() {
             <button
               onClick={finish}
               disabled={saving || (isReview && !rating)}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-display text-lg font-bold text-white transition disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-display text-lg font-bold text-white transition hover:-translate-y-0.5 disabled:opacity-50"
               style={{ background: color, boxShadow: `0 16px 34px -14px ${color}` }}
             >
               <Check size={20} /> {saving ? 'Salvando…' : 'Concluir bloco'}
@@ -478,9 +479,9 @@ export function FocusPage() {
   )
 }
 
-function Shell({ children, onClose, color = '#c4471d', title }: { children: React.ReactNode; onClose: () => void; color?: string; title?: string }) {
+function Shell({ children, onClose, color = '#3e63f2', title }: { children: React.ReactNode; onClose: () => void; color?: string; title?: string }) {
   return (
-    <div className="page-in relative min-h-screen overflow-hidden" style={{ background: '#ffffff', borderTop: `4px solid ${color}` }}>
+    <div className="page-in relative min-h-screen overflow-hidden" style={{ background: `radial-gradient(900px 500px at 50% -10%, ${tint(color, 0.14)}, transparent 70%), #f3f4f7` }}>
       <header className="relative z-10 flex items-center justify-between gap-4 px-6 py-5">
         <div className="flex items-center gap-2.5">
           <LogoMark size={36} />
@@ -489,7 +490,7 @@ function Shell({ children, onClose, color = '#c4471d', title }: { children: Reac
             {title && <div className="mt-1 max-w-[50vw] truncate text-xs text-muted">{title}</div>}
           </div>
         </div>
-        <button onClick={onClose} className="flex items-center gap-1.5 rounded-md bg-white/80 px-3.5 py-2 text-sm font-semibold text-slate-600 backdrop-blur hover:bg-white" title="Sair (o cronômetro continua no topo do site)">
+        <button onClick={onClose} className="flex items-center gap-1.5 rounded-full bg-white/80 px-3.5 py-2 text-sm font-semibold text-slate-600 backdrop-blur hover:bg-white" title="Sair (o cronômetro continua no topo do site)">
           <X size={16} /> Sair
         </button>
       </header>

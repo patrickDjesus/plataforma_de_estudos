@@ -186,7 +186,7 @@ export function CheckInPage() {
                     <div className="text-xs text-muted">{mins ? `${(mins / 60).toFixed(1).replace('.0', '')}h livres` : 'sem estudo'}</div>
                   </div>
                   {/* Linha do tempo 6h–24h */}
-                  <div className="relative hidden h-7 flex-1 overflow-hidden rounded-md bg-[#efefed] sm:block">
+                  <div className="relative hidden h-7 flex-1 overflow-hidden rounded-full bg-[#f1f2f5] sm:block">
                     {[9, 12, 15, 18, 21].map((h) => (
                       <span key={h} className="absolute top-0 bottom-0 w-px bg-white" style={{ left: `${((h - 6) / 18) * 100}%` }} />
                     ))}
@@ -197,7 +197,7 @@ export function CheckInPage() {
                       return (
                         <span
                           key={i}
-                          className="absolute top-1 bottom-1 rounded-sm bg-brand"
+                          className="absolute top-1 bottom-1 rounded-full bg-gradient-to-r from-[#5b7cff] to-[#3e63f2] shadow-[0_4px_10px_-4px_rgba(62,99,242,0.8)]"
                           style={{ left: `${a * 100}%`, width: `${(b - a) * 100}%` }}
                         />
                       )
@@ -208,7 +208,7 @@ export function CheckInPage() {
                       <button
                         key={p.label}
                         onClick={() => addPreset(day, p.start, p.end)}
-                        className="rounded-md border border-line px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-brand/40 hover:bg-brand-soft hover:text-brand"
+                        className="rounded-full border border-line px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-brand/40 hover:bg-brand-soft hover:text-brand"
                         title={`${fmtTime(p.start)}–${fmtTime(p.end)}`}
                       >
                         + {p.label}
@@ -272,9 +272,12 @@ export function CheckInPage() {
   }
 
   return (
-    <div className="page-in relative flex min-h-screen flex-col overflow-hidden bg-[#ffffff]">
+    <div className="page-in relative flex min-h-screen flex-col overflow-hidden bg-[#f3f4f7]">
       {/* fundo decorativo */}
       <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-40 -left-40 h-[520px] w-[520px] rounded-full bg-[#3e63f2]/12 blur-3xl" />
+        <div className="absolute top-1/3 -right-40 h-[480px] w-[480px] rounded-full bg-[#ff9a3d]/12 blur-3xl" />
+        <div className="absolute -bottom-40 left-1/3 h-[420px] w-[420px] rounded-full bg-[#2fd89a]/10 blur-3xl" />
       </div>
 
       {/* topo */}
@@ -295,11 +298,11 @@ export function CheckInPage() {
                 <li key={x.id} className="flex items-center gap-2">
                   <button
                     onClick={() => i <= stepIdx && setStep(x.id)}
-                    className={`flex items-center gap-2 rounded-md py-1.5 pr-3.5 pl-1.5 text-sm font-semibold transition ${
+                    className={`flex items-center gap-2 rounded-full py-1.5 pr-3.5 pl-1.5 text-sm font-semibold transition ${
                       state === 'atual' ? 'bg-white text-ink shadow-sm' : state === 'feito' ? 'text-brand' : 'text-muted'
                     }`}
                   >
-                    <span className={`grid h-7 w-7 place-items-center rounded-md ${state === 'depois' ? 'bg-white/70 text-muted' : 'bg-brand text-white'}`}>
+                    <span className={`grid h-7 w-7 place-items-center rounded-full ${state === 'depois' ? 'bg-white/70 text-muted' : 'bg-brand text-white'}`}>
                       {state === 'feito' ? <Check size={15} /> : <Icon size={15} />}
                     </span>
                     {x.label}
@@ -312,7 +315,7 @@ export function CheckInPage() {
         )}
         <button
           onClick={() => navigate(existing ? '/calendario' : '/materias')}
-          className="flex items-center gap-1.5 rounded-md bg-white/70 px-3.5 py-2 text-sm font-semibold text-slate-600 backdrop-blur hover:bg-white"
+          className="flex items-center gap-1.5 rounded-full bg-white/70 px-3.5 py-2 text-sm font-semibold text-slate-600 backdrop-blur hover:bg-white"
           title={existing ? 'Voltar sem mudar nada' : 'Entrar no site sem planejar agora'}
         >
           <X size={16} /> {existing ? 'Fechar' : 'Pular por agora'}
@@ -322,7 +325,7 @@ export function CheckInPage() {
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 pb-6 lg:flex-row lg:items-start lg:gap-10">
         {/* Capi perguntando */}
         <aside className="flex shrink-0 items-end gap-2 lg:sticky lg:top-8 lg:w-[300px] lg:flex-col lg:items-start">
-          <div key={step} className="capi-pop relative order-2 rounded-xl border border-line bg-white px-5 py-4 lg:order-1">
+          <div key={step} className="capi-pop relative order-2 rounded-[22px] border border-line bg-white px-5 py-4 shadow-[0_18px_40px_-20px_rgba(16,24,40,0.35)] lg:order-1">
             <p className="font-display text-lg leading-snug font-bold text-ink">{capi.text}</p>
             <span className="absolute bottom-5 -left-2 h-4 w-4 rotate-45 border-b border-l border-line bg-white lg:-bottom-2 lg:left-14 lg:border-t-0 lg:border-r lg:border-b lg:border-l-0" />
           </div>
@@ -350,8 +353,8 @@ export function CheckInPage() {
           )}
 
           {step === 'inicio' && (
-            <div className="rounded-xl border border-line bg-white p-8 sm:p-10">
-              <p className="mb-3 inline-flex rounded-md bg-brand-soft px-3 py-1 text-xs font-bold tracking-wider text-brand uppercase">{fmtWeekRange(weekId)}</p>
+            <div className="rounded-[28px] border border-line bg-white p-8 shadow-[0_20px_50px_-28px_rgba(16,24,40,0.35)] sm:p-10">
+              <p className="mb-3 inline-flex rounded-full bg-brand-soft px-3 py-1 text-xs font-bold tracking-wider text-brand uppercase">{fmtWeekRange(weekId)}</p>
               <h1 className="text-4xl font-extrabold sm:text-5xl">{existing ? 'Reajustar a semana' : planningNext ? 'Planejar a próxima semana' : 'Nova semana, novo foco'}</h1>
               {planningNext && <p className="mt-2 text-sm font-semibold text-brand">Fim de semana: o plano vale para a semana que começa segunda.</p>}
               {subjects.length > 0 && !subjects.some((s) => s.areaId === 'faculdade') && (
@@ -367,7 +370,7 @@ export function CheckInPage() {
                 Em 4 passos rápidos você define o foco por área, seus horários e as matérias da semana. Eu monto a rota de estudos com revisões incluídas.
               </p>
               <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                <button onClick={() => setStep('foco')} className="group flex items-center gap-4 rounded-2xl bg-brand p-5 text-left text-white transition">
+                <button onClick={() => setStep('foco')} className="group flex items-center gap-4 rounded-2xl bg-brand p-5 text-left text-white shadow-[0_14px_30px_-14px_rgba(62,99,242,0.9)] transition hover:-translate-y-0.5">
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/20">
                     <CalendarRange size={24} />
                   </span>
@@ -378,7 +381,7 @@ export function CheckInPage() {
                   <ArrowRight className="transition group-hover:translate-x-1" />
                 </button>
                 {!existing && subjects.length > 0 && (
-                  <button onClick={repeatLast} disabled={saving} className="group flex items-center gap-4 rounded-2xl border border-line bg-white p-5 text-left transition hover:border-brand/40">
+                  <button onClick={repeatLast} disabled={saving} className="group flex items-center gap-4 rounded-2xl border border-line bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-brand/40">
                     <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand">
                       <Repeat size={24} />
                     </span>
@@ -400,7 +403,7 @@ export function CheckInPage() {
                   <div key={a.id}>
                     <div className="mb-3 flex items-center justify-between">
                       <span className="flex items-center gap-3 font-semibold">
-                        <span className="subject-icon h-11 w-11 rounded-lg font-display text-base font-extrabold" style={{ color: AREA_COLOR[a.id], border: `1px solid ${AREA_COLOR[a.id]}55` }}>
+                        <span className="subject-icon h-11 w-11 rounded-[14px] font-display text-base font-extrabold" style={{ background: `linear-gradient(145deg, ${AREA_COLOR[a.id]}, color-mix(in srgb, ${AREA_COLOR[a.id]} 72%, #000))` }}>
                           <span className="relative z-10">{a.name[0]}</span>
                         </span>
                         <span className="text-lg">{a.name}</span>
@@ -422,8 +425,8 @@ export function CheckInPage() {
                         setPercents(rebalance(percents, a.id, Number(e.target.value)))
                         setConfirmLow(false)
                       }}
-                      className="h-3.5 w-full cursor-pointer appearance-none rounded-md"
-                      style={{ accentColor: AREA_COLOR[a.id], background: `linear-gradient(to right, ${AREA_COLOR[a.id]} ${percents[a.id]}%, #ececea ${percents[a.id]}%)` }}
+                      className="h-3.5 w-full cursor-pointer appearance-none rounded-full"
+                      style={{ accentColor: AREA_COLOR[a.id], background: `linear-gradient(to right, ${AREA_COLOR[a.id]} ${percents[a.id]}%, #eef0f4 ${percents[a.id]}%)` }}
                     />
                   </div>
                 ))}
@@ -448,7 +451,7 @@ export function CheckInPage() {
               title="Horários disponíveis"
               subtitle={`Pré-preenchido com a semana anterior · ${hours(minutes)} livres`}
               action={
-                <button onClick={copyWeekdays} className="rounded-xl bg-[#efefed] px-3 py-2 text-xs font-bold text-ink hover:bg-[#e7e7e4]" title="Usa os horários de segunda em todos os dias úteis">
+                <button onClick={copyWeekdays} className="rounded-xl bg-[#f1f2f5] px-3 py-2 text-xs font-bold text-ink hover:bg-[#e8e9ee]" title="Usa os horários de segunda em todos os dias úteis">
                   Copiar segunda para seg–sex
                 </button>
               }
@@ -499,7 +502,8 @@ export function CheckInPage() {
                           setPaused(isPaused ? paused.filter((p) => p !== s.id) : [...paused, s.id])
                           if (!isPaused && themes[s.areaId] === s.id) setThemes({ ...themes, [s.areaId]: undefined })
                         }}
-                        className={`flex items-center gap-3 rounded-md border p-2.5 text-left transition-colors ${isPaused ? 'border-dashed border-line bg-transparent' : 'border-line bg-paper hover:border-ink'}`}
+                        className={`flex items-center gap-3 rounded-2xl border p-2.5 text-left transition ${isPaused ? 'border-line bg-[#fafbfc]' : 'border-transparent'}`}
+                        style={isPaused ? undefined : { background: tint(s.color, 0.08), boxShadow: `inset 0 0 0 1.5px ${tint(s.color, 0.35)}` }}
                       >
                         <span className={isPaused ? 'opacity-40 grayscale' : ''}>
                           <SubjectIcon subject={s} size={38} />
@@ -508,15 +512,15 @@ export function CheckInPage() {
                           <span className={`block truncate text-sm font-bold ${isPaused ? 'text-muted line-through' : ''}`}>{s.name}</span>
                           <span className="text-[11px] text-muted">{isPaused ? 'Pausada' : `Peso ${s.weight}${s.mandatory ? ' · obrigatória' : ''}`}</span>
                         </span>
-                        <span className={`relative h-5 w-9 shrink-0 rounded-sm transition ${isPaused ? 'bg-slate-300' : 'bg-ink'}`}>
-                          <span className={`absolute top-0.5 h-4 w-4 rounded-sm bg-white transition-all ${isPaused ? 'left-0.5' : 'left-[18px]'}`} />
+                        <span className={`relative h-5 w-9 shrink-0 rounded-full transition ${isPaused ? 'bg-slate-300' : ''}`} style={isPaused ? undefined : { background: s.color }}>
+                          <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${isPaused ? 'left-0.5' : 'left-[18px]'}`} />
                         </span>
                       </button>
                     )
                   })}
                 </div>
               )}
-              <div className="rounded-2xl bg-[#f4f4f2] p-4">
+              <div className="rounded-2xl bg-[#f6f7f9] p-4">
                 <div className="mb-3 text-xs font-semibold tracking-wider text-muted uppercase">Adicionar matéria</div>
                 <div className="grid gap-2 md:grid-cols-3">
                   {AREAS.map((a) => (
@@ -579,7 +583,7 @@ export function CheckInPage() {
               <button
                 onClick={() => submit()}
                 disabled={!canSave || saving}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand py-4 font-display text-lg font-bold text-white transition disabled:opacity-50"
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand py-4 font-display text-lg font-bold text-white shadow-[0_16px_34px_-14px_rgba(62,99,242,0.9)] transition hover:-translate-y-0.5 disabled:opacity-50"
               >
                 <Rocket size={20} /> {saving ? 'Montando…' : existing ? 'Salvar e regerar plano' : 'Gerar minha semana'}
               </button>
@@ -611,7 +615,7 @@ export function CheckInPage() {
 
 function StepCard({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-line bg-white p-6 sm:p-8">
+    <div className="rounded-[28px] border border-line bg-white p-6 shadow-[0_20px_50px_-28px_rgba(16,24,40,0.35)] sm:p-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold">{title}</h2>
@@ -626,7 +630,7 @@ function StepCard({ title, subtitle, action, children }: { title: string; subtit
 
 function Summary({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-[#f4f4f2] p-4">
+    <div className="rounded-2xl bg-[#f6f7f9] p-4">
       <div className="text-xs font-semibold text-muted">{label}</div>
       <div className="mt-1 font-display text-2xl font-bold">{value}</div>
     </div>
@@ -665,7 +669,7 @@ function RetroStep({ stats, onDone, onSkip }: { stats: WeekStats; onDone: (worke
   return (
     <StepCard title="Revisão da semana passada" subtitle={fmtWeekRange(stats.weekId)}>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl bg-[#f4f4f2] p-4">
+        <div className="rounded-2xl bg-[#f6f7f9] p-4">
           <div className="text-xs font-bold text-muted uppercase">Tempo estudado</div>
           <div className="mt-1 font-display text-3xl font-extrabold">{h(total)}</div>
           <div className="mt-2 flex h-2.5 overflow-hidden rounded-full bg-white">
@@ -680,7 +684,7 @@ function RetroStep({ stats, onDone, onSkip }: { stats: WeekStats; onDone: (worke
             ))}
           </div>
         </div>
-        <div className="rounded-2xl bg-[#f4f4f2] p-4">
+        <div className="rounded-2xl bg-[#f6f7f9] p-4">
           <div className="text-xs font-bold text-muted uppercase">Plano cumprido</div>
           <div className="mt-1 font-display text-3xl font-extrabold" style={{ color: masteryColor(rate * 100) }}>
             {stats.planned ? `${Math.round(rate * 100)}%` : '—'}
@@ -688,7 +692,7 @@ function RetroStep({ stats, onDone, onSkip }: { stats: WeekStats; onDone: (worke
           <div className="mt-1 text-xs text-muted">{stats.planned ? `${stats.done} de ${stats.planned} blocos` : 'Sem blocos planejados'}</div>
         </div>
         {stats.weakest.length > 0 && (
-          <div className="rounded-2xl bg-[#f4f4f2] p-4">
+          <div className="rounded-2xl bg-[#f6f7f9] p-4">
             <div className="mb-1.5 text-xs font-bold text-muted uppercase">Pontos mais fracos</div>
             {stats.weakest.map((t) => (
               <div key={t.topicId} className="flex items-center justify-between gap-2 text-sm">
@@ -701,17 +705,17 @@ function RetroStep({ stats, onDone, onSkip }: { stats: WeekStats; onDone: (worke
           </div>
         )}
         {(reasons.length > 0 || cats.length > 0) && (
-          <div className="rounded-2xl bg-[#f4f4f2] p-4">
+          <div className="rounded-2xl bg-[#f6f7f9] p-4">
             <div className="mb-1.5 text-xs font-bold text-muted uppercase">Erros mais comuns</div>
             <div className="flex flex-wrap gap-1.5">
               {reasons.map(([r, n]) => (
-                <span key={r} className="rounded-md bg-white px-2.5 py-1 text-xs font-semibold">
-                  {REASON_LABEL[r as keyof typeof REASON_LABEL].label} ×{n}
+                <span key={r} className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold">
+                  {REASON_LABEL[r as keyof typeof REASON_LABEL].emoji} {REASON_LABEL[r as keyof typeof REASON_LABEL].label} ×{n}
                 </span>
               ))}
               {cats.map(([c, n]) => (
-                <span key={c} className="rounded-md bg-white px-2.5 py-1 text-xs font-semibold">
-                  {CATEGORY_LABEL[c as keyof typeof CATEGORY_LABEL]} ×{n}
+                <span key={c} className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold">
+                  ✍️ {CATEGORY_LABEL[c as keyof typeof CATEGORY_LABEL]} ×{n}
                 </span>
               ))}
             </div>
@@ -721,11 +725,11 @@ function RetroStep({ stats, onDone, onSkip }: { stats: WeekStats; onDone: (worke
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <label className="block">
-          <span className="mb-1.5 block text-sm font-bold">O que funcionou?</span>
+          <span className="mb-1.5 block text-sm font-bold">✅ O que funcionou?</span>
           <VoiceTextarea value={worked} onValue={setWorked} rows={3} placeholder="Ex.: estudar de manhã, os desafios rápidos…" className="w-full rounded-2xl border border-line bg-white p-3 text-sm outline-none focus:border-brand" />
         </label>
         <label className="block">
-          <span className="mb-1.5 block text-sm font-bold">O que travou?</span>
+          <span className="mb-1.5 block text-sm font-bold">🚧 O que travou?</span>
           <VoiceTextarea value={blocked} onValue={setBlocked} rows={3} placeholder="Ex.: muitas provas, cansaço à noite…" className="w-full rounded-2xl border border-line bg-white p-3 text-sm outline-none focus:border-brand" />
         </label>
       </div>
@@ -733,14 +737,14 @@ function RetroStep({ stats, onDone, onSkip }: { stats: WeekStats; onDone: (worke
         {RETRO_TAGS.map((t) => {
           const on = tags.includes(t.id)
           return (
-            <button key={t.id} onClick={() => toggle(t.id)} aria-pressed={on} className={`rounded-md border px-3 py-1.5 text-xs font-bold transition ${on ? 'border-brand bg-brand text-white' : 'border-line bg-white text-slate-600 hover:border-brand/40'}`}>
-              {t.label}
+            <button key={t.id} onClick={() => toggle(t.id)} aria-pressed={on} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${on ? 'border-brand bg-brand text-white' : 'border-line bg-white text-slate-600 hover:border-brand/40'}`}>
+              {t.emoji} {t.label}
             </button>
           )
         })}
       </div>
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <button onClick={onSkip} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-muted hover:bg-[#efefed]">
+        <button onClick={onSkip} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-muted hover:bg-[#f1f2f5]">
           Pular revisão
         </button>
         <button
@@ -777,16 +781,16 @@ function ThemePanel({
     <div className={`mb-6 rounded-2xl border-2 p-4 transition ${on ? 'border-brand/40 bg-brand-soft/40' : 'border-line'}`}>
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
-          <div className="font-display text-lg font-bold">Semana temática</div>
-          <p className="text-xs text-muted">Uma matéria por área recebe o estudo novo. As outras ficam só nas revisões.</p>
+          <div className="font-display text-lg font-bold">🎯 Semana temática</div>
+          <p className="text-xs text-muted">Uma matéria por área: o estudo novo da semana fica todo nela. As revisões de outras matérias continuam, curtinhas, para você não esquecer.</p>
         </div>
         <button
           onClick={() => setOn(!on)}
           aria-pressed={on}
           aria-label="Semana temática"
-          className={`relative h-7 w-12 shrink-0 rounded-md transition ${on ? 'bg-brand' : 'bg-slate-300'}`}
+          className={`relative h-7 w-12 shrink-0 rounded-full transition ${on ? 'bg-brand' : 'bg-slate-300'}`}
         >
-          <span className={`absolute top-1 h-5 w-5 rounded-md bg-white shadow transition-all ${on ? 'left-6' : 'left-1'}`} />
+          <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${on ? 'left-6' : 'left-1'}`} />
         </button>
       </div>
       {on && (
@@ -814,7 +818,7 @@ function ThemePanel({
                         key={s.id}
                         onClick={() => setThemes({ ...themes, [a.id]: sel ? undefined : s.id })}
                         aria-pressed={sel}
-                        className={`flex items-center gap-1.5 rounded-md border py-1 pr-3 pl-1 text-sm font-semibold transition ${sel ? 'text-white shadow-sm' : 'border-line bg-white hover:border-slate-300'}`}
+                        className={`flex items-center gap-1.5 rounded-full border py-1 pr-3 pl-1 text-sm font-semibold transition ${sel ? 'text-white shadow-sm' : 'border-line bg-white hover:border-slate-300'}`}
                         style={sel ? { background: s.color, borderColor: s.color } : undefined}
                       >
                         <SubjectIcon subject={s as never} size={22} />
@@ -884,7 +888,7 @@ function BackupCard() {
       </p>
     )
   return (
-    <div className="mt-4 rounded-2xl border border-line bg-[#f4f4f2] p-4">
+    <div className="mt-4 rounded-2xl border border-line bg-[#f6f7f9] p-4">
       <div className="flex flex-wrap items-center gap-3">
         <Capybara pose="estudando" size={46} />
         <div className="min-w-0 flex-1 text-sm">

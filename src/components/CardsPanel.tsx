@@ -26,7 +26,7 @@ export function CardsPanel({ note, subject, topic }: { note: Note; subject?: Sub
   const [error, setError] = useState('')
   const [manual, setManual] = useState({ front: '', back: '' })
   const [editing, setEditing] = useState<string | null>(null)
-  const color = subject?.color ?? '#c4471d'
+  const color = subject?.color ?? '#3e63f2'
 
   useEffect(() => {
     getAI().then(setAI)
@@ -62,7 +62,7 @@ export function CardsPanel({ note, subject, topic }: { note: Note; subject?: Sub
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 font-sans text-sm font-bold">
           <Layers3 size={17} style={{ color }} /> Flashcards {topic ? `· ${topic.name}` : ''}
-          <span className="rounded-md px-2 py-0.5 text-[11px] font-bold" style={{ background: tint(color, 0.12), color }}>
+          <span className="rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ background: tint(color, 0.12), color }}>
             {cards.length}
           </span>
         </h3>
@@ -108,14 +108,14 @@ export function CardsPanel({ note, subject, topic }: { note: Note; subject?: Sub
                   value={s.front}
                   onChange={(e) => setSuggestions((prev) => prev.map((x) => (x.key === s.key ? { ...x, front: e.target.value } : x)))}
                   rows={2}
-                  className="resize-none rounded-lg bg-[#f4f4f2] px-2.5 py-1.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-brand/20"
+                  className="resize-none rounded-lg bg-[#f6f7f9] px-2.5 py-1.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-brand/20"
                 />
                 <textarea
                   aria-label="Verso"
                   value={s.back}
                   onChange={(e) => setSuggestions((prev) => prev.map((x) => (x.key === s.key ? { ...x, back: e.target.value } : x)))}
                   rows={2}
-                  className="resize-none rounded-lg bg-[#f4f4f2] px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand/20"
+                  className="resize-none rounded-lg bg-[#f6f7f9] px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-brand/20"
                 />
                 <div className="flex items-start gap-1">
                   <button onClick={() => approve([s])} className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50" title="Aprovar">
@@ -161,7 +161,7 @@ export function CardsPanel({ note, subject, topic }: { note: Note; subject?: Sub
 
       {/* Novo cartão manual */}
       <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
-        <input id={`card-front-${note.id}`} value={manual.front} onChange={(e) => setManual({ ...manual, front: e.target.value })} placeholder="Frente: pergunta ou conceito" className="rounded-xl border border-line bg-[#f7f7f5] px-3 py-2 text-sm outline-none focus:border-brand/50 focus:bg-white" />
+        <input id={`card-front-${note.id}`} value={manual.front} onChange={(e) => setManual({ ...manual, front: e.target.value })} placeholder="Frente: pergunta ou conceito" className="rounded-xl border border-line bg-[#f8f9fb] px-3 py-2 text-sm outline-none focus:border-brand/50 focus:bg-white" />
         <input
           id={`card-back-${note.id}`}
           value={manual.back}
@@ -173,7 +173,7 @@ export function CardsPanel({ note, subject, topic }: { note: Note; subject?: Sub
             }
           }}
           placeholder="Verso: resposta"
-          className="rounded-xl border border-line bg-[#f7f7f5] px-3 py-2 text-sm outline-none focus:border-brand/50 focus:bg-white"
+          className="rounded-xl border border-line bg-[#f8f9fb] px-3 py-2 text-sm outline-none focus:border-brand/50 focus:bg-white"
         />
         <button
           disabled={!manual.front.trim() || !manual.back.trim()}
@@ -181,7 +181,7 @@ export function CardsPanel({ note, subject, topic }: { note: Note; subject?: Sub
             await approve([{ ...manual, key: 'm' }], 'manual')
             setManual({ front: '', back: '' })
           }}
-          className="flex items-center justify-center gap-1 rounded-xl bg-[#efefed] px-3 py-2 text-xs font-bold text-ink hover:bg-[#e7e7e4] disabled:opacity-50"
+          className="flex items-center justify-center gap-1 rounded-xl bg-[#f1f2f5] px-3 py-2 text-xs font-bold text-ink hover:bg-[#e8e9ee] disabled:opacity-50"
         >
           <Plus size={14} /> Cartão
         </button>
@@ -195,8 +195,8 @@ function EditCard({ card, onDone }: { card: Flashcard; onDone: () => void }) {
   const [back, setBack] = useState(card.back)
   return (
     <div className="space-y-1.5 rounded-xl border-2 border-brand/30 p-2.5">
-      <textarea value={front} onChange={(e) => setFront(e.target.value)} rows={2} className="w-full resize-none rounded-lg bg-[#f4f4f2] px-2.5 py-1.5 text-sm font-semibold outline-none" />
-      <textarea value={back} onChange={(e) => setBack(e.target.value)} rows={2} className="w-full resize-none rounded-lg bg-[#f4f4f2] px-2.5 py-1.5 text-sm outline-none" />
+      <textarea value={front} onChange={(e) => setFront(e.target.value)} rows={2} className="w-full resize-none rounded-lg bg-[#f6f7f9] px-2.5 py-1.5 text-sm font-semibold outline-none" />
+      <textarea value={back} onChange={(e) => setBack(e.target.value)} rows={2} className="w-full resize-none rounded-lg bg-[#f6f7f9] px-2.5 py-1.5 text-sm outline-none" />
       <div className="flex justify-end gap-1.5">
         <button onClick={onDone} className="rounded-lg px-2.5 py-1 text-xs font-semibold text-muted hover:bg-slate-100">
           Cancelar

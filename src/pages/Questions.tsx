@@ -10,9 +10,7 @@ import { ResultView } from '../components/ChallengeRunner'
 import { WritingTraining } from '../components/WritingTraining'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
-import { Card } from '../components/ui'
-import { DashShell, PageHeader } from '../components/dash'
-import { QuestionsHeroStats } from '../components/QuestionStats'
+import { Card, PageHeader, Tabs } from '../components/ui'
 import { RushPage } from './rush/RushPage'
 import { ExtraQuestions } from './ExtraQuestions'
 import { Simulado } from './Simulado'
@@ -26,27 +24,29 @@ export function QuestionsPage() {
   const [tab, setTab] = useState<Tab>(asked && TABS.includes(asked) ? asked : 'rush')
   return (
     <>
-      <PageHeader icon={<FileQuestion size={26} />} color="#c4471d" title="Questões" subtitle="Rush, simulado, listas e o que você faz por fora." stats={<QuestionsHeroStats />} />
-      <DashShell<Tab>
-        value={tab}
-        onChange={setTab}
-        flush={tab === 'rush'}
-        items={[
-          { id: 'rush', label: 'Rush', icon: <Zap size={20} /> },
-          { id: 'simulado', label: 'Simulado', icon: <Timer size={20} /> },
-          { id: 'gerar', label: 'Gerar lista', icon: <Sparkles size={20} /> },
-          { id: 'escrita', label: 'Escrita', icon: <PenLine size={20} /> },
-          { id: 'registrar', label: 'Registrar', icon: <ClipboardPlus size={20} /> },
-          { id: 'historico', label: 'Histórico', icon: <History size={20} /> },
-        ]}
-      >
+      <PageHeader icon={<FileQuestion size={24} />} title="Questões" subtitle="Rush de questões sem parar, listas sob medida, treino de escrita e registro das questões que você faz por fora." />
+      <div className="mb-5">
+        <Tabs<Tab>
+          value={tab}
+          onChange={setTab}
+          items={[
+            { id: 'rush', label: 'Rush', icon: <Zap size={15} /> },
+            { id: 'simulado', label: 'Simulado', icon: <Timer size={15} /> },
+            { id: 'gerar', label: 'Gerar lista', icon: <Sparkles size={15} /> },
+            { id: 'escrita', label: 'Treino de escrita', icon: <PenLine size={15} /> },
+            { id: 'registrar', label: 'Registrar extras', icon: <ClipboardPlus size={15} /> },
+            { id: 'historico', label: 'Histórico', icon: <History size={15} /> },
+          ]}
+        />
+      </div>
+      <div key={tab} className="page-in">
         {tab === 'rush' && <RushPage />}
         {tab === 'simulado' && <Simulado />}
         {tab === 'gerar' && <ChallengeBuilderPage mode="questoes" />}
         {tab === 'registrar' && <ExtraQuestions />}
         {tab === 'escrita' && <WritingTraining />}
         {tab === 'historico' && <QuestionHistory />}
-      </DashShell>
+      </div>
     </>
   )
 }
@@ -59,7 +59,7 @@ function QuestionHistory() {
   const sets = list.filter((c) => c.origin === 'questoes' || c.origin === 'demanda')
 
   if (open) {
-    const color = subjects.get(open.subjectId)?.color ?? '#c4471d'
+    const color = subjects.get(open.subjectId)?.color ?? '#3e63f2'
     return (
       <Card className="mx-auto max-w-2xl p-6">
         <ResultView items={open.items} answers={open.answers} results={open.results} fromNotes={open.fromNotes} color={color} onSelfGrade={() => undefined} onContest={() => undefined} onFinish={() => setOpen(null)} />
@@ -93,7 +93,7 @@ function QuestionHistory() {
                   {c.request ? ` · “${c.request}”` : ''}
                 </div>
               </div>
-              <span className={`rounded-md px-2.5 py-1 text-xs font-bold ${pct >= 85 ? 'bg-emerald-50 text-emerald-700' : pct >= 50 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'}`}>{pct}%</span>
+              <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${pct >= 85 ? 'bg-emerald-50 text-emerald-700' : pct >= 50 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'}`}>{pct}%</span>
             </button>
           )
         })}

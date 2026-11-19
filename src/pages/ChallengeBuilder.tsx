@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, BookOpenCheck, CheckSquare, FileText, ListChecks, MessageSquareText, PenLine, Search, Sparkles, Swords, ToggleLeft } from 'lucide-react'
+import { ArrowLeft, BookOpenCheck, CheckSquare, FileText, ListChecks, MessageSquareText, PenLine, Search, Sparkles, ToggleLeft } from 'lucide-react'
 import { AREAS, useNotes, useSubjects, useTopics, useSettings } from '../db/hooks'
 import type { ChallengeType, Difficulty } from '../lib/prompts'
 import { tint } from '../lib/colors'
@@ -8,7 +8,6 @@ import { Capybara } from '../components/Capybara'
 import { ChallengeModal } from '../components/ChallengeModal'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Card } from '../components/ui'
-import { PageHeader } from '../components/dash'
 import { VoiceTextarea } from '../components/Voice'
 
 const TYPES: { id: ChallengeType; label: string; hint: string; icon: ReactNode }[] = [
@@ -19,9 +18,9 @@ const TYPES: { id: ChallengeType; label: string; hint: string; icon: ReactNode }
   { id: 'lacunas', label: 'Lacunas', hint: 'frases das suas notas', icon: <CheckSquare size={18} /> },
 ]
 const LEVELS: { id: Difficulty; label: string; emoji: string; hint: string }[] = [
-  { id: 'facil', label: 'Fácil', emoji: '', hint: 'conceitos básicos' },
-  { id: 'medio', label: 'Médio', emoji: '', hint: 'aplicar e relacionar' },
-  { id: 'dificil', label: 'Difícil', emoji: '', hint: 'situações novas e pegadinhas' },
+  { id: 'facil', label: 'Fácil', emoji: '🌱', hint: 'conceitos básicos' },
+  { id: 'medio', label: 'Médio', emoji: '🔥', hint: 'aplicar e relacionar' },
+  { id: 'dificil', label: 'Difícil', emoji: '🚀', hint: 'situações novas e pegadinhas' },
 ]
 const COUNTS = [3, 5, 10]
 const Q_COUNTS = [5, 10, 20]
@@ -57,7 +56,7 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
   const [running, setRunning] = useState(false)
 
   const subject = subjects.find((s) => s.id === subjectId)
-  const color = subject?.color ?? '#c4471d'
+  const color = subject?.color ?? '#3e63f2'
   const subjectTopics = topics.filter((t) => t.subjectId === subjectId)
   const visibleTopics = query.trim() ? subjectTopics.filter((t) => t.name.toLowerCase().includes(query.toLowerCase())) : subjectTopics
   const topic = subjectTopics.find((t) => t.id === topicId)
@@ -80,17 +79,9 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
   return (
     <>
       {!isQ && (
-        <PageHeader
-          icon={<Swords size={28} />}
-          color="#c4471d"
-          title="Desafio livre"
-          subtitle="Escolha matéria, tópico, quantidade, dificuldade e tipos de questão."
-          back={
-            <button onClick={() => navigate('/recuperacao')} className="-ml-1 flex items-center gap-1 text-xs font-semibold text-muted hover:text-ink">
-              <ArrowLeft size={13} /> Recuperação
-            </button>
-          }
-        />
+        <button onClick={() => navigate('/recuperacao')} className="mb-3 flex items-center gap-1.5 rounded-xl px-2 py-1.5 text-sm font-semibold text-slate-600 hover:bg-white">
+          <ArrowLeft size={16} /> Recuperação
+        </button>
       )}
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_340px]">
@@ -117,7 +108,7 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
                               setTopicId('')
                               setQuery('')
                             }}
-                            className={`flex items-center gap-2.5 rounded-2xl border p-2.5 text-left transition ${on ? 'border-transparent' : 'border-line bg-white'}`}
+                            className={`flex items-center gap-2.5 rounded-2xl border p-2.5 text-left transition hover:-translate-y-0.5 ${on ? 'border-transparent' : 'border-line bg-white'}`}
                             style={on ? { background: tint(s.color, 0.12), boxShadow: `inset 0 0 0 2px ${s.color}` } : undefined}
                           >
                             <SubjectIcon subject={s} size={36} />
@@ -142,12 +133,12 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
                 <StepTitle n={2} title="Escolha o tópico" />
                 <div className="relative w-full max-w-60">
                   <Search size={14} className="absolute top-2.5 left-3 text-muted" />
-                  <input id="builder-topic-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar tópico…" className="w-full rounded-xl border border-line bg-[#f7f7f5] py-2 pr-3 pl-8 text-sm outline-none focus:border-brand/50" />
+                  <input id="builder-topic-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar tópico…" className="w-full rounded-xl border border-line bg-[#f8f9fb] py-2 pr-3 pl-8 text-sm outline-none focus:border-brand/50" />
                 </div>
               </div>
               <div className="thin-scroll flex max-h-64 flex-wrap gap-2 overflow-y-auto pr-1">
                 <Pill on={!topicId} color={color} onClick={() => setTopicId('')}>
-                  Matéria inteira
+                  ✨ Matéria inteira
                 </Pill>
                 {visibleTopics.map((t) => (
                   <Pill key={t.id} on={t.id === topicId} color={color} onClick={() => setTopicId(t.id)} title={notedTopics.has(t.id) ? 'Tem anotações suas' : 'Sem anotações ainda'}>
@@ -183,6 +174,7 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
                   <div className="grid grid-cols-3 gap-2">
                     {LEVELS.map((l) => (
                       <button key={l.id} onClick={() => setDifficulty(l.id)} className={`rounded-2xl border py-2.5 text-center transition ${difficulty === l.id ? 'border-transparent text-white' : 'border-line hover:bg-slate-50'}`} style={difficulty === l.id ? { background: color } : undefined}>
+                        <div className="text-xl">{l.emoji}</div>
                         <div className="text-xs font-bold">{l.label}</div>
                       </button>
                     ))}
@@ -213,10 +205,10 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
                   <div className="mt-5 grid gap-5 md:grid-cols-[auto_1fr]">
                     <div>
                       <div className="mb-2 text-xs font-semibold text-muted">Base</div>
-                      <div className="flex rounded-2xl bg-[#efefed] p-1">
+                      <div className="flex rounded-2xl bg-[#f1f2f5] p-1">
                         {(['notas', 'geral'] as const).map((b) => (
                           <button key={b} onClick={() => setBase(b)} className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${base === b ? 'bg-white shadow-sm' : 'text-muted'}`} style={base === b ? { color } : undefined}>
-                            {b === 'notas' ? 'Minhas anotações' : 'Conhecimento geral'}
+                            {b === 'notas' ? '📄 Minhas anotações' : '🌎 Conhecimento geral'}
                           </button>
                         ))}
                       </div>
@@ -230,11 +222,11 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
                         onValue={setRequest}
                         rows={2}
                         placeholder='Ex.: "questões de pH com contas" ou "focadas em interpretação de gráficos"'
-                        className="w-full rounded-2xl border border-line bg-[#f7f7f5] px-4 py-3 text-sm outline-none focus:border-brand/50 focus:bg-white"
+                        className="w-full rounded-2xl border border-line bg-[#f8f9fb] px-4 py-3 text-sm outline-none focus:border-brand/50 focus:bg-white"
                       />
                       <div className="mt-1.5 flex flex-wrap gap-1.5">
                         {REQUEST_HINTS.map((h) => (
-                          <button key={h} onClick={() => setRequest(h)} className="rounded-md bg-[#efefed] px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:bg-[#e7e7e4]">
+                          <button key={h} onClick={() => setRequest(h)} className="rounded-full bg-[#f1f2f5] px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:bg-[#e8e9ee]">
                             {h}
                           </button>
                         ))}
@@ -273,7 +265,7 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
         {/* Resumo com o Capi */}
         <div className="lg:sticky lg:top-24">
           <Card className="overflow-hidden p-0">
-            <div className="relative flex flex-col items-center px-6 pt-6 pb-4 text-center" style={{ background: tint(color, 0.07) }}>
+            <div className="relative flex flex-col items-center px-6 pt-6 pb-4 text-center" style={{ background: `radial-gradient(120% 90% at 50% 0%, ${tint(color, 0.18)}, transparent 70%)` }}>
               <div key={capiLine} className="capi-pop relative mb-1 rounded-2xl border border-line bg-white px-4 py-2.5 text-sm font-semibold shadow-sm">
                 {capiLine}
                 <span className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-r border-b border-line bg-white" />
@@ -288,12 +280,12 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
               {isQ && request.trim() && <Row label="Pedido" value={request.trim()} />}
               <div className="flex flex-wrap gap-1 pt-1">
                 {isQ ? (
-                  <span className="rounded-md px-2 py-0.5 text-[10px] font-bold" style={{ background: tint(color, 0.12), color }}>
+                  <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: tint(color, 0.12), color }}>
                     {Q_STYLES.find((q) => q.id === qStyle)?.label}
                   </span>
                 ) : (
                   effectiveTypes.map((t) => (
-                    <span key={t} className="rounded-md px-2 py-0.5 text-[10px] font-bold" style={{ background: tint(color, 0.12), color }}>
+                    <span key={t} className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: tint(color, 0.12), color }}>
                       {TYPES.find((x) => x.id === t)?.label}
                     </span>
                   ))
@@ -302,7 +294,7 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
               <button
                 onClick={() => setRunning(true)}
                 disabled={!subject}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-display text-lg font-bold text-white transition disabled:opacity-40"
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-display text-lg font-bold text-white transition hover:-translate-y-0.5 disabled:opacity-40"
                 style={{ background: color, boxShadow: `0 16px 34px -16px ${color}` }}
               >
                 <Sparkles size={20} /> {isQ ? `Gerar ${count} questões` : 'Gerar desafio'}
@@ -336,7 +328,7 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
 function StepTitle({ n, title }: { n: number; title: string }) {
   return (
     <h2 className="mb-4 flex items-center gap-2.5 text-lg font-bold">
-      <span className="grid h-7 w-7 place-items-center rounded-md bg-ink font-sans text-xs font-bold text-white">{n}</span>
+      <span className="grid h-7 w-7 place-items-center rounded-full bg-ink font-sans text-xs font-bold text-white">{n}</span>
       {title}
     </h2>
   )
@@ -344,7 +336,7 @@ function StepTitle({ n, title }: { n: number; title: string }) {
 
 function Pill({ on, color, onClick, title, children }: { on: boolean; color: string; onClick: () => void; title?: string; children: ReactNode }) {
   return (
-    <button onClick={onClick} title={title} className={`flex items-center gap-1.5 rounded-md border px-3.5 py-1.5 text-sm font-semibold transition ${on ? 'border-transparent text-white' : 'border-line bg-white hover:bg-slate-50'}`} style={on ? { background: color } : undefined}>
+    <button onClick={onClick} title={title} className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${on ? 'border-transparent text-white' : 'border-line bg-white hover:bg-slate-50'}`} style={on ? { background: color } : undefined}>
       {children}
     </button>
   )

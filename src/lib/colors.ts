@@ -8,9 +8,9 @@ const AREA_HUES: Record<AreaId, number[]> = {
 }
 
 export const AREA_COLOR: Record<AreaId, string> = {
-  faculdade: '#2f4b6e',
-  ensino: '#a8742a',
-  idiomas: '#4d7a57',
+  faculdade: '#3e63f2',
+  ensino: '#f97316',
+  idiomas: '#10b981',
 }
 
 function hslToHex(h: number, s: number, l: number): string {
@@ -27,7 +27,7 @@ export function autoColor(areaId: AreaId, index: number): string {
   const hues = AREA_HUES[areaId]
   const hue = hues[index % hues.length]
   const light = index >= hues.length ? 44 : 52
-  return hslToHex(hue, 40, light - 10)
+  return hslToHex(hue, 78, light)
 }
 
 /** Fundo claro (tinta) da cor, para chips e destaques. */
@@ -51,8 +51,8 @@ function hexToHsl(hex: string): [number, number, number] {
   return [h * 60, s * 100, l * 100]
 }
 
-/** Versão sóbria de uma cor viva (tons de tinta, não de neon). Cores já sóbrias voltam iguais. */
-export function mute(hex: string): string {
+/** A versão "sóbria" que a versão 33 (tema descartado) gravou no lugar de uma cor viva. */
+export function mutedVersion(hex: string): string {
   if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex
   const [h, s, l] = hexToHsl(hex)
   if (s <= 50) return hex

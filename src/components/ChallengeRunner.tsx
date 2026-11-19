@@ -212,7 +212,7 @@ export function ChallengeRunner({ ctx, subjectId, topicId, origin, count, color,
             key={k}
             onClick={() => setI(k)}
             className="h-2 flex-1 rounded-full transition"
-            style={{ background: k === i ? color : answered(k) ? tint(color, 0.45) : '#e7e7e4' }}
+            style={{ background: k === i ? color : answered(k) ? tint(color, 0.45) : '#e6e8ee' }}
             aria-label={`Item ${k + 1}`}
           />
         ))}
@@ -233,7 +233,7 @@ export function ChallengeRunner({ ctx, subjectId, topicId, origin, count, color,
                   className={`flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left text-sm font-semibold transition ${a === k ? 'border-transparent text-white' : 'border-line hover:bg-slate-50'}`}
                   style={a === k ? { background: color } : undefined}
                 >
-                  <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-md text-xs font-bold ${a === k ? 'bg-white/25' : 'bg-[#efefed]'}`}>{'ABCDE'[k]}</span>
+                  <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${a === k ? 'bg-white/25' : 'bg-[#f1f2f5]'}`}>{'ABCDE'[k]}</span>
                   {o}
                 </button>
               ))}
@@ -267,7 +267,7 @@ export function ChallengeRunner({ ctx, subjectId, topicId, origin, count, color,
               onValue={(v) => setAnswer(v)}
               rows={it.type === 'explique' ? 7 : 4}
               placeholder={it.type === 'explique' ? 'Explique com suas palavras, como se ensinasse a um colega…' : 'Sua resposta…'}
-              className="w-full rounded-2xl border border-line bg-[#f7f7f5] px-4 py-3 text-sm outline-none focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10"
+              className="w-full rounded-2xl border border-line bg-[#f8f9fb] px-4 py-3 text-sm outline-none focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10"
             />
           </>
         )}
@@ -283,7 +283,7 @@ export function ChallengeRunner({ ctx, subjectId, topicId, origin, count, color,
                       aria-label={`Lacuna ${k + 1}`}
                       value={(a as string[])[k] ?? ''}
                       onChange={(e) => setAnswer((a as string[]).map((x, j) => (j === k ? e.target.value : x)))}
-                      className="mx-1 w-36 rounded-lg border-b-2 bg-[#f4f4f2] px-2 py-0.5 text-center font-semibold outline-none"
+                      className="mx-1 w-36 rounded-lg border-b-2 bg-[#f6f7f9] px-2 py-0.5 text-center font-semibold outline-none"
                       style={{ borderColor: color }}
                     />
                   )}
@@ -371,7 +371,7 @@ function correctAnswer(it: ChallengeItem): string {
 function capiComment(it: ChallengeItem, r: ChallengeResult | null): string {
   if (!r) return 'Não consegui corrigir esta. Compare com a resposta esperada e me diga se acertou.'
   if (r.feedback) return r.feedback
-  if (r.score >= 0.75) return it.type === 'lacunas' ? 'Completou certinho!' : 'Na mosca!'
+  if (r.score >= 0.75) return it.type === 'lacunas' ? 'Completou certinho!' : 'Na mosca! 🎯'
   return 'Essa escapou. Dá uma olhada na resposta certa ao lado.'
 }
 
@@ -406,7 +406,7 @@ export function ResultView({
     return (
       <div className="flex flex-col items-center text-center">
         <div className="relative">
-          <span className="absolute inset-x-6 bottom-2 h-10 rounded-md blur-2xl" style={{ background: tint(color, 0.45) }} />
+          <span className="absolute inset-x-6 bottom-2 h-10 rounded-full blur-2xl" style={{ background: tint(color, 0.45) }} />
           <Capybara key={re.pose} pose={re.pose} size={190} className="relative" />
         </div>
         <div className="pop-score font-display text-6xl font-extrabold tabular-nums" style={{ color }}>
@@ -418,7 +418,7 @@ export function ResultView({
           {items.map((_, k) => {
             const v = verdict(results[k])
             return (
-              <button key={k} onClick={() => setView(k)} className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold ${v.cls}`} title={`Questão ${k + 1}: ${v.label}`}>
+              <button key={k} onClick={() => setView(k)} className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${v.cls}`} title={`Questão ${k + 1}: ${v.label}`}>
                 {v.icon} {k + 1}
               </button>
             )
@@ -427,7 +427,7 @@ export function ResultView({
         <p className="mt-2 text-xs text-muted">
           {hits} de {items.length} certas{!fromNotes ? ' · desafio feito com conhecimento geral' : ''}
         </p>
-        <button onClick={() => setView(0)} className="mt-6 flex items-center gap-2 rounded-2xl px-6 py-3.5 font-bold text-white transition" style={{ background: color, boxShadow: `0 14px 30px -14px ${color}` }}>
+        <button onClick={() => setView(0)} className="mt-6 flex items-center gap-2 rounded-2xl px-6 py-3.5 font-bold text-white transition hover:-translate-y-0.5" style={{ background: color, boxShadow: `0 14px 30px -14px ${color}` }}>
           Ver a correção <ArrowRight size={18} />
         </button>
       </div>
@@ -448,7 +448,7 @@ export function ResultView({
               key={j}
               onClick={() => setView(j)}
               className="h-2 flex-1 rounded-full transition"
-              style={{ background: j === k ? color : vj.label === 'Acertou' ? '#34d399' : vj.label === 'Quase' ? '#fbbf24' : vj.label === 'Errou' ? '#fb7185' : '#e7e7e4', opacity: j === k ? 1 : 0.7 }}
+              style={{ background: j === k ? color : vj.label === 'Acertou' ? '#34d399' : vj.label === 'Quase' ? '#fbbf24' : vj.label === 'Errou' ? '#fb7185' : '#e6e8ee', opacity: j === k ? 1 : 0.7 }}
               aria-label={`Questão ${j + 1}`}
             />
           )
@@ -460,14 +460,14 @@ export function ResultView({
           <span className="text-[11px] font-bold tracking-wide uppercase" style={{ color }}>
             Questão {k + 1} de {items.length} · {ITEM_LABEL[it.type]}
           </span>
-          <span className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold ${v.cls}`}>
+          <span className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${v.cls}`}>
             {v.icon} {v.label}
           </span>
         </div>
         <p className="mb-4 font-display text-lg leading-snug font-bold">{promptOf(it)}</p>
 
         <div className="grid gap-2 sm:grid-cols-2">
-          <div className={`rounded-2xl p-3.5 ${r && !r.contested && r.score >= 0.75 ? 'bg-emerald-50' : r && !r.contested && r.score === 0 ? 'bg-rose-50' : 'bg-[#f4f4f2]'}`}>
+          <div className={`rounded-2xl p-3.5 ${r && !r.contested && r.score >= 0.75 ? 'bg-emerald-50' : r && !r.contested && r.score === 0 ? 'bg-rose-50' : 'bg-[#f6f7f9]'}`}>
             <div className="mb-1 text-[11px] font-bold tracking-wide text-muted uppercase">Sua resposta</div>
             <div className="text-sm font-semibold">{showAnswer(it, answers[k]) || <em className="font-normal text-muted">em branco</em>}</div>
           </div>

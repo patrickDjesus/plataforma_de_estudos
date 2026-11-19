@@ -241,7 +241,7 @@ async function spawnVariants(req: SpawnRequest, lastOverride?: null) {
     const sp = rush.update((S) => addVariants(S, q, raw, n, { offs, long }))
     if (!sp) throw new AIError('empty', errCopy('empty'))
     setSpawn(sp)
-    toast(long ? `Checagem final de "${q.conceito}" agendada` : `${sp.n} ${sp.n > 1 ? 'revisões entraram' : 'revisão entrou'} na fila: ${q.conceito}`)
+    toast(long ? `📌 Checagem final de "${q.conceito}" agendada` : `🔁 ${sp.n} ${sp.n > 1 ? 'revisões entraram' : 'revisão entrou'} na fila: ${q.conceito}`)
     sfx('whoosh')
   } catch (e) {
     runtime.update((r) => ({ tasks: r.tasks.filter((t) => t.id !== id) }))
@@ -297,26 +297,26 @@ function celebrate(correct: boolean) {
   if (correct) {
     sfx('ok')
     say('correct', q?.boss ? 'boss' : demon ? 'demon' : L.fast && st.streak < 4 && Math.random() < 0.5 ? 'fast' : st.streak >= 10 ? 'high' : st.streak >= 4 ? 'mid' : 'low')
-    if (q?.boss) later(() => (mega('CHEFÃO DERROTADO!'), sfx('big')), 300)
-    else if ([5, 10, 15, 20, 30, 40, 50, 75, 100].includes(st.streak)) later(() => (mega(`${st.streak} seguidas!`), sfx('big')), 350)
-    else if (L.levelUp) later(() => (mega(`Dificuldade ${L.levelUp}`), sfx('big'), toast('As questões vão ficar um pouco mais difíceis!')), 350)
-    if (L.comeback) later(() => (mega('VOLTA POR CIMA'), sfx('big')))
+    if (q?.boss) later(() => (mega('🏆 CHEFÃO DERROTADO!'), sfx('big')), 300)
+    else if ([5, 10, 15, 20, 30, 40, 50, 75, 100].includes(st.streak)) later(() => (mega(`🔥 ${st.streak} seguidas!`), sfx('big')), 350)
+    else if (L.levelUp) later(() => (mega(`🔥 Dificuldade ${L.levelUp}`), sfx('big'), toast('As questões vão ficar um pouco mais difíceis!')), 350)
+    if (L.comeback) later(() => (mega('💪 VOLTA POR CIMA'), sfx('big')))
   } else {
     sfx(L.shielded ? 'shield' : 'bad')
     say('wrong', q?.boss ? 'boss' : demon ? 'demon' : L.naosei ? 'naosei' : 'calm')
-    if (L.shielded) later(() => toast(`Escudo usado: seu combo continua em ${st.streak}!`, 'item'), 500)
-    if (q?.boss) later(() => toast('O chefão venceu dessa vez. Ele volta mais pra frente!'), 900)
+    if (L.shielded) later(() => toast(`🛡️ Escudo usado: seu combo continua em ${st.streak}!`, 'item'), 500)
+    if (q?.boss) later(() => toast('💀 O chefão venceu dessa vez. Ele volta mais pra frente!'), 900)
     else if (L.levelDown) later(() => toast('Dei uma segurada na dificuldade para calibrar'), 900)
   }
   if (L.gift) later(() => giveItemFx(L.gift!, `pelo combo de ${st.streak}`))
   if (L.gift2) later(() => giveItemFx(L.gift2!, 'por vencer o chefão'))
-  for (const m of L.missions ?? []) later(() => (toast(`Missão completa: ${m.text} · +${m.xp} pts${m.item ? ` + ${ITEMS[m.item].name}` : ''}`, 'gold'), sfx('badge')))
-  if (S.goalHit && st.done === S.cfg.goal) later(() => (mega('META BATIDA!'), sfx('big')), 600)
-  else if (st.done % 50 === 0 && st.done) later(() => toast(`${st.done} questões feitas!`), 1200)
+  for (const m of L.missions ?? []) later(() => (toast(`🎯 Missão completa: ${m.text} · +${m.xp} pts${m.item ? ` + ${ITEMS[m.item].name}` : ''}`, 'gold'), sfx('badge')))
+  if (S.goalHit && st.done === S.cfg.goal) later(() => (mega('🏆 META BATIDA!'), sfx('big')), 600)
+  else if (st.done % 50 === 0 && st.done) later(() => toast(`🎉 ${st.done} questões feitas!`), 1200)
 }
 
 function giveItemFx(id: ItemId, why: string) {
-  toast(`Ganhou ${ITEMS[id].name} ${why}!`, 'item')
+  toast(`🎁 Ganhou ${ITEMS[id].name} ${why}!`, 'item')
   sfx('gift')
 }
 
@@ -394,7 +394,7 @@ export function skipQuestion() {
     d.skipped++
   })
   sfx('skip')
-  toast('Pulou. Não conta como erro.')
+  toast('⏭️ Pulou. Não conta como erro.')
   goNext()
 }
 

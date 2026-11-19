@@ -38,7 +38,7 @@ function Stepper({ value, onChange, label, max }: { value: number; onChange: (n:
   const clamp = (n: number) => Math.max(0, Math.min(max ?? 999, Number.isFinite(n) ? Math.round(n) : 0))
   return (
     <div className="flex items-center gap-2">
-      <button type="button" onClick={() => onChange(clamp(value - 1))} className="grid h-10 w-10 place-items-center rounded-xl bg-[#efefed] text-ink hover:bg-[#e7e7e4]" aria-label={`Menos ${label}`}>
+      <button type="button" onClick={() => onChange(clamp(value - 1))} className="grid h-10 w-10 place-items-center rounded-xl bg-[#f1f2f5] text-ink hover:bg-[#e6e8ee]" aria-label={`Menos ${label}`}>
         <Minus size={18} />
       </button>
       <input
@@ -51,7 +51,7 @@ function Stepper({ value, onChange, label, max }: { value: number; onChange: (n:
         aria-label={label}
         className="h-12 w-20 rounded-xl border border-line text-center font-display text-2xl font-extrabold outline-none focus:border-brand"
       />
-      <button type="button" onClick={() => onChange(clamp(value + 1))} className="grid h-10 w-10 place-items-center rounded-xl bg-[#efefed] text-ink hover:bg-[#e7e7e4]" aria-label={`Mais ${label}`}>
+      <button type="button" onClick={() => onChange(clamp(value + 1))} className="grid h-10 w-10 place-items-center rounded-xl bg-[#f1f2f5] text-ink hover:bg-[#e6e8ee]" aria-label={`Mais ${label}`}>
         <Plus size={18} />
       </button>
     </div>
@@ -63,7 +63,7 @@ function Prompt({ p, onDone }: { p: Pending; onDone: () => void }) {
   const [withCorrect, setWithCorrect] = useState(false)
   const [correct, setCorrect] = useState(0)
   const [saving, setSaving] = useState(false)
-  const color = p.subject?.color ?? '#c4471d'
+  const color = p.subject?.color ?? '#3e63f2'
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === 'Escape' && onDone()
@@ -78,9 +78,9 @@ function Prompt({ p, onDone }: { p: Pending; onDone: () => void }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#18181b]/45 p-4 backdrop-blur-[2px]" onMouseDown={onDone}>
-      <div className="capi-pop relative w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-3 px-6 pt-6 pb-4" style={{ borderTop: `3px solid ${color}` }}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#0b1026]/45 p-4 backdrop-blur-[2px]" onMouseDown={onDone}>
+      <div className="capi-pop relative w-full max-w-md overflow-hidden rounded-[26px] bg-white shadow-2xl" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-3 px-6 pt-6 pb-4" style={{ background: `radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, ${color} 18%, #fff), #fff 70%)` }}>
           <Capybara pose="pensando" size={84} />
           <div className="min-w-0">
             <div className="font-display text-xl font-extrabold">Fez questões?</div>
@@ -89,7 +89,7 @@ function Prompt({ p, onDone }: { p: Pending; onDone: () => void }) {
               <span className="truncate">{p.label}</span>
             </div>
           </div>
-          <button onClick={onDone} className="absolute top-3 right-3 rounded-md p-1.5 text-muted hover:bg-slate-100" aria-label="Fechar">
+          <button onClick={onDone} className="absolute top-3 right-3 rounded-full p-1.5 text-muted hover:bg-slate-100" aria-label="Fechar">
             <X size={18} />
           </button>
         </div>
@@ -100,7 +100,7 @@ function Prompt({ p, onDone }: { p: Pending; onDone: () => void }) {
             <Stepper value={count} onChange={(n) => (setCount(n), setCorrect((c) => Math.min(c, n)))} label="questões feitas" />
             <div className="mt-2 flex flex-wrap gap-1.5">
               {[5, 10, 15, 20, 30, 50].map((n) => (
-                <button key={n} onClick={() => (setCount(n), setCorrect((c) => Math.min(c, n)))} className={`rounded-md px-3 py-1 text-xs font-bold transition ${count === n ? 'text-white' : 'bg-[#efefed] text-slate-600 hover:bg-[#e7e7e4]'}`} style={count === n ? { background: color } : undefined}>
+                <button key={n} onClick={() => (setCount(n), setCorrect((c) => Math.min(c, n)))} className={`rounded-full px-3 py-1 text-xs font-bold transition ${count === n ? 'text-white' : 'bg-[#f1f2f5] text-slate-600 hover:bg-[#e6e8ee]'}`} style={count === n ? { background: color } : undefined}>
                   {n}
                 </button>
               ))}
@@ -109,7 +109,7 @@ function Prompt({ p, onDone }: { p: Pending; onDone: () => void }) {
 
           <div className="rounded-2xl border border-line p-3">
             <label className="flex cursor-pointer items-center gap-2 text-sm font-bold">
-              <input type="checkbox" checked={withCorrect} onChange={(e) => setWithCorrect(e.target.checked)} className="h-4 w-4 accent-[#c4471d]" />
+              <input type="checkbox" checked={withCorrect} onChange={(e) => setWithCorrect(e.target.checked)} className="h-4 w-4 accent-[#3e63f2]" />
               Quero informar os acertos
             </label>
             <p className="mt-1 pl-6 text-[11px] text-muted">Com os acertos, as questões também contam no domínio do tópico.</p>

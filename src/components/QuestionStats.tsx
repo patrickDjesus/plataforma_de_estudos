@@ -1,12 +1,11 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowRight, Flame, ListChecks, Percent, Target } from 'lucide-react'
+import { ArrowRight, ListChecks } from 'lucide-react'
 import { db } from '../db/db'
 import { useSettings, useSubjectMap } from '../db/hooks'
 import { DEFAULT_DAILY_GOAL, goalStreak } from '../lib/dailyGoal'
 import { addDays, fromISODate, toISODate, weekIdOf } from '../lib/dates'
 import { tint } from '../lib/colors'
 import { SubjectIcon } from './SubjectIcon'
-import { HeroStat, TileIcon } from './dash'
 
 interface Bucket {
   done: number
@@ -81,7 +80,7 @@ export function useQuestionStats() {
 }
 
 const pct = (b: Bucket) => (b.graded ? Math.round((b.correct / b.graded) * 100) : null)
-const accColor = (p: number | null) => (p === null ? '#a1a19b' : p >= 80 ? '#4d7a57' : p >= 60 ? '#7a8a3a' : p >= 40 ? '#a8742a' : '#b23a2a')
+const accColor = (p: number | null) => (p === null ? '#94a3b8' : p >= 80 ? '#10b981' : p >= 60 ? '#84cc16' : p >= 40 ? '#eab308' : '#ef4444')
 
 /** Faixa compacta no Geral. */
 export function QuestionsStrip({ onMore, onRegister }: { onMore: () => void; onRegister?: () => void }) {
@@ -89,8 +88,13 @@ export function QuestionsStrip({ onMore, onRegister }: { onMore: () => void; onR
   if (!s) return null
   const p = pct(s.total)
   return (
-    <button onClick={onMore} className="group mb-6 flex w-full flex-wrap items-center gap-x-7 gap-y-2 border-y border-line py-3 text-left">
-      <span className="font-mono text-[11px] font-semibold tracking-[0.12em] uppercase">Questões</span>
+    <button onClick={onMore} className="group mb-5 flex w-full flex-wrap items-center gap-x-6 gap-y-2 rounded-[18px] border border-line bg-gradient-to-r from-[#f5f7ff] to-white px-5 py-3.5 text-left transition hover:border-brand/40">
+      <span className="flex items-center gap-2 text-sm font-bold">
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-white">
+          <ListChecks size={18} />
+        </span>
+        Questões
+      </span>
       <DailyGoalMini s={s} />
       <Mini value={s.week.done} label="nesta semana" />
       <Mini value={s.total.done} label="no total" />
@@ -109,13 +113,13 @@ export function QuestionsStrip({ onMore, onRegister }: { onMore: () => void; onR
               onRegister()
             }
           }}
-          className="ml-auto text-sm font-semibold text-ink underline decoration-line decoration-2 underline-offset-4 hover:decoration-ink"
+          className="ml-auto rounded-xl bg-brand px-3 py-1.5 text-xs font-bold text-white hover:brightness-110"
         >
-          registrar extras
+          + Registrar extras
         </span>
       )}
-      <span className={`${onRegister ? '' : 'ml-auto'} flex items-center gap-1 text-sm font-semibold text-brand`}>
-        resumo <ArrowRight size={14} className="transition group-hover:translate-x-0.5" />
+      <span className={`${onRegister ? '' : 'ml-auto'} flex items-center gap-1 text-xs font-bold text-brand`}>
+        Ver resumo <ArrowRight size={14} className="transition group-hover:translate-x-0.5" />
       </span>
     </button>
   )
@@ -143,7 +147,7 @@ export function QuestionsSummary() {
   const rows = [...s.bySubject.entries()].filter(([id]) => subjects.has(id)).sort((a, b) => b[1].done - a[1].done)
   const maxRow = Math.max(1, ...rows.map(([, b]) => b.done))
   return (
-    <div className="rounded-lg border border-line p-5 lg:col-span-2">
+    <div className="rounded-[18px] border border-line p-5 lg:col-span-2">
       <h3 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold">
         <ListChecks size={18} /> Questões
       </h3>
@@ -178,7 +182,7 @@ export function QuestionsSummary() {
               {s.weeks.map((w, i) => (
                 <div key={w.weekId} className="flex flex-1 flex-col items-center gap-1" title={`Semana de ${w.weekId.slice(8)}/${w.weekId.slice(5, 7)}: ${w.done} questões`}>
                   <span className="text-[10px] font-bold text-muted tabular-nums">{w.done || ''}</span>
-                  <div className="flex w-full items-end rounded-md bg-[#ececea]" style={{ height: 100 }}>
+                  <div className="flex w-full items-end rounded-md bg-[#eef0f4]" style={{ height: 100 }}>
                     <div className={`w-full rounded-md ${i === 7 ? 'bg-brand' : 'bg-[#a8b6ff]'}`} style={{ height: `${(w.done / max) * 100}%` }} />
                   </div>
                   <span className="text-[10px] text-muted">{i === 7 ? 'esta' : `${w.weekId.slice(8)}/${w.weekId.slice(5, 7)}`}</span>
@@ -209,7 +213,7 @@ export function QuestionsSummary() {
                         </span>
                       </div>
                       <div className="h-1.5 overflow-hidden rounded-full" style={{ background: tint(sub.color, 0.14) }}>
-                        <div className="h-full rounded-md" style={{ width: `${(b.done / maxRow) * 100}%`, background: sub.color }} />
+                        <div className="h-full rounded-full" style={{ width: `${(b.done / maxRow) * 100}%`, background: sub.color }} />
                       </div>
                     </div>
                   </div>
@@ -225,7 +229,7 @@ export function QuestionsSummary() {
 
 function Big({ value, label, color }: { value: number | string; label: string; color?: string }) {
   return (
-    <div className="rounded-2xl bg-[#f4f4f2] p-3">
+    <div className="rounded-2xl bg-[#f6f7f9] p-3">
       <div className="font-display text-2xl font-extrabold tabular-nums" style={color ? { color } : undefined}>
         {value}
       </div>
@@ -245,36 +249,16 @@ function DailyGoalMini({ s }: { s: QuestionStats }) {
   const hit = done >= goal
   return (
     <span className="flex items-center gap-2" title={`Meta do dia: ${done}/${goal} questões · ${streak} dia(s) seguidos batendo a meta`}>
-      <span className="relative grid h-9 w-9 place-items-center rounded-md" style={{ background: `conic-gradient(${hit ? '#4d7a57' : '#c4471d'} ${pct * 360}deg, #e7e7e4 0deg)` }}>
-        <span className="grid h-7 w-7 place-items-center rounded-md bg-white text-[11px] font-extrabold tabular-nums">{hit ? '✓' : done}</span>
+      <span className="relative grid h-9 w-9 place-items-center rounded-full" style={{ background: `conic-gradient(${hit ? '#22b573' : '#3e63f2'} ${pct * 360}deg, #e6e8f0 0deg)` }}>
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-[11px] font-extrabold tabular-nums">{hit ? '✓' : done}</span>
       </span>
       <span className="leading-tight">
         <b className="block font-display text-base tabular-nums">
           {done}
           <span className="text-xs text-muted">/{goal}</span>
         </b>
-        <span className="text-[11px] text-muted">hoje{streak > 0 ? ` · ${streak} dia${streak > 1 ? 's' : ''}` : ''}</span>
+        <span className="text-[11px] text-muted">hoje{streak > 0 ? ` · 🔥 ${streak} dia${streak > 1 ? 's' : ''}` : ''}</span>
       </span>
     </span>
-  )
-}
-
-/** Números do cabeçalho da página Questões. */
-export function QuestionsHeroStats() {
-  const s = useQuestionStats()
-  const settings = useSettings()
-  if (!s) return null
-  const goal = settings.dailyGoal ?? DEFAULT_DAILY_GOAL
-  const today = toISODate(new Date())
-  const done = s.byDay.get(today) ?? 0
-  const streak = goalStreak(s.byDay, goal, today)
-  const p = pct(s.total)
-  return (
-    <>
-      <HeroStat tile={<TileIcon color="#c4471d"><Target size={22} /></TileIcon>} value={<>{done}<span className="text-sm text-muted">/{goal}</span></>} label="meta de hoje" accent={done >= goal ? '#4d7a57' : '#c4471d'} />
-      <HeroStat tile={<TileIcon color="#b5612a"><Flame size={22} /></TileIcon>} value={streak} label={streak === 1 ? 'dia batendo a meta' : 'dias batendo a meta'} accent="#b5612a" />
-      <HeroStat tile={<TileIcon color="#6b5a8a"><ListChecks size={22} /></TileIcon>} value={s.week.done} label="questões na semana" />
-      <HeroStat tile={<TileIcon color="#4d7a57"><Percent size={22} /></TileIcon>} value={p === null ? '—' : `${p}%`} label="acerto geral" accent={accColor(p)} />
-    </>
   )
 }

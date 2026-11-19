@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { BookOpen, Sparkles, Swords, Waypoints, ChevronDown, ChevronRight, FilePlus2, FileText, Link2, Search, Trash2 } from 'lucide-react'
+import { Sparkles, Swords, Waypoints, ChevronDown, ChevronRight, FilePlus2, FileText, Link2, Search, Trash2 } from 'lucide-react'
 import { AREAS, useNote, useNotes, useSubjects, useTopics } from '../db/hooks'
 import { createNote, deleteNote, updateNote } from '../db/repo'
 import { db } from '../db/db'
@@ -14,7 +14,6 @@ import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
 import { askConfirm } from '../components/confirm'
 import { Btn, Card, inputCls } from '../components/ui'
-import { HeroStat, PageHeader, TileIcon } from '../components/dash'
 
 export function NotebookPage() {
   const { noteId } = useParams()
@@ -80,30 +79,7 @@ export function NotebookPage() {
     </Link>
   )
 
-  const written = notes.filter((n) => n.content.replace(/<[^>]+>/g, '').trim().length > 0).length
-  const linkCount = notes.reduce((acc, n) => acc + linkedTitles(n.content).length, 0)
-
   return (
-    <>
-    <PageHeader
-      icon={<BookOpen size={28} />}
-      color="#2f5f7e"
-      title="Caderno"
-      subtitle="Use [[Nome]] para ligar notas entre matérias."
-      stats={
-        <>
-          <HeroStat tile={<TileIcon color="#2f5f7e"><FileText size={22} /></TileIcon>} value={written} label={written === 1 ? 'nota escrita' : 'notas escritas'} />
-          <HeroStat tile={<TileIcon color="#6b5a8a"><Link2 size={22} /></TileIcon>} value={linkCount} label={linkCount === 1 ? 'ligação entre notas' : 'ligações entre notas'} />
-        </>
-      }
-      actions={
-        subjects[0] && (
-          <Btn variant="primary" onClick={() => newNote(note?.subjectId ?? subjects[0].id, note?.topicId)}>
-            <FilePlus2 size={16} /> Nova nota
-          </Btn>
-        )
-      }
-    />
     <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
       {/* Árvore */}
       <Card className="h-fit p-4 lg:sticky lg:top-24">
@@ -284,7 +260,6 @@ export function NotebookPage() {
         </Card>
       )}
     </div>
-    </>
   )
 }
 
@@ -297,7 +272,7 @@ function ConnList({ title, notes, subjects }: { title: string; notes: Note[]; su
         {notes.map((n) => {
           const s = subjects.find((x) => x.id === n.subjectId)
           return (
-            <Link key={n.id} to={`/caderno/${n.id}`} className="rounded-md px-3 py-1 text-xs font-semibold" style={{ background: tint(s?.color ?? '#c4471d'), color: s?.color }}>
+            <Link key={n.id} to={`/caderno/${n.id}`} className="rounded-full px-3 py-1 text-xs font-semibold" style={{ background: tint(s?.color ?? '#3e63f2'), color: s?.color }}>
               {n.title}
             </Link>
           )

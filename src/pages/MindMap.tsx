@@ -31,8 +31,7 @@ import { useMastery } from '../db/mastery'
 import { askConfirm } from '../components/confirm'
 import { Capybara } from '../components/Capybara'
 import { SubjectIcon } from '../components/SubjectIcon'
-import { Btn, Card, Tabs, inputCls } from '../components/ui'
-import { PageHeader } from '../components/dash'
+import { Btn, Card, PageHeader, Tabs, inputCls } from '../components/ui'
 
 type NodeData = GNode & Record<string, unknown>
 
@@ -55,7 +54,7 @@ function SubjectNode({ data }: NodeProps<Node<NodeData>>) {
   const s = subjects.find((x) => x.id === data.refId)
   return (
     <div
-      className="group flex items-center gap-2.5 rounded-lg border-2 bg-white py-2 pr-4 pl-2"
+      className="group flex items-center gap-2.5 rounded-[20px] border-2 bg-white py-2 pr-4 pl-2 shadow-[0_10px_30px_-12px_rgba(16,24,40,0.35)]"
       style={{ borderColor: data.color, boxShadow: `0 0 0 6px ${tint(data.color, 0.12)}, 0 12px 28px -12px ${data.color}` }}
     >
       <Handles />
@@ -71,14 +70,14 @@ function TopicNode({ data }: NodeProps<Node<NodeData>>) {
     const c = masteryColor(data.mastery)
     return (
       <div
-        className={`group flex items-center gap-1.5 rounded-md border-2 px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap ${has ? '' : 'border-dashed'}`}
-        style={{ background: has ? tint(c, 0.16) : '#fff', borderColor: has ? c : '#cbd5e1', color: has ? `color-mix(in srgb, ${c} 70%, #000)` : '#6b6b66' }}
+        className={`group flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap ${has ? '' : 'border-dashed'}`}
+        style={{ background: has ? tint(c, 0.16) : '#fff', borderColor: has ? c : '#cbd5e1', color: has ? `color-mix(in srgb, ${c} 70%, #000)` : '#64748b' }}
         title={has ? `Domínio: ${data.mastery}% (${masteryLabel(data.mastery)})` : 'Ainda sem dados de domínio'}
       >
         <Handles />
         {data.label}
         {has && (
-          <span className="rounded-md px-1.5 text-[10px] font-extrabold text-white" style={{ background: c }}>
+          <span className="rounded-full px-1.5 text-[10px] font-extrabold text-white" style={{ background: c }}>
             {data.mastery}%
           </span>
         )}
@@ -87,7 +86,7 @@ function TopicNode({ data }: NodeProps<Node<NodeData>>) {
   }
   return (
     <div
-      className="group flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap"
+      className="group flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-semibold whitespace-nowrap"
       style={{ background: tint(data.color, 0.12), borderColor: tint(data.color, 0.4), color: `color-mix(in srgb, ${data.color} 80%, #000)` }}
     >
       <Handles />
@@ -194,10 +193,9 @@ function MindMap() {
   return (
     <>
       <PageHeader
-        icon={<Waypoints size={28} />}
-        color="#6b5a8a"
+        icon={<Waypoints size={24} />}
         title="Mapa mental"
-        subtitle="Matérias, tópicos e notas ligados."
+        subtitle="Suas matérias, tópicos e notas conectados. As ligações [[…]] do caderno aparecem sozinhas."
         actions={
           <>
             <Btn onClick={() => fitView({ padding: 0.2, duration: 400 })}>
@@ -249,7 +247,7 @@ function MindMap() {
             className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition ${byMastery ? 'border-transparent bg-ink text-white' : 'border-line bg-white text-slate-600'}`}
             title="Pinta cada tópico de vermelho (fraco) a verde (dominado)"
           >
-            <span className="h-3 w-8 rounded-full" style={{ background: 'linear-gradient(90deg,#b23a2a,#a8842e,#4d7a57)' }} /> Domínio
+            <span className="h-3 w-8 rounded-full" style={{ background: 'linear-gradient(90deg,#ef4444,#eab308,#10b981)' }} /> Domínio
           </button>
           <span className="mx-1 hidden h-6 w-px bg-line md:block" />
           <div className="flex flex-wrap gap-1.5">
@@ -259,7 +257,7 @@ function MindMap() {
                 <button
                   key={a.id}
                   onClick={() => setAreas(on ? areas.filter((x) => x !== a.id) : [...areas, a.id])}
-                  className="rounded-md border px-3 py-1 text-xs font-semibold transition"
+                  className="rounded-full border px-3 py-1 text-xs font-semibold transition"
                   style={on ? { background: AREA_COLOR[a.id], borderColor: AREA_COLOR[a.id], color: '#fff' } : { borderColor: tint(AREA_COLOR[a.id], 0.4), color: AREA_COLOR[a.id] }}
                 >
                   {a.name}
@@ -274,7 +272,7 @@ function MindMap() {
                   <button
                     key={s.id}
                     onClick={() => setSubjectFilter(on ? subjectFilter.filter((x) => x !== s.id) : [...subjectFilter, s.id])}
-                    className="rounded-md border px-2.5 py-1 text-xs font-semibold transition"
+                    className="rounded-full border px-2.5 py-1 text-xs font-semibold transition"
                     style={on ? { background: s.color, borderColor: s.color, color: '#fff' } : { borderColor: tint(s.color, 0.35), color: s.color, background: tint(s.color, 0.06) }}
                   >
                     {s.name}
@@ -284,7 +282,7 @@ function MindMap() {
           </div>
         </div>
 
-        <div className="relative h-[calc(100vh-290px)] min-h-[460px] bg-[#f8f8f6]">
+        <div className="relative h-[calc(100vh-290px)] min-h-[460px] bg-[#fafbfc]">
           {subjects.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <Capybara pose="pensando" size={140} />
@@ -336,7 +334,7 @@ function MindMap() {
           </span>
           {byMastery && (
             <span className="flex items-center gap-2">
-              <span className="h-2 w-16 rounded-full" style={{ background: 'linear-gradient(90deg,#b23a2a,#b5612a,#a8842e,#7a8a3a,#4d7a57)' }} /> domínio do tópico (fraco → dominado)
+              <span className="h-2 w-16 rounded-full" style={{ background: 'linear-gradient(90deg,#ef4444,#f97316,#eab308,#84cc16,#10b981)' }} /> domínio do tópico (fraco → dominado)
             </span>
           )}
           <span className="ml-auto">Arraste para organizar · puxe da bolinha lateral de um nó até outro para ligar · duplo clique abre a nota</span>

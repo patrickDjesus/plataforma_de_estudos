@@ -53,11 +53,13 @@ export function AchievementsSection() {
     <div className="space-y-5">
       <div className="grid gap-5 lg:grid-cols-[1fr_1.6fr]">
         {/* Nível geral */}
-        <div className="relative bg-ink p-6 text-paper">
+        <div className="relative overflow-hidden rounded-[18px] bg-gradient-to-br from-[#3e63f2] to-[#6b4cff] p-6 text-white">
+          <span className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/10" />
+          <span className="absolute -bottom-14 -left-6 h-36 w-36 rounded-full bg-white/5" />
           <div className="relative">
             <div className="text-xs font-semibold tracking-wider text-white/70 uppercase">Nível geral</div>
             <div className="mt-2 flex items-end gap-3">
-              <span className="font-display text-6xl leading-none font-semibold text-[#e8a07f]">{total.level}</span>
+              <span className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-[#ffb648] to-[#ff7a2f] font-display text-3xl font-extrabold shadow-lg">{total.level}</span>
               <div className="pb-1">
                 <div className="font-display text-2xl font-bold tabular-nums">{total.xp} XP</div>
                 <div className="text-sm text-white/75">
@@ -66,7 +68,7 @@ export function AchievementsSection() {
               </div>
             </div>
             <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/20">
-              <div className="h-full rounded-md bg-white" style={{ width: `${total.progress * 100}%` }} />
+              <div className="h-full rounded-full bg-white" style={{ width: `${total.progress * 100}%` }} />
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
               <div className="rounded-xl bg-white/10 py-2">
@@ -83,7 +85,7 @@ export function AchievementsSection() {
         </div>
 
         {/* Nível por área */}
-        <div className="rounded-lg border border-line p-5">
+        <div className="rounded-[18px] border border-line p-5">
           <h3 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold">
             <GraduationCap size={18} /> Nível por área
           </h3>
@@ -93,7 +95,7 @@ export function AchievementsSection() {
               const c = AREA_COLOR[l.id]
               return (
                 <div key={l.id} className="flex items-center gap-4">
-                  <span className="subject-icon h-12 w-12 shrink-0 rounded-lg font-display text-lg font-extrabold" style={{ color: c, border: `1px solid ${c}55` }}>
+                  <span className="subject-icon h-12 w-12 shrink-0 rounded-[14px] font-display text-lg font-extrabold" style={{ background: `linear-gradient(145deg, ${c}, color-mix(in srgb, ${c} 72%, #000))` }}>
                     <span className="relative z-10">{l.level}</span>
                   </span>
                   <div className="min-w-0 flex-1">
@@ -104,7 +106,7 @@ export function AchievementsSection() {
                       </span>
                     </div>
                     <div className="h-2.5 overflow-hidden rounded-full" style={{ background: tint(c, 0.12) }}>
-                      <div className="h-full rounded-md transition-all" style={{ width: `${l.progress * 100}%`, background: c }} />
+                      <div className="h-full rounded-full transition-all" style={{ width: `${l.progress * 100}%`, background: c }} />
                     </div>
                   </div>
                 </div>
@@ -115,10 +117,10 @@ export function AchievementsSection() {
       </div>
 
       {/* Conquistas */}
-      <div className="rounded-lg border border-line p-5">
+      <div className="rounded-[18px] border border-line p-5">
         <h3 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold">
           <Trophy size={18} /> Conquistas
-          <span className="rounded-md bg-brand-soft px-2 py-0.5 text-[11px] font-bold text-brand">
+          <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-bold text-brand">
             {got}/{list.length}
           </span>
         </h3>
@@ -127,10 +129,10 @@ export function AchievementsSection() {
             const Icon = ACHIEVEMENT_ICONS[a.icon]
             const when = data.unlocked.get(a.id)
             return (
-              <div key={a.id} className={`relative flex flex-col items-center rounded-2xl border p-4 text-center transition ${a.unlocked ? 'border-transparent' : 'border-line bg-[#f8f8f6]'}`} style={a.unlocked ? { background: tint(a.color, 0.08), boxShadow: `inset 0 0 0 1.5px ${tint(a.color, 0.35)}` } : undefined}>
+              <div key={a.id} className={`relative flex flex-col items-center rounded-2xl border p-4 text-center transition ${a.unlocked ? 'border-transparent' : 'border-line bg-[#fafbfc]'}`} style={a.unlocked ? { background: tint(a.color, 0.08), boxShadow: `inset 0 0 0 1.5px ${tint(a.color, 0.35)}` } : undefined}>
                 <span
-                  className={`subject-icon mb-2 h-14 w-14 rounded-lg ${a.unlocked ? '' : 'grayscale'}`}
-                  style={{ color: a.unlocked ? a.color : '#a1a19b', border: `1px solid ${a.unlocked ? a.color + '55' : '#d9d9d5'}` }}
+                  className={`subject-icon mb-2 h-14 w-14 rounded-[18px] ${a.unlocked ? '' : 'grayscale'}`}
+                  style={{ background: a.unlocked ? `linear-gradient(145deg, ${a.color}, color-mix(in srgb, ${a.color} 70%, #000))` : 'linear-gradient(145deg,#cfd4de,#a9b0be)' }}
                 >
                   {a.unlocked ? <Icon size={26} /> : <Lock size={22} />}
                 </span>
@@ -142,8 +144,8 @@ export function AchievementsSection() {
                   </div>
                 ) : (
                   <div className="mt-2 w-full">
-                    <div className="h-1.5 overflow-hidden rounded-full bg-[#e7e7e4]">
-                      <div className="h-full rounded-md" style={{ width: `${(a.value / a.target) * 100}%`, background: a.color }} />
+                    <div className="h-1.5 overflow-hidden rounded-full bg-[#eceef3]">
+                      <div className="h-full rounded-full" style={{ width: `${(a.value / a.target) * 100}%`, background: a.color }} />
                     </div>
                     <div className="mt-1 text-[11px] text-muted tabular-nums">
                       {a.value}/{a.target}

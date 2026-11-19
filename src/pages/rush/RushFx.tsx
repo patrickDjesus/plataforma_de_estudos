@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Flame } from 'lucide-react'
 import { Capybara } from '../../components/Capybara'
 import type { RushState } from '../../lib/rush'
 import { qHeat } from '../../lib/rush'
@@ -59,8 +58,8 @@ function mixHex(a: string, b: string, t: number) {
 }
 /** Claro e limpo até a média; daí escurece até um quase-preto avermelhado. */
 const STOPS: [number, string][] = [
-  [0, '#ffffff'],
-  [0.35, '#e7e7e4'],
+  [0, '#eef0f5'],
+  [0.35, '#e6e8ee'],
   [0.5, '#2c2f38'],
   [0.65, '#1d1a20'],
   [0.8, '#160b0e'],
@@ -100,7 +99,7 @@ export function Arena({ heat, boss, onFire, children }: { heat: number; boss: bo
     [],
   )
   return (
-    <div data-arena className="essential-motion relative isolate overflow-hidden rounded-xl p-3 transition-[background-color] duration-[1200ms] sm:p-5" style={{ backgroundColor: arenaColor(h) }}>
+    <div className="essential-motion relative isolate overflow-hidden rounded-[32px] p-3 transition-[background-color] duration-[1200ms] sm:p-5" style={{ backgroundColor: arenaColor(h) }}>
       {/* brilho vermelho que sobe do chão */}
       <div
         className={`pointer-events-none absolute inset-0 -z-10 transition-opacity duration-1000 ${h >= 0.8 ? 'rk-heartbeat' : ''}`}
@@ -158,7 +157,7 @@ export function FxLayer() {
       {flies.map((f) => (
         <span
           key={f.k}
-          className="rk-fly pointer-events-none fixed z-[67] rounded-md bg-[#18181b] px-2.5 py-0.5 font-display text-sm font-bold text-amber-300 shadow-lg"
+          className="rk-fly pointer-events-none fixed z-[67] rounded-full bg-[#16181d] px-2.5 py-0.5 font-display text-sm font-bold text-amber-300 shadow-lg"
           style={{ left: f.x - 24, top: f.y - 12, ['--dx' as string]: `${f.dx}px`, ['--dy' as string]: `${f.dy}px` }}
         >
           {f.text}
@@ -170,7 +169,7 @@ export function FxLayer() {
 
 /** Anel que se expande (atrás da Capi quando acerta). */
 export function Ring({ color = 'rgba(34,181,115,.5)', size = 120 }: { color?: string; size?: number }) {
-  return <span aria-hidden className="rk-ring pointer-events-none absolute top-1/2 left-1/2 -z-10 rounded-md border-4" style={{ width: size, height: size, marginLeft: -size / 2, marginTop: -size / 2, borderColor: color }} />
+  return <span aria-hidden className="rk-ring pointer-events-none absolute top-1/2 left-1/2 -z-10 rounded-full border-4" style={{ width: size, height: size, marginLeft: -size / 2, marginTop: -size / 2, borderColor: color }} />
 }
 
 // ---------- Faixa de destaque (combo, nível, chefão derrotado…) ----------
@@ -179,11 +178,11 @@ export function Banner({ text, k }: { text: string; k: number }) {
   const hasIcon = /\p{Extended_Pictographic}/u.test(icon)
   return (
     <div className="pointer-events-none fixed inset-x-0 top-[18%] z-[75] flex justify-center px-4">
-      <div key={k} className="rk-banner flex items-center gap-3 rounded-2xl border border-white/10 bg-[#18181b]/92 px-6 py-3.5 text-white shadow-[0_20px_50px_-15px_rgba(0,0,0,.6)] backdrop-blur">
+      <div key={k} className="rk-banner flex items-center gap-3 rounded-2xl border border-white/10 bg-[#16181d]/92 px-6 py-3.5 text-white shadow-[0_20px_50px_-15px_rgba(0,0,0,.6)] backdrop-blur">
         {hasIcon && <span className="text-3xl">{icon}</span>}
         <div>
           <div className="font-display text-2xl leading-none font-extrabold tracking-wide uppercase sm:text-3xl">{hasIcon ? rest.join(' ') : text}</div>
-          <div className="mt-2 h-[3px] w-16 rounded-md bg-gradient-to-r from-amber-400 to-orange-500" />
+          <div className="mt-2 h-[3px] w-16 rounded-full bg-gradient-to-r from-amber-400 to-orange-500" />
         </div>
       </div>
     </div>
@@ -230,9 +229,9 @@ export function ComboMeter({ streak, best }: { streak: number; best: number }) {
   const mult = (1 + Math.min(Math.max(streak - 1, 0), 9) / 10).toFixed(1)
   const hot = streak >= 5
   return (
-    <span key={streak} title={`Combo atual: ${streak} (recorde ${best})`} className={`rush-bump flex items-center gap-2 rounded-md py-1 pr-3 pl-1.5 transition-colors ${hot ? 'bg-[#18181b] text-white shadow-[0_0_18px_-2px_rgba(255,120,30,.6)]' : 'bg-[#efefed]'}`}>
-      <span className={`grid h-7 w-7 place-items-center rounded-md text-[15px] ${hot ? 'bg-orange-500/20' : 'bg-white'}`}>
-        <Flame size={16} className={streak >= 3 ? 'rk-flame text-[#e2551b]' : 'opacity-40'} />
+    <span key={streak} title={`Combo atual: ${streak} (recorde ${best})`} className={`rush-bump flex items-center gap-2 rounded-full py-1 pr-3 pl-1.5 transition-colors ${hot ? 'bg-[#16181d] text-white shadow-[0_0_18px_-2px_rgba(255,120,30,.6)]' : 'bg-[#f1f2f5]'}`}>
+      <span className={`grid h-7 w-7 place-items-center rounded-full text-[15px] ${hot ? 'bg-orange-500/20' : 'bg-white'}`}>
+        <span className={streak >= 3 ? 'rk-flame' : 'opacity-40 grayscale'}>🔥</span>
       </span>
       <span className="leading-none">
         <span className="block font-display text-sm font-extrabold tabular-nums">

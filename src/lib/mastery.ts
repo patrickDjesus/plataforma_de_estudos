@@ -87,12 +87,12 @@ export function computeMastery(m: MasteryInput): Mastery | null {
 
 /** Cor do domínio: vermelho (fraco) → amarelo → verde (dominado). */
 export function masteryColor(v: number | null | undefined): string {
-  if (v === null || v === undefined) return '#a1a19b'
-  if (v < 25) return '#b23a2a'
-  if (v < 45) return '#b5612a'
-  if (v < 65) return '#a8842e'
-  if (v < 80) return '#7a8a3a'
-  return '#4d7a57'
+  if (v === null || v === undefined) return '#94a3b8'
+  if (v < 25) return '#ef4444'
+  if (v < 45) return '#f97316'
+  if (v < 65) return '#eab308'
+  if (v < 80) return '#84cc16'
+  return '#10b981'
 }
 
 export function masteryLabel(v: number | null | undefined): string {

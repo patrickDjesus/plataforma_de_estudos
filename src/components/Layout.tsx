@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { BookOpen, Brain, ChevronDown, FileQuestion, CalendarRange, House, Layers, Settings, Waypoints } from 'lucide-react'
+import { BookOpen, Brain, ChevronDown, FileQuestion, CalendarRange, House, Layers, LayoutGrid, Settings, Waypoints } from 'lucide-react'
 import { db } from '../db/db'
 import { currentWeekId } from '../db/repo'
 import { addDays } from '../lib/dates'
@@ -52,12 +52,12 @@ export function Layout() {
   if (phone)
     return (
       <div className="min-h-full pb-20">
-        <header className="sticky top-0 z-40 border-b border-line bg-canvas">
+        <header className="sticky top-0 z-40 border-b border-line bg-white">
           <div className="flex h-14 items-center justify-between gap-2 px-3">
             <NavLink to="/" className="flex shrink-0 items-center" aria-label="Mendonça, início">
               <Logo />
             </NavLink>
-            <span className="font-mono text-[11px] tracking-wider text-muted uppercase">consulta</span>
+            <span className="rounded-full bg-[#f1f2f5] px-2.5 py-1 text-[11px] font-bold text-muted">Modo consulta</span>
             <div className="flex items-center gap-2">
               <SyncBadge />
             </div>
@@ -66,9 +66,10 @@ export function Layout() {
         <main key={`/${location.pathname.split('/')[1]}`} className="page-in px-3 py-4">
           <Outlet />
         </main>
-        <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 border-t border-ink bg-canvas" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} aria-label="Navegação">
-          {NAV.slice(0, 2).map(({ to, label }) => (
-            <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `py-3.5 text-center text-sm font-semibold ${isActive ? 'text-ink underline decoration-brand decoration-2 underline-offset-[6px]' : 'text-muted'}`}>
+        <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 border-t border-line bg-white" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} aria-label="Navegação">
+          {NAV.slice(0, 2).map(({ to, label, icon: Icon }) => (
+            <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-bold ${isActive ? 'text-brand' : 'text-slate-500'}`}>
+              <Icon size={22} strokeWidth={2} />
               {label}
             </NavLink>
           ))}
@@ -79,13 +80,13 @@ export function Layout() {
 
   return (
     <div className="min-h-full">
-      <header className="sticky top-0 z-40 border-b border-line bg-canvas/95 backdrop-blur-sm">
-        <div className="mx-auto flex h-[60px] max-w-[1240px] items-stretch gap-2 px-3 sm:gap-4 sm:px-4">
+      <header className="sticky top-0 z-40 border-b border-line bg-white">
+        <div className="mx-auto flex h-[68px] max-w-[1240px] items-stretch gap-2 px-3 sm:gap-4 sm:px-4">
           <NavLink to="/" className="flex shrink-0 items-center" aria-label="Mendonça, início">
             <Logo />
           </NavLink>
-          <nav className="flex min-w-0 flex-1 items-stretch justify-center gap-1 lg:gap-3">
-            {NAV.map(({ to, label }) => (
+          <nav className="flex min-w-0 flex-1 items-stretch justify-center gap-0.5 lg:gap-1">
+            {NAV.map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -93,12 +94,13 @@ export function Layout() {
                 title={label}
                 aria-label={label}
                 className={({ isActive }) =>
-                  `relative flex items-center px-2 text-[14px] font-semibold whitespace-nowrap transition-colors after:absolute after:inset-x-2 after:bottom-0 after:h-[2px] ${
-                    isActive ? 'text-ink after:bg-brand' : 'text-muted after:bg-transparent hover:text-ink'
+                  `relative flex items-center gap-1.5 px-2 text-[13.5px] font-semibold lg:px-2.5 whitespace-nowrap transition after:absolute after:inset-x-2 after:bottom-0 after:h-[3px] after:rounded-t-full ${
+                    isActive ? 'text-brand after:bg-brand' : 'text-slate-700 after:bg-transparent hover:text-ink'
                   }`
                 }
               >
-                {label}
+                <Icon size={18} strokeWidth={2} />
+                <span className="hidden lg:inline">{label}</span>
               </NavLink>
             ))}
             <MoreMenu />
@@ -143,21 +145,27 @@ function MoreMenu() {
         title="Mais páginas"
         aria-expanded={open}
         aria-haspopup="menu"
-        className={`relative flex items-center gap-1 px-2 text-[14px] font-semibold whitespace-nowrap transition-colors after:absolute after:inset-x-2 after:bottom-0 after:h-[2px] ${
-          active ? 'text-ink after:bg-brand' : 'text-muted after:bg-transparent hover:text-ink'
+        className={`relative flex items-center gap-1.5 px-2 text-[13.5px] font-semibold whitespace-nowrap transition after:absolute after:inset-x-2 after:bottom-0 after:h-[3px] after:rounded-t-full lg:px-2.5 ${
+          active ? 'text-brand after:bg-brand' : 'text-slate-700 after:bg-transparent hover:text-ink'
         }`}
       >
-        Mais
+        <LayoutGrid size={18} />
+        <span className="hidden lg:inline">Mais</span>
         <ChevronDown size={14} className={`transition ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div role="menu" className="absolute top-full right-0 z-50 w-56 border border-ink bg-paper py-1 shadow-xl">
-          {MORE.map(({ to, label, hint }) => {
+        <div role="menu" className="capi-pop absolute top-[calc(100%+6px)] right-0 z-50 w-64 rounded-2xl border border-line bg-white p-1.5 shadow-[0_20px_40px_-16px_rgba(16,24,40,0.35)]">
+          {MORE.map(({ to, label, hint, icon: Icon }) => {
             const on = location.pathname.startsWith(to)
             return (
-              <button key={to} role="menuitem" onClick={() => navigate(to)} className={`block w-full border-l-2 px-4 py-2.5 text-left transition-colors ${on ? 'border-brand bg-brand-soft/50' : 'border-transparent hover:bg-[#f4f4f2]'}`}>
-                <span className="block text-sm font-semibold">{label}</span>
-                <span className="block text-xs text-muted">{hint}</span>
+              <button key={to} role="menuitem" onClick={() => navigate(to)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${on ? 'bg-brand-soft' : 'hover:bg-slate-50'}`}>
+                <span className={`grid h-9 w-9 place-items-center rounded-xl ${on ? 'bg-brand text-white' : 'bg-[#f1f2f5] text-slate-600'}`}>
+                  <Icon size={18} />
+                </span>
+                <span>
+                  <span className={`block text-sm font-bold ${on ? 'text-brand' : ''}`}>{label}</span>
+                  <span className="block text-[11px] text-muted">{hint}</span>
+                </span>
               </button>
             )
           })}

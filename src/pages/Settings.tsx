@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react'
-import { Database, Download, RotateCcw, Settings2, SlidersHorizontal, Upload, UserRound } from 'lucide-react'
+import { Download, RotateCcw, Settings2, Upload } from 'lucide-react'
 import { useSettings } from '../db/hooks'
 import { applySeed, ensureSeed, exportBackup, importBackup, resetAllData, updateSettings } from '../db/repo'
 import { useNavigate } from 'react-router-dom'
 import type { Settings } from '../db/types'
 import { toISODate } from '../lib/dates'
-import { Btn, Card, Field, inputCls } from '../components/ui'
-import { DashShell, PageHeader } from '../components/dash'
+import { Btn, Card, Field, PageHeader, inputCls } from '../components/ui'
 import { askConfirm } from '../components/confirm'
 import { CAPI_POSES, Capybara, type CapiPose } from '../components/Capybara'
 import { showMascot } from '../lib/mascotBus'
@@ -48,14 +47,11 @@ const NUMBER_FIELDS: { key: keyof Settings; label: string; min: number; max: num
   { key: 'dailyGoal', label: 'Meta de questões por dia', min: 1, max: 300, def: 20 },
 ]
 
-type Section = 'perfil' | 'planejador' | 'dados'
-
 export function SettingsPage() {
   const settings = useSettings()
   const fileRef = useRef<HTMLInputElement>(null)
   const [msg, setMsg] = useState('')
   const [resetting, setResetting] = useState(false)
-  const [section, setSection] = useState<Section>('perfil')
   const navigate = useNavigate()
   const [backupText, setBackupText] = useState('')
   const [pasted, setPasted] = useState('')
@@ -89,21 +85,11 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader icon={<Settings2 size={28} />} color="#475569" title="Ajustes" subtitle="Seu perfil, as regras do planejador e os seus dados." />
-      <DashShell<Section>
-        value={section}
-        onChange={setSection}
-        items={[
-          { id: 'perfil', label: 'Perfil', icon: <UserRound size={20} /> },
-          { id: 'planejador', label: 'Planejador', icon: <SlidersHorizontal size={20} /> },
-          { id: 'dados', label: 'Dados', icon: <Database size={20} /> },
-        ]}
-      >
-      {section === 'perfil' && (
-      <div className="grid gap-5">
-        <Card>
+      <PageHeader icon={<Settings2 size={22} />} title="Ajustes" subtitle="Regras do planejador e backup dos seus dados." />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="lg:col-span-2">
           <h2 className="mb-4 text-lg font-bold">Perfil</h2>
-          <div className="max-w-sm space-y-4">
+          <div className="max-w-sm">
             <Field label="Como quer ser chamado?">
               <input
                 id="user-name"
@@ -114,8 +100,26 @@ export function SettingsPage() {
                 onBlur={(e) => updateSettings({ userName: e.target.value.trim() || undefined })}
               />
             </Field>
-            <label className="block max-w-sm">
-              <span className="mb-1.5 block font-mono text-[11px] tracking-wider text-muted uppercase">Prova alvo (opcional)</span>
+          </div>
+        </Card>
+        <Card className="lg:col-span-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold">Conheça o Capi</h2>
+              <p className="text-sm text-muted">A capivara que te dá boas-vindas, faz perguntas e comemora com você. Clique nele no canto da tela para conversar.</p>
+            </div>
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
+              <input
+                id="mascot-welcome"
+                type="checkbox"
+                className="h-4 w-4 accent-[#3e63f2]"
+                checked={settings.mascotWelcome !== false}
+                onChange={(e) => updateSettings({ mascotWelcome: e.target.checked })}
+              />
+              Boas-vindas ao abrir o site
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-bold">Prova alvo (opcional)</span>
               <input
                 defaultValue={settings.targetExam ?? ''}
                 key={`exam-${settings.targetExam ?? ''}`}
@@ -123,25 +127,7 @@ export function SettingsPage() {
                 placeholder="Ex.: ENEM, Fuvest, Unicamp"
                 className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm outline-none focus:border-brand"
               />
-              <span className="mt-1 block text-[11px] text-muted">Rush, simulado e listas imitam essa prova.</span>
-            </label>
-          </div>
-        </Card>
-        <Card>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-bold">Conheça o Capi</h2>
-              <p className="text-sm text-muted">Clique no Capi, no canto da tela, para conversar.</p>
-            </div>
-            <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold">
-              <input
-                id="mascot-welcome"
-                type="checkbox"
-                className="h-4 w-4 accent-[#c4471d]"
-                checked={settings.mascotWelcome !== false}
-                onChange={(e) => updateSettings({ mascotWelcome: e.target.checked })}
-              />
-              Boas-vindas ao abrir o site
+              <span className="mt-1 block text-[11px] text-muted">O Rush, o Simulado e as listas passam a imitar o estilo dessa prova. Vazio = nível ENEM/vestibular em geral.</span>
             </label>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-9">
@@ -149,7 +135,7 @@ export function SettingsPage() {
               <button
                 key={p}
                 onClick={() => showMascot({ pose: p, title: POSE_TITLE[p], text: POSE_TEXT[p], autoHideMs: 5000 })}
-                className="flex flex-col items-center rounded-2xl bg-[#f4f4f2] px-2 pt-3 pb-2 transition hover:bg-brand-soft"
+                className="flex flex-col items-center rounded-2xl bg-[#f6f7f9] px-2 pt-3 pb-2 transition hover:bg-brand-soft"
               >
                 <Capybara pose={p} size={86} />
                 <span className="mt-1 text-xs font-semibold capitalize">{p}</span>
@@ -157,9 +143,6 @@ export function SettingsPage() {
             ))}
           </div>
         </Card>
-      </div>
-      )}
-      {section === 'planejador' && (
         <Card>
           <h2 className="mb-4 text-lg font-bold">Planejador</h2>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -179,16 +162,13 @@ export function SettingsPage() {
               </Field>
             ))}
           </div>
-          <p className="mt-4 text-xs text-muted">Vale a partir do próximo plano gerado.</p>
+          <p className="mt-4 text-xs text-muted">As mudanças valem na próxima vez que o plano for gerado (check-in ou “Regerar plano”).</p>
         </Card>
 
-      )}
-      {section === 'dados' && (
-      <div className="grid gap-5">
         <Card>
           <h2 className="mb-1 text-lg font-bold">Backup</h2>
           <p className="mb-4 text-sm text-muted">
-            A nuvem já guarda tudo. O backup é uma cópia extra, sua.
+            Aberto pelo claude.ai, o Mendonça salva tudo na sua área privada da nuvem e sincroniza entre seus dispositivos (veja o selo ao lado do cronômetro). O backup é uma cópia extra, guardada por você.
           </p>
           <div className="flex flex-wrap gap-2">
             <Btn variant="primary" onClick={doExport}>
@@ -229,12 +209,12 @@ export function SettingsPage() {
           {msg && <p className="mt-3 text-sm font-semibold">{msg}</p>}
         </Card>
 
-        <Card>
+        <Card className="lg:col-span-2">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="max-w-xl">
               <h2 className="text-lg font-bold">Conteúdos padrão</h2>
               <p className="text-sm text-muted">
-                Recria o que faltar do Ensino Médio e do Inglês. O que você editou fica.
+                O Mendonça já vem com as matérias do Ensino Médio e o Inglês, com todos os tópicos e um documento pronto no caderno para cada um. Se você apagou algum e quer de volta, restaure aqui. Só o que estiver faltando é recriado; o que você editou fica como está.
               </p>
             </div>
             <Btn
@@ -249,12 +229,12 @@ export function SettingsPage() {
           </div>
         </Card>
 
-        <Card className="border-rose-100">
+        <Card className="border-rose-100 lg:col-span-2">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="max-w-xl">
               <h2 className="text-lg font-bold text-rose-700">Reiniciar todos os dados</h2>
               <p className="text-sm text-muted">
-                Apaga tudo, aqui e na nuvem. Não tem volta.
+                Apaga matérias, tópicos, notas, semanas, histórico, revisões, mapa, conquistas e ajustes, neste navegador e na nuvem (os outros dispositivos também são limpos). Não dá para desfazer: exporte um backup antes se quiser guardar algo.
               </p>
             </div>
             <Btn
@@ -275,8 +255,6 @@ export function SettingsPage() {
           </div>
         </Card>
       </div>
-      )}
-      </DashShell>
     </>
   )
 }

@@ -12,17 +12,17 @@ import { Spinner, VoiceTextarea } from './Voice'
 import { Card } from './ui'
 
 type Theme = { tema: string; contexto: string; dicas: string[] }
-const COLOR = '#2f5f7e'
+const COLOR = '#0284c7'
 const CAT_COLOR: Record<WritingCategory, string> = {
   crase: '#e11d48',
-  virgula: '#a8742a',
-  concordancia: '#6b5a8a',
+  virgula: '#f59e0b',
+  concordancia: '#8b5cf6',
   regencia: '#0d9488',
   acentuacao: '#2563eb',
-  ortografia: '#9a4a6a',
+  ortografia: '#db2777',
   pontuacao: '#ea580c',
   colocacao: '#65a30d',
-  outro: '#6b6b66',
+  outro: '#64748b',
 }
 const CATS = Object.keys(CATEGORY_LABEL) as WritingCategory[]
 
@@ -57,7 +57,7 @@ function highlight(text: string, devs: WritingDeviation[]) {
 
 function reaction(devs: number, w: number): { pose: CapiPose; title: string } {
   const rate = w ? (devs / w) * 100 : 0
-  if (devs === 0) return { pose: 'comemorando', title: 'Texto impecável! Nenhum desvio da norma-padrão.' }
+  if (devs === 0) return { pose: 'comemorando', title: 'Texto impecável! Nenhum desvio da norma-padrão. 🎉' }
   if (devs <= 2 || rate <= 3) return { pose: 'formado', title: 'Muito bom! Só uns detalhes para ajustar.' }
   if (rate <= 8) return { pose: 'pensando', title: 'Bom texto, mas alguns desvios merecem atenção.' }
   return { pose: 'chorando', title: 'Vários desvios… mas é treinando que melhora!' }
@@ -161,7 +161,7 @@ export function WritingTraining() {
                     {theme.dicas.length > 0 && (
                       <ul className="mt-3 space-y-1 text-sm text-slate-600">
                         {theme.dicas.map((d) => (
-                          <li key={d}>{d}</li>
+                          <li key={d}>💡 {d}</li>
                         ))}
                       </ul>
                     )}
@@ -173,12 +173,12 @@ export function WritingTraining() {
                   <button onClick={() => setStage('escrevendo')} disabled={!theme} className="flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40" style={{ background: COLOR }}>
                     <PenLine size={16} /> Escrever sobre isso
                   </button>
-                  <button onClick={newTheme} disabled={loading} className="flex items-center gap-1.5 rounded-xl bg-[#efefed] px-4 py-2.5 text-sm font-semibold hover:bg-[#e7e7e4]">
+                  <button onClick={newTheme} disabled={loading} className="flex items-center gap-1.5 rounded-xl bg-[#f1f2f5] px-4 py-2.5 text-sm font-semibold hover:bg-[#e8e9ee]">
                     <RefreshCw size={15} /> Outro tema
                   </button>
                 </div>
                 <div className="mt-4 flex gap-2 border-t border-line pt-4">
-                  <input id="writing-custom" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Ou digite seu próprio tema…" className="flex-1 rounded-xl border border-line bg-[#f7f7f5] px-3 py-2 text-sm outline-none focus:border-brand/50" />
+                  <input id="writing-custom" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Ou digite seu próprio tema…" className="flex-1 rounded-xl border border-line bg-[#f8f9fb] px-3 py-2 text-sm outline-none focus:border-brand/50" />
                   <button
                     disabled={!custom.trim()}
                     onClick={() => {
@@ -209,7 +209,7 @@ export function WritingTraining() {
                 rows={12}
                 disabled={stage === 'corrigindo'}
                 placeholder="Escreva (ou fale) seu texto aqui. 1 a 3 parágrafos já bastam."
-                className="w-full rounded-2xl border border-line bg-[#f8f8f6] px-5 py-4 text-[15px] leading-relaxed outline-none focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10"
+                className="w-full rounded-2xl border border-line bg-[#fcfcfd] px-5 py-4 text-[15px] leading-relaxed outline-none focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10"
               />
             </div>
             {error && <p className="mt-2 text-sm font-semibold text-rose-700">{error}</p>}
@@ -238,8 +238,8 @@ export function WritingTraining() {
                     <span className="font-semibold">{CATEGORY_LABEL[cat]}</span>
                     <span className="text-muted tabular-nums">{n}×</span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-[#ececea]">
-                    <div className="h-full rounded-md" style={{ width: `${(n / counts[0][1]) * 100}%`, background: CAT_COLOR[cat] }} />
+                  <div className="h-2 overflow-hidden rounded-full bg-[#eef0f4]">
+                    <div className="h-full rounded-full" style={{ width: `${(n / counts[0][1]) * 100}%`, background: CAT_COLOR[cat] }} />
                   </div>
                 </div>
               ))}
@@ -256,7 +256,7 @@ export function WritingTraining() {
                   <span className="block truncate text-sm font-semibold">{w.theme}</span>
                   <span className="text-[11px] text-muted">{new Date(w.createdAt).toLocaleDateString('pt-BR')}</span>
                 </span>
-                <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-bold ${w.deviations.length === 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{w.deviations.length} desvios</span>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${w.deviations.length === 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{w.deviations.length} desvios</span>
               </button>
             ))}
           </div>
@@ -273,7 +273,7 @@ function WritingResult({ w, onBack, backLabel }: { w: Writing; onBack: () => voi
       <Card className="flex flex-wrap items-center gap-5 p-6">
         <Capybara pose={re.pose} size={130} />
         <div className="min-w-0 flex-1">
-          <div className="pop-score font-display text-5xl font-extrabold" style={{ color: w.deviations.length ? '#a8742a' : '#4d7a57' }}>
+          <div className="pop-score font-display text-5xl font-extrabold" style={{ color: w.deviations.length ? '#f59e0b' : '#10b981' }}>
             {w.deviations.length} {w.deviations.length === 1 ? 'desvio' : 'desvios'}
           </div>
           <h3 className="mt-1 text-lg font-bold">{re.title}</h3>
@@ -281,7 +281,7 @@ function WritingResult({ w, onBack, backLabel }: { w: Writing; onBack: () => voi
           {w.strengths && w.strengths.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {w.strengths.map((s) => (
-                <span key={s} className="rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                <span key={s} className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                   ✓ {s}
                 </span>
               ))}
@@ -298,10 +298,10 @@ function WritingResult({ w, onBack, backLabel }: { w: Writing; onBack: () => voi
           {w.deviations.map((d, i) => (
             <Card key={i} className="p-5">
               <div className="mb-2 flex items-center gap-2">
-                <span className="grid h-6 w-6 place-items-center rounded-md text-xs font-bold text-white" style={{ background: CAT_COLOR[d.category] }}>
+                <span className="grid h-6 w-6 place-items-center rounded-full text-xs font-bold text-white" style={{ background: CAT_COLOR[d.category] }}>
                   {i + 1}
                 </span>
-                <span className="rounded-md px-2.5 py-0.5 text-xs font-bold" style={{ background: `${CAT_COLOR[d.category]}1a`, color: CAT_COLOR[d.category] }}>
+                <span className="rounded-full px-2.5 py-0.5 text-xs font-bold" style={{ background: `${CAT_COLOR[d.category]}1a`, color: CAT_COLOR[d.category] }}>
                   {CATEGORY_LABEL[d.category]}
                 </span>
               </div>

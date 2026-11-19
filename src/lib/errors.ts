@@ -2,10 +2,10 @@ import type { Challenge, ErrorEntry, ErrorReason, WritingCategory } from '../db/
 import { addDays } from './dates'
 
 export const REASON_LABEL: Record<ErrorReason, { emoji: string; label: string }> = {
-  'nao-sabia': { emoji: '', label: 'Não sabia' },
-  confundi: { emoji: '', label: 'Confundi' },
-  desatencao: { emoji: '', label: 'Desatenção' },
-  tempo: { emoji: '', label: 'Faltou tempo' },
+  'nao-sabia': { emoji: '🤷', label: 'Não sabia' },
+  confundi: { emoji: '🔀', label: 'Confundi' },
+  desatencao: { emoji: '🙈', label: 'Desatenção' },
+  tempo: { emoji: '⏱️', label: 'Faltou tempo' },
 }
 
 export const CATEGORY_LABEL: Record<WritingCategory, string> = {

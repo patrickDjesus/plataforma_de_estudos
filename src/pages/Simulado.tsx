@@ -172,7 +172,7 @@ export function Simulado() {
           <Capybara pose="focado" size={90} />
           <div>
             <h2 className="font-display text-3xl font-extrabold">Simulado</h2>
-            <p className="text-sm text-muted">Múltipla escolha, tempo marcado, sem dica. Conta nas estatísticas.</p>
+            <p className="text-sm text-muted">Como numa prova de verdade: só múltipla escolha, tempo marcado, sem dica, sem Capi, sem efeitos. A nota e os erros entram nas suas estatísticas.</p>
           </div>
         </div>
         <div className="space-y-5">
@@ -188,7 +188,7 @@ export function Simulado() {
                     {list.map((s) => {
                       const on = chosen.includes(s.id)
                       return (
-                        <button key={s.id} onClick={() => setChosen(on ? chosen.filter((x) => x !== s.id) : [...chosen, s.id])} aria-pressed={on} className={`flex items-center gap-1.5 rounded-md border py-1 pr-3 pl-1 text-sm font-semibold transition ${on ? 'text-white' : 'border-line bg-white'}`} style={on ? { background: s.color, borderColor: s.color } : undefined}>
+                        <button key={s.id} onClick={() => setChosen(on ? chosen.filter((x) => x !== s.id) : [...chosen, s.id])} aria-pressed={on} className={`flex items-center gap-1.5 rounded-full border py-1 pr-3 pl-1 text-sm font-semibold transition ${on ? 'text-white' : 'border-line bg-white'}`} style={on ? { background: s.color, borderColor: s.color } : undefined}>
                           <SubjectIcon subject={s} size={22} /> {s.name}
                         </button>
                       )
@@ -204,7 +204,7 @@ export function Simulado() {
               <div className="mb-2 text-sm font-bold">Questões</div>
               <div className="flex gap-2">
                 {SIZES.map((n) => (
-                  <button key={n} onClick={() => setSize(n)} className={`rounded-md border-2 px-4 py-1.5 text-sm font-bold ${size === n ? 'border-brand bg-brand text-white' : 'border-line bg-white'}`}>
+                  <button key={n} onClick={() => setSize(n)} className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${size === n ? 'border-brand bg-brand text-white' : 'border-line bg-white'}`}>
                     {n}
                   </button>
                 ))}
@@ -215,7 +215,7 @@ export function Simulado() {
               <div className="mb-2 text-sm font-bold">Tempo por questão</div>
               <div className="flex gap-2">
                 {PER_Q.map((n) => (
-                  <button key={n} onClick={() => setPerQ(n)} className={`rounded-md border-2 px-4 py-1.5 text-sm font-bold ${perQ === n ? 'border-brand bg-brand text-white' : 'border-line bg-white'}`}>
+                  <button key={n} onClick={() => setPerQ(n)} className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${perQ === n ? 'border-brand bg-brand text-white' : 'border-line bg-white'}`}>
                     {n} min
                   </button>
                 ))}
@@ -226,7 +226,7 @@ export function Simulado() {
             </div>
           </div>
           {error && <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">{error}</p>}
-          <button disabled={!chosen.length} onClick={generate} className="flex items-center gap-2 rounded-2xl bg-ink px-7 py-3.5 font-display text-lg font-bold text-white transition active:translate-y-1 disabled:opacity-40">
+          <button disabled={!chosen.length} onClick={generate} className="flex items-center gap-2 rounded-2xl bg-ink px-7 py-3.5 font-display text-lg font-bold text-white shadow-[0_6px_0_#000] transition active:translate-y-1 disabled:opacity-40">
             <Timer size={18} /> Começar simulado
           </button>
         </div>
@@ -264,25 +264,25 @@ export function Simulado() {
             Questão {i + 1} de {qs.length}
             {short > 0 && <span className="ml-2 text-xs font-semibold text-amber-700">(a IA mandou {qs.length} de {qs.length + short}; o tempo foi ajustado)</span>}
           </span>
-          <span className={`flex items-center gap-1.5 rounded-md px-3 py-1 font-display text-base font-extrabold tabular-nums ${urgent ? 'bg-rose-100 text-rose-700' : 'bg-[#18181b] text-white'}`}>
+          <span className={`flex items-center gap-1.5 rounded-full px-3 py-1 font-display text-base font-extrabold tabular-nums ${urgent ? 'bg-rose-100 text-rose-700' : 'bg-[#16181d] text-white'}`}>
             <Clock3 size={15} /> {fmt(left)}
           </span>
         </div>
-        <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-[#e7e7e4]">
-          <div className="h-full rounded-md bg-ink transition-all" style={{ width: `${(i / qs.length) * 100}%` }} />
+        <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-[#e6e8ee]">
+          <div className="h-full rounded-full bg-ink transition-all" style={{ width: `${(i / qs.length) * 100}%` }} />
         </div>
         <Card key={q.id} className="page-in p-6 sm:p-8">
           <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-bold">
-            <span className="rounded-md px-2.5 py-1" style={{ background: tint(s?.color ?? '#c4471d', 0.14), color: s?.color }}>
+            <span className="rounded-full px-2.5 py-1" style={{ background: tint(s?.color ?? '#3e63f2', 0.14), color: s?.color }}>
               {s?.name}
             </span>
-            {q.topico && <span className="rounded-md bg-[#efefed] px-2.5 py-1 text-muted">{q.topico}</span>}
+            {q.topico && <span className="rounded-full bg-[#f1f2f5] px-2.5 py-1 text-muted">{q.topico}</span>}
           </div>
           <MathText text={q.enunciado} className="mb-5 text-[17px] leading-relaxed font-semibold whitespace-pre-wrap" />
           <div className="grid gap-2" role="radiogroup">
             {q.alternativas.map((a, k) => (
-              <button key={k} onClick={() => setSel(k)} aria-pressed={sel === k} className={`grid grid-cols-[34px_1fr] items-center gap-3 rounded-2xl border-2 px-3.5 py-2.5 text-left font-semibold transition ${sel === k ? 'border-ink bg-[#efefed]' : 'border-line bg-white hover:border-slate-300'}`}>
-                <span className={`grid h-[34px] w-[34px] place-items-center rounded-md font-display font-bold ${sel === k ? 'bg-ink text-white' : 'bg-[#efefed]'}`}>{'ABCDE'[k]}</span>
+              <button key={k} onClick={() => setSel(k)} aria-pressed={sel === k} className={`grid grid-cols-[34px_1fr] items-center gap-3 rounded-2xl border-2 px-3.5 py-2.5 text-left font-semibold transition ${sel === k ? 'border-ink bg-[#f1f2f5]' : 'border-line bg-white hover:border-slate-300'}`}>
+                <span className={`grid h-[34px] w-[34px] place-items-center rounded-full font-display font-bold ${sel === k ? 'bg-ink text-white' : 'bg-[#f1f2f5]'}`}>{'ABCDE'[k]}</span>
                 <MathText as="span" text={a} />
               </button>
             ))}
@@ -323,7 +323,7 @@ function Result({ qs, answers, subjects, onAgain, onHome }: { qs: RushQ[]; answe
     return [...m.entries()]
   }, [qs, answers])
   const [open, setOpen] = useState<number | null>(null)
-  const color = pct >= 70 ? '#4d7a57' : pct >= 50 ? '#a8742a' : '#b23a2a'
+  const color = pct >= 70 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444'
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <Card className="p-6 text-center sm:p-8">
@@ -346,8 +346,8 @@ function Result({ qs, answers, subjects, onAgain, onHome }: { qs: RushQ[]; answe
                     {p}% · {r.correct}/{r.done}
                   </span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-[#ececea]">
-                  <div className="h-full rounded-md" style={{ width: `${p}%`, background: s?.color ?? '#c4471d' }} />
+                <div className="h-2 overflow-hidden rounded-full bg-[#eef0f4]">
+                  <div className="h-full rounded-full" style={{ width: `${p}%`, background: s?.color ?? '#3e63f2' }} />
                 </div>
               </div>
             )
@@ -372,14 +372,14 @@ function Result({ qs, answers, subjects, onAgain, onHome }: { qs: RushQ[]; answe
             return (
               <div key={q.id} className="py-2">
                 <button onClick={() => setOpen(open === k ? null : k)} className="flex w-full items-center gap-3 text-left">
-                  <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-md text-xs font-extrabold text-white ${ok ? 'bg-emerald-500' : a?.choice == null ? 'bg-slate-400' : 'bg-rose-500'}`}>{k + 1}</span>
+                  <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-extrabold text-white ${ok ? 'bg-emerald-500' : a?.choice == null ? 'bg-slate-400' : 'bg-rose-500'}`}>{k + 1}</span>
                   <span className="min-w-0 flex-1 truncate text-sm font-semibold">{q.enunciado}</span>
                   <span className="shrink-0 text-xs text-muted">
                     {s?.name} · {ok ? 'certa' : a?.choice == null ? 'em branco' : `marcou ${'ABCDE'[a.choice]}, era ${'ABCDE'[q.correta ?? 0]}`}
                   </span>
                 </button>
                 {open === k && (
-                  <div className="mt-2 space-y-2 rounded-2xl bg-[#f4f4f2] p-3 text-sm">
+                  <div className="mt-2 space-y-2 rounded-2xl bg-[#f6f7f9] p-3 text-sm">
                     <MathText text={q.enunciado} className="font-semibold whitespace-pre-wrap" />
                     {q.alternativas.map((alt, j) => (
                       <div key={j} className={`rounded-xl px-3 py-1.5 ${j === q.correta ? 'bg-emerald-100 font-bold' : j === a?.choice ? 'bg-rose-100' : ''}`}>
@@ -389,7 +389,7 @@ function Result({ qs, answers, subjects, onAgain, onHome }: { qs: RushQ[]; answe
                     {q.resolucao && <MathText text={q.resolucao} className="whitespace-pre-wrap text-slate-700" />}
                     {q.ideia && (
                       <p>
-                        <b>Ideia-chave:</b> <MathText as="span" text={q.ideia} />
+                        <b>💡 Ideia-chave:</b> <MathText as="span" text={q.ideia} />
                       </p>
                     )}
                   </div>

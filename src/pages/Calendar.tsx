@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarRange, Check, CheckCheck, Clock3, Flag, LayoutGrid, Plus, RefreshCw, RotateCcw, SlidersHorizontal, Sun, Trash2 } from 'lucide-react'
+import { CalendarRange, Check, Clock3, Flag, LayoutGrid, Plus, RefreshCw, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { tint } from '../lib/colors'
 import { useSubjectMap, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
 import { currentWeekId, deleteBlock, regeneratePlan, setBlockDone, updateBlock } from '../db/repo'
@@ -9,8 +9,7 @@ import { DAY_SHORT, addDays, fmtDayMonth, fmtDuration, fmtTime, fmtWeekRange, mi
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { BlockDialog, type Draft } from '../components/BlockDialog'
-import { Btn, Card, Chip, Tabs } from '../components/ui'
-import { HeroStat, PageHeader, TileIcon } from '../components/dash'
+import { Btn, Card, Chip, PageHeader, Tabs } from '../components/ui'
 import type { Subject, Topic } from '../db/types'
 
 const PPM = 0.85 // pixels por minuto
@@ -74,18 +73,6 @@ export function CalendarPage() {
     return [...acc.entries()]
   }, [blocks])
 
-  const weekStats = useMemo(() => {
-    const study = blocks.filter((b) => b.kind === 'study' || b.kind === 'revisao')
-    const done = study.filter((b) => b.done)
-    return {
-      total: study.length,
-      done: done.length,
-      plannedMin: study.reduce((a, b) => a + b.end - b.start, 0),
-      doneMin: done.reduce((a, b) => a + b.end - b.start, 0),
-      today: study.filter((b) => b.date === todayIso && !b.done).length,
-    }
-  }, [blocks, todayIso])
-
   const snap = (m: number) => Math.round(m / SNAP) * SNAP
 
   const onPointerDown = (e: RPointerEvent, b: Block, mode: DragState['mode']) => {
@@ -136,30 +123,18 @@ export function CalendarPage() {
 
   return (
     <>
-      <PageHeader
-        icon={<CalendarRange size={28} />}
-        color="#c4471d"
-        title="Mapa da semana"
-        subtitle="Seu progresso e sua rotina de estudos."
-        stats={
-          <>
-            <HeroStat tile={<TileIcon color="#c4471d"><CheckCheck size={22} /></TileIcon>} value={<>{weekStats.done}<span className="text-sm text-muted">/{weekStats.total}</span></>} label="blocos feitos" />
-            <HeroStat tile={<TileIcon color="#9a4a6a"><Clock3 size={22} /></TileIcon>} value={`${Math.round(weekStats.doneMin / 60)}h`} label={`estudadas de ${Math.round(weekStats.plannedMin / 60)}h`} accent="#9a4a6a" />
-            <HeroStat tile={<TileIcon color="#b5612a"><Sun size={22} /></TileIcon>} value={weekStats.today} label={weekStats.today === 1 ? 'bloco hoje' : 'blocos hoje'} accent="#b5612a" />
-          </>
-        }
-      />
+      <PageHeader icon={<CalendarRange size={24} />} title="Mapa da semana" subtitle="Veja seu progresso e organize sua rotina de estudos." />
 
       <Card className="overflow-hidden p-0">
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 pb-4">
           <div>
             <h2 className="text-xl font-bold">{fmtWeekRange(weekId)}</h2>
             {nextPlanned && (
-              <div className="mt-1.5 inline-flex gap-1 rounded-md bg-[#efefed] p-1 text-xs font-bold">
-                <button onClick={() => setPickNext(false)} className={`rounded-md px-3 py-1 ${!showNext ? 'bg-white text-brand shadow-sm' : 'text-muted'}`}>
+              <div className="mt-1.5 inline-flex gap-1 rounded-full bg-[#f1f2f5] p-1 text-xs font-bold">
+                <button onClick={() => setPickNext(false)} className={`rounded-full px-3 py-1 ${!showNext ? 'bg-white text-brand shadow-sm' : 'text-muted'}`}>
                   Esta semana
                 </button>
-                <button onClick={() => setPickNext(true)} className={`rounded-md px-3 py-1 ${showNext ? 'bg-white text-brand shadow-sm' : 'text-muted'}`}>
+                <button onClick={() => setPickNext(true)} className={`rounded-full px-3 py-1 ${showNext ? 'bg-white text-brand shadow-sm' : 'text-muted'}`}>
                   Próxima semana
                 </button>
               </div>
@@ -170,8 +145,8 @@ export function CalendarPage() {
                   .map((id) => (id ? subjects.get(id) : undefined))
                   .filter((s): s is Subject => !!s)
                   .map((s) => (
-                    <span key={s.id} className="rounded-md px-2.5 py-0.5 text-xs font-bold text-white" style={{ background: s.color }}>
-                      Semana de {s.name}
+                    <span key={s.id} className="rounded-full px-2.5 py-0.5 text-xs font-bold text-white" style={{ background: s.color }}>
+                      🎯 Semana de {s.name}
                     </span>
                   ))}
               </div>
@@ -228,7 +203,7 @@ export function CalendarPage() {
                   return (
                     <div key={d} className="py-3 text-center">
                       <div className={`text-xs font-bold tracking-wider ${isToday ? 'text-brand' : 'text-muted'}`}>{DAY_SHORT[i]}</div>
-                      <div className={`mx-auto mt-1 w-fit rounded-md px-2.5 py-0.5 text-sm font-bold ${isToday ? 'bg-brand text-white' : ''}`}>{fmtDayMonth(d)}</div>
+                      <div className={`mx-auto mt-1 w-fit rounded-full px-2.5 py-0.5 text-sm font-bold ${isToday ? 'bg-brand text-white' : ''}`}>{fmtDayMonth(d)}</div>
                     </div>
                   )
                 })}
@@ -274,7 +249,7 @@ export function CalendarPage() {
                   if (di < 0) return null
                   const subject = b.subjectId ? subjects.get(b.subjectId) : undefined
                   const topic = b.topicId ? topicMap.get(b.topicId) : undefined
-                  const color = b.kind === 'compromisso' ? '#6b6b66' : (subject?.color ?? '#6366f1')
+                  const color = b.kind === 'compromisso' ? '#64748b' : (subject?.color ?? '#6366f1')
                   const h = (pos.end - pos.start) * PPM
                   const title = b.kind === 'study' || b.kind === 'revisao' ? (topic?.name ?? subject?.name ?? 'Estudo') : (b.title ?? subject?.name ?? 'Evento')
                   const isReview = b.kind === 'revisao'
@@ -293,10 +268,10 @@ export function CalendarPage() {
                         width: `calc(${100 / 7}% - 8px)`,
                         background:
                           b.kind === 'compromisso'
-                            ? 'repeating-linear-gradient(135deg,#6b6b66,#6b6b66 8px,#718096 8px,#718096 16px)'
+                            ? 'repeating-linear-gradient(135deg,#64748b,#64748b 8px,#718096 8px,#718096 16px)'
                             : isReview
                               ? `repeating-linear-gradient(135deg, ${color}, ${color} 6px, ${color}cc 6px, ${color}cc 12px)`
-                              : color,
+                              : `linear-gradient(160deg, ${color}, ${color}dd)`,
                         boxShadow: `0 6px 16px -8px ${color}`,
                       }}
                     >
@@ -411,12 +386,12 @@ function CardsView({
             >
               <div className="pt-1 pb-1.5 text-center">
                 <div className={`text-[11px] font-bold tracking-wider ${isToday ? 'text-brand' : 'text-muted'}`}>{['SEGUNDA', 'TERÇA', 'QUARTA', 'QUINTA', 'SEXTA', 'SÁBADO', 'DOMINGO'][i]}</div>
-                <div className={`mx-auto mt-1 w-fit rounded-md px-2.5 py-0.5 text-sm font-bold tabular-nums ${isToday ? 'bg-brand text-white' : ''}`}>{fmtDayMonth(date)}</div>
+                <div className={`mx-auto mt-1 w-fit rounded-full px-2.5 py-0.5 text-sm font-bold tabular-nums ${isToday ? 'bg-brand text-white' : ''}`}>{fmtDayMonth(date)}</div>
               </div>
               {list.map((b) => {
                 const subject = b.subjectId ? subjects.get(b.subjectId) : undefined
                 const topic = b.topicId ? topicMap.get(b.topicId) : undefined
-                const color = b.kind === 'compromisso' ? '#6b6b66' : (subject?.color ?? '#c4471d')
+                const color = b.kind === 'compromisso' ? '#64748b' : (subject?.color ?? '#3e63f2')
                 const title = b.kind === 'study' || b.kind === 'revisao' ? (topic?.name ?? subject?.name ?? 'Estudo') : (b.title ?? subject?.name ?? 'Evento')
                 const isReview = b.kind === 'revisao'
                 const ink = `color-mix(in srgb, ${color} 75%, #000)`
@@ -427,9 +402,9 @@ function CardsView({
                     onDragStart={() => setDragId(b.id)}
                     onDragEnd={() => setDragId(null)}
                     onClick={() => onOpen(b)}
-                    className={`group relative flex min-h-[84px] cursor-pointer flex-col justify-between rounded-2xl p-3 transition ${isReview ? '' : 'text-white'} ${dragId === b.id ? 'opacity-40' : ''} ${b.done ? 'opacity-55' : ''} ${b.missed && !b.done ? 'opacity-45 grayscale-[.4]' : ''}`}
+                    className={`group relative flex min-h-[84px] cursor-pointer flex-col justify-between rounded-2xl p-3 transition hover:-translate-y-0.5 ${isReview ? '' : 'text-white'} ${dragId === b.id ? 'opacity-40' : ''} ${b.done ? 'opacity-55' : ''} ${b.missed && !b.done ? 'opacity-45 grayscale-[.4]' : ''}`}
                     style={{
-                      background: b.kind === 'compromisso' ? 'repeating-linear-gradient(135deg,#6b6b66,#6b6b66 8px,#6b6b66 8px,#6b6b66 16px)' : isReview ? tint(color, 0.12) : color,
+                      background: b.kind === 'compromisso' ? 'repeating-linear-gradient(135deg,#6b7280,#6b7280 8px,#737a87 8px,#737a87 16px)' : isReview ? tint(color, 0.12) : color,
                       border: isReview ? `2px dashed ${tint(color, 0.7)}` : undefined,
                       color: isReview ? ink : undefined,
                       boxShadow: isReview ? undefined : `0 8px 18px -10px ${color}`,
@@ -441,7 +416,7 @@ function CardsView({
                         {isReview && <RotateCcw size={12} className="mr-1 inline" />}
                         {title}
                       </div>
-                      <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold ${isReview ? 'bg-white/70' : 'bg-white/25'}`}>{fmtDuration((b.end - b.start) * 60)}</span>
+                      <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${isReview ? 'bg-white/70' : 'bg-white/25'}`}>{fmtDuration((b.end - b.start) * 60)}</span>
                     </div>
                     {b.missed && !b.done && <div className="-mt-1 truncate text-[11px] font-bold">Perdido · remarcado</div>}
                     {!b.missed && isReview && <div className="-mt-1 truncate text-[11px] font-semibold opacity-80">Revisão · {subject?.name}</div>}
@@ -483,7 +458,7 @@ function CardsView({
                 <button
                   key={k}
                   onClick={() => onCreate(date, Math.min(nextStart, 23 * 60))}
-                  className="group grid min-h-[84px] place-items-center rounded-md border border-dashed border-line text-transparent transition hover:bg-brand-soft hover:text-brand"
+                  className="group grid min-h-[84px] place-items-center rounded-2xl bg-[#f4f5f8] text-transparent transition hover:bg-brand-soft hover:text-brand"
                   aria-label={`Criar bloco em ${fmtDayMonth(date)}`}
                 >
                   <Plus size={18} />
@@ -505,7 +480,7 @@ function PhoneView({ dates, todayIso, blocks, subjects, topicMap, onOpen }: { da
   const row = (b: Block, big: boolean) => {
     const subject = b.subjectId ? subjects.get(b.subjectId) : undefined
     const topic = b.topicId ? topicMap.get(b.topicId) : undefined
-    const color = b.kind === 'compromisso' ? '#6b6b66' : (subject?.color ?? '#c4471d')
+    const color = b.kind === 'compromisso' ? '#64748b' : (subject?.color ?? '#3e63f2')
     const title = b.kind === 'study' || b.kind === 'revisao' ? (topic?.name ?? subject?.name ?? 'Estudo') : (b.title ?? subject?.name ?? 'Evento')
     const canDone = b.kind === 'study' || b.kind === 'revisao'
     return (

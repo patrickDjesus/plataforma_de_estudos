@@ -58,7 +58,7 @@ export function useRankWatcher(rank: RankState, ready: boolean) {
       const name = rankName(pos)
       showMascot(
         pos > from
-          ? { pose: 'comemorando', title: `Subiu para ${name}!`, text: 'Seu esforço está aparecendo. Bora manter o ritmo!', autoHideMs: 8000 }
+          ? { pose: 'comemorando', title: `Subiu para ${name}! 🎉`, text: 'Seu esforço está aparecendo. Bora manter o ritmo!', autoHideMs: 8000 }
           : { pose: 'chorando', title: `Caiu para ${name}`, text: 'Acontece! Uns blocos cumpridos e você volta rapidinho. Eu acredito em você.', autoHideMs: 8000 },
       )
     }, 6500)
@@ -100,7 +100,7 @@ export function RankSection() {
     <div className="space-y-5">
       {preview !== null && (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm">
-          <b className="text-amber-800">Prévia: {rankName(preview)}</b>
+          <b className="text-amber-800">👀 Prévia: {rankName(preview)}</b>
           <span className="text-amber-800/80">Só visual: seu rank de verdade é {rankName(real.pos)}.</span>
           {preview < MASTER_POS && (
             <span className="ml-auto flex gap-1">
@@ -121,10 +121,10 @@ export function RankSection() {
       )}
       {/* Rank atual */}
       <div
-        className="relative overflow-hidden rounded-xl p-6 text-white"
-        style={{ background: `radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, ${tier.dark} 70%, #fff) 0%, ${tier.dark} 45%, color-mix(in srgb, ${tier.dark} 55%, #18181b) 100%)` }}
+        className="relative overflow-hidden rounded-[22px] p-6 text-white"
+        style={{ background: `radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, ${tier.dark} 70%, #fff) 0%, ${tier.dark} 45%, color-mix(in srgb, ${tier.dark} 55%, #0b1026) 100%)` }}
       >
-        <span className="absolute -top-20 -right-16 h-56 w-56 rounded-md bg-white/10" />
+        <span className="absolute -top-20 -right-16 h-56 w-56 rounded-full bg-white/10" />
         <div className="relative flex flex-wrap items-center gap-6">
           <RankFrame pos={rank.pos} size={190}>
             <RankEmblem pos={rank.pos} size={160} />
@@ -138,13 +138,13 @@ export function RankSection() {
                 <span className="text-white/75">{isMaster ? 'Topo da escada' : `${size - rank.points} para ${rankName(rank.pos + 1)}`}</span>
               </div>
               <div className="h-3 overflow-hidden rounded-full bg-white/20">
-                <div className="h-full rounded-md bg-white transition-all" style={{ width: `${isMaster ? 100 : Math.max(2, (rank.points / size) * 100)}%` }} />
+                <div className="h-full rounded-full bg-white transition-all" style={{ width: `${isMaster ? 100 : Math.max(2, (rank.points / size) * 100)}%` }} />
               </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
-              <span className="rounded-md bg-white/15 px-2.5 py-1">Melhor: {rankName(rank.best.pos)}</span>
+              <span className="rounded-full bg-white/15 px-2.5 py-1">🏆 Melhor: {rankName(rank.best.pos)}</span>
               {!isMaster && rank.points === 0 && rank.pos > 0 && (
-                <span className="flex items-center gap-1 rounded-md bg-white/15 px-2.5 py-1">
+                <span className="flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1">
                   <Shield size={12} /> Escudo ativo: a próxima perda rebaixa
                 </span>
               )}
@@ -154,7 +154,7 @@ export function RankSection() {
       </div>
 
       {/* Escada */}
-      <div className="rounded-lg border border-line p-5">
+      <div className="rounded-[18px] border border-line p-5">
         <h3 className="mb-1 font-sans text-sm font-semibold">Escada de ranks</h3>
         <p className="mb-4 text-xs text-muted">Clique num rank para ver como ele fica (prévia, sem mexer nos seus pontos).</p>
         <div className="grid grid-cols-4 gap-3 sm:grid-cols-7">
@@ -167,7 +167,7 @@ export function RankSection() {
                 key={t.id}
                 onClick={() => setRankPreview(tierOf(real.pos).id === t.id ? null : i === TIERS.length - 1 ? MASTER_POS : i * 3 + 1)}
                 title={`Ver ${t.name}`}
-                className={`flex flex-col items-center rounded-2xl p-2 text-center transition hover:bg-[#f4f4f2] ${here ? 'bg-brand-soft ring-2 ring-brand' : ''} ${reached || here ? '' : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0'}`}
+                className={`flex flex-col items-center rounded-2xl p-2 text-center transition hover:-translate-y-0.5 hover:bg-[#f6f7f9] ${here ? 'bg-brand-soft ring-2 ring-brand' : ''} ${reached || here ? '' : 'opacity-40 grayscale hover:opacity-100 hover:grayscale-0'}`}
               >
                 <RankEmblem pos={pos} size={60} showDivision={false} animated={reached} />
                 <div className="mt-1 text-xs font-bold">{t.name}</div>
@@ -180,7 +180,7 @@ export function RankSection() {
 
       <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
         {/* Histórico */}
-        <div className="rounded-lg border border-line p-5">
+        <div className="rounded-[18px] border border-line p-5">
           <h3 className="mb-3 font-sans text-sm font-semibold">Últimas pontuações</h3>
           {recent.length === 0 ? (
             <p className="text-sm text-muted">Conclua blocos, revisões e desafios para começar a subir.</p>
@@ -193,7 +193,7 @@ export function RankSection() {
                   </span>
                   <span className="min-w-0 flex-1 truncate">{e.label}</span>
                   {e.change && (
-                    <span className={`flex shrink-0 items-center gap-0.5 rounded-md px-2 py-0.5 text-[10px] font-bold ${e.change === 'subiu' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                    <span className={`flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold ${e.change === 'subiu' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
                       {e.change === 'subiu' ? <ChevronsUp size={12} /> : <ChevronsDown size={12} />}
                       {rankName(e.after.pos)}
                     </span>
@@ -205,7 +205,7 @@ export function RankSection() {
           )}
         </div>
         {/* Regras */}
-        <div className="rounded-lg border border-line p-5">
+        <div className="rounded-[18px] border border-line p-5">
           <h3 className="mb-3 flex items-center gap-2 font-sans text-sm font-semibold">
             <Crown size={16} /> Como ganhar pontos
           </h3>
