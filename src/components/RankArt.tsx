@@ -136,11 +136,11 @@ function Emblem({ tier, id, animated }: { tier: TierId; id: string; animated: bo
     <defs>
       <linearGradient id={`s${id}`} x1="0" y1="0" x2="1" y2="0">
         <stop offset="0" stopColor="#fff" stopOpacity="0" />
-        <stop offset="0.5" stopColor="#fff" stopOpacity="0.6" />
+        <stop offset="0.5" stopColor="#fff" stopOpacity="0.9" />
         <stop offset="1" stopColor="#fff" stopOpacity="0" />
       </linearGradient>
       <radialGradient id={`g${id}`}>
-        <stop offset="0" stopColor={p[1]} stopOpacity="0.5" />
+        <stop offset="0" stopColor={p[1]} stopOpacity="0.75" />
         <stop offset="1" stopColor={p[1]} stopOpacity="0" />
       </radialGradient>
       <clipPath id={`c${id}`}>{clip}</clipPath>
@@ -148,10 +148,10 @@ function Emblem({ tier, id, animated }: { tier: TierId; id: string; animated: bo
   )
   const shine = animated && (
     <g clipPath={`url(#c${id})`}>
-      <rect className="rk-shine" style={{ animationDuration: '5.5s' }} x="20" y="0" width="16" height="130" fill={`url(#s${id})`} />
+      <rect className="rk-shine" style={{ animationDuration: '3.2s' }} x="14" y="0" width="22" height="130" fill={`url(#s${id})`} />
     </g>
   )
-  const glow = (r: number, cy = 62) => animated && <circle className="rk-pulse" cx="60" cy={cy} r={r} fill={`url(#g${id})`} />
+  const glow = (r: number, cy = 62) => animated && <circle className="rk-glow" cx="60" cy={cy} r={r} fill={`url(#g${id})`} />
   const hexClip = <polygon points={pts(hexPts(60, 60, 40))} />
 
   switch (tier) {
@@ -190,8 +190,8 @@ function Emblem({ tier, id, animated }: { tier: TierId; id: string; animated: bo
       return (
         <g>
           {defs(hexClip)}
-          <Sway on={animated} x={30} y={94} deg={-4}>{l.left}</Sway>
-          <Sway on={animated} x={90} y={94} deg={4}>{l.right}</Sway>
+          <Sway on={animated} x={30} y={94} deg={-7}>{l.left}</Sway>
+          <Sway on={animated} x={90} y={94} deg={7}>{l.right}</Sway>
           <HexFrame p={p} />
           <circle cx="60" cy="60" r="21" fill="none" stroke={p[1]} strokeWidth="3" />
           <circle cx="60" cy="60" r="21" fill="none" stroke={p[0]} strokeOpacity="0.6" strokeWidth="1" />
@@ -211,8 +211,8 @@ function Emblem({ tier, id, animated }: { tier: TierId; id: string; animated: bo
       return (
         <g>
           {defs(hexClip)}
-          <Sway on={animated} x={32} y={62} deg={-7}>{w.left}</Sway>
-          <Sway on={animated} x={88} y={62} deg={7}>{w.right}</Sway>
+          <Sway on={animated} x={32} y={62} deg={-13}>{w.left}</Sway>
+          <Sway on={animated} x={88} y={62} deg={13}>{w.right}</Sway>
           <HexFrame p={p} />
           {/* livro aberto */}
           <polygon points={pts([[43, 57], [59, 61], [59, 79], [43, 75]])} fill={p[0]} />
@@ -231,8 +231,8 @@ function Emblem({ tier, id, animated }: { tier: TierId; id: string; animated: bo
         <g>
           {defs(hexClip)}
           {glow(54)}
-          <Sway on={animated} x={28} y={96} deg={-5}>{l.left}</Sway>
-          <Sway on={animated} x={92} y={96} deg={5}>{l.right}</Sway>
+          <Sway on={animated} x={28} y={96} deg={-9}>{l.left}</Sway>
+          <Sway on={animated} x={92} y={96} deg={9}>{l.right}</Sway>
           <HexFrame p={p} />
           {/* troféu */}
           <g className={a('rk-bob')}>
@@ -262,8 +262,8 @@ function Emblem({ tier, id, animated }: { tier: TierId; id: string; animated: bo
         <g>
           {defs(<polygon points={pts(crown)} />)}
           {glow(56)}
-          <Sway on={animated} x={42} y={80} deg={-5}>{w.left}</Sway>
-          <Sway on={animated} x={78} y={80} deg={5}>{w.right}</Sway>
+          <Sway on={animated} x={42} y={80} deg={-9}>{w.left}</Sway>
+          <Sway on={animated} x={78} y={80} deg={9}>{w.right}</Sway>
           <polygon points={pts([[34, 46], [48, 32], [52, 36], [40, 48]])} fill={p[1]} />
           <polygon points={pts([[86, 46], [72, 32], [68, 36], [80, 48]])} fill={p[2]} />
           <g className={a('rk-bob')}>
@@ -294,8 +294,8 @@ function Emblem({ tier, id, animated }: { tier: TierId; id: string; animated: bo
         <g>
           {defs(<polygon points={pts([[42, 44], [78, 44], [88, 56], [60, 92], [32, 56]])} />)}
           {glow(58)}
-          <Sway on={animated} x={48} y={92} deg={-5}>{w.left}</Sway>
-          <Sway on={animated} x={72} y={92} deg={5}>{w.right}</Sway>
+          <Sway on={animated} x={48} y={92} deg={-9}>{w.left}</Sway>
+          <Sway on={animated} x={72} y={92} deg={9}>{w.right}</Sway>
           <g className={a('rk-bob')}>
             <polygon points={pts([[42, 44], [52, 44], [48, 56], [32, 56]])} fill={p[0]} />
             <polygon points={pts([[52, 44], [68, 44], [60, 56], [48, 56]])} fill={p[1]} />
@@ -342,7 +342,7 @@ function Emblem({ tier, id, animated }: { tier: TierId; id: string; animated: bo
           <g transform="rotate(-14 60 70)">
             <path d={front} fill="none" stroke={p[1]} strokeWidth="6" strokeLinecap="round" />
             <path d={front} fill="none" stroke={p[0]} strokeWidth="2" strokeLinecap="round" opacity="0.8" />
-            {animated && <path className="rk-dash" style={{ animationDuration: '2.2s' }} d={front} fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" pathLength="100" strokeDasharray="12 88" />}
+            {animated && <path className="rk-dash" style={{ animationDuration: '1.4s' }} d={front} fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" pathLength="100" strokeDasharray="18 82" />}
           </g>
           <g className={a('rk-bob')}>
             <polygon points={pts([[42, 36], [40, 18], [50, 27], [60, 12], [70, 27], [80, 18], [78, 36]])} fill={gold[1]} />
