@@ -47,7 +47,7 @@ Em **Project → Settings → Environment Variables**:
 |---|---|---|
 | `ANTHROPIC_API_KEY` | sua chave da API do Claude (console.anthropic.com) | obrigatória para a IA; nunca vai para o site |
 | `ALLOWED_EMAILS` | seu e-mail | opcional, mas recomendado: só esse e-mail usa a IA (e gasta a chave) |
-| `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` | URL e chave pública do projeto | a integração Supabase da Vercel já cria; se não usou a integração, crie com o prefixo `VITE_` ou `NEXT_PUBLIC_` |
+| `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` | URL e chave pública do projeto | opcionais: o projeto já vem com elas em `.env.production` (a chave anon é pública) |
 
 Depois de mudar variáveis, faça um novo deploy (**Deployments → … → Redeploy**), porque as do Supabase entram no build.
 

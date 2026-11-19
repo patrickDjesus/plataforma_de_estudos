@@ -15,8 +15,12 @@ import Anthropic from '@anthropic-ai/sdk'
 const client = new Anthropic()
 
 const env = (...names: string[]) => names.map((n) => process.env[n]).find(Boolean)
-const SUPABASE_URL = env('SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL', 'VITE_SUPABASE_URL')
-const SUPABASE_KEY = env('SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'VITE_SUPABASE_ANON_KEY', 'SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'VITE_SUPABASE_PUBLISHABLE_KEY')
+// Valores públicos do projeto (os mesmos do .env.production); variáveis da Vercel têm prioridade.
+const DEFAULT_URL = 'https://vhvvemgtvbycnaixwffs.supabase.co'
+const DEFAULT_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZodnZlbWd0dmJ5Y25haXh3ZmZzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMDM2MzQsImV4cCI6MjExMDY3OTYzNH0.M4JE93dzynexygDltvpQmBL2gyDiDgeYGhw5Ws-k8O0'
+const SUPABASE_URL = env('SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL', 'VITE_SUPABASE_URL') ?? DEFAULT_URL
+const SUPABASE_KEY = env('SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'VITE_SUPABASE_ANON_KEY', 'SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'VITE_SUPABASE_PUBLISHABLE_KEY') ?? DEFAULT_KEY
 const ALLOWED = (process.env.ALLOWED_EMAILS ?? '')
   .split(',')
   .map((e) => e.trim().toLowerCase())
