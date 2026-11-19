@@ -119,6 +119,10 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 @keyframes rk-flame { 0%, 100% { transform: scale(1, 1) } 25% { transform: scale(.9, 1.2) } 50% { transform: scale(1.06, .88) } 75% { transform: scale(.94, 1.12) } }
 @keyframes rk-ember { 0% { transform: translateY(0); opacity: 0 } 15% { opacity: 1 } 100% { transform: translateY(-38px); opacity: 0 } }
 .rk-shine { animation: rk-shine 5s ease-in-out infinite; }
+@keyframes rk-dash { to { stroke-dashoffset: -100 } }
+@keyframes rk-bob { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-2.5px) } }
+.rk-dash { animation: rk-dash 4s linear infinite; }
+.rk-bob { animation: rk-bob 3s ease-in-out infinite; }
 .rk-spin { animation: rk-spin 5s linear infinite; transform-box: view-box; transform-origin: 100px 100px; }
 .rk-spin-rev { animation: rk-spin 30s linear infinite reverse; transform-box: view-box; transform-origin: 100px 100px; }
 .rk-pulse { animation: rk-pulse 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
