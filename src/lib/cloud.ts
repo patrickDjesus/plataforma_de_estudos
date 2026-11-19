@@ -13,7 +13,7 @@ import { SUPABASE_TABLE, getSupabase, supabaseConfigured } from './supabase'
 // ---- Tipos mínimos da API do claude.ai (contrato 0.2.x) ----
 type DocSnap = { id: string; exists: boolean; data(): Record<string, unknown> | undefined }
 type QuerySnap = { docs: DocSnap[]; docChanges(): { type: 'added' | 'modified' | 'removed'; doc: DocSnap }[]; metadata: { fromCache: boolean } }
-type DocRef = { set(d: Record<string, unknown>): Promise<void> }
+type DocRef = { set(d: Record<string, unknown>): Promise<void>; delete(): Promise<void> }
 type ColRef = { doc(id: string): DocRef; onSnapshot(next: (s: QuerySnap) => void, err?: (e: { code: string }) => void): () => void }
 type CloudDB = { collection(path: string): ColRef }
 type CloudUser = { id(): Promise<string | null> }
@@ -49,6 +49,45 @@ export function useSyncStatus() {
   )
 }
 export const syncError = () => lastError
+
+// ---- Uso da nuvem do claude.ai (limite de 25.000 registros por site) ----
+export const CLOUD_DOC_LIMIT = 25000
+let docCount: number | null = null
+const countListeners = new Set<() => void>()
+function setDocCount(n: number) {
+  if (n === docCount) return
+  docCount = n
+  countListeners.forEach((l) => l())
+}
+/** Quantos registros o site ocupa na nuvem do claude.ai (null fora dela). */
+export function useCloudDocCount() {
+  return useSyncExternalStore(
+    (l) => {
+      countListeners.add(l)
+      return () => countListeners.delete(l)
+    },
+    () => docCount,
+  )
+}
+
+/** Marcas de "apagado" ficam na nuvem por este tempo; depois a faxina as remove. */
+const TOMBSTONE_TTL = 30 * 24 * 60 * 60 * 1000
+
+/** Faxina: remove da nuvem as marcas de coisas apagadas há mais de 30 dias. */
+async function purgeTombstones(col: ColRef, docs: DocSnap[]) {
+  const cutoff = Date.now() - TOMBSTONE_TTL
+  const old = docs.filter((d) => {
+    const b = d.data() as Body | undefined
+    return b?.del && Number(b.u ?? 0) < cutoff
+  })
+  for (const d of old.slice(0, 500)) {
+    try {
+      await col.doc(d.id).delete()
+    } catch {
+      return // tenta de novo na próxima vez que o site abrir
+    }
+  }
+}
 
 // ---- Carimbos locais e fila de envio (localStorage) ----
 const STAMPS = 'mendonca-sync-stamps'
@@ -227,13 +266,16 @@ export async function startCloudSync() {
         }
         first = false
         window.clearTimeout(timeout)
+        setDocCount(snap.docs.length)
         await applyRemote(snap.docs.map((d) => d.data() as Body))
         await seedOutbox()
         cloudCol = { set: (key, body) => col.doc(key).set(body) }
         setStatus(outbox.size ? 'enviando' : 'sincronizado')
         scheduleFlush(200)
+        window.setTimeout(() => void purgeTombstones(col, snap.docs), 15000)
         return
       }
+      setDocCount(snap.docs.length)
       await applyRemote(snap.docChanges().filter((c) => c.type !== 'removed').map((c) => c.doc.data() as Body))
     },
     (e) => {

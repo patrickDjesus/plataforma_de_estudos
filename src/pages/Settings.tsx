@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Download, RotateCcw, Settings2, Upload } from 'lucide-react'
 import { useSettings } from '../db/hooks'
+import { CLOUD_DOC_LIMIT, useCloudDocCount } from '../lib/cloud'
 import { applySeed, ensureSeed, exportBackup, importBackup, resetAllData, updateSettings } from '../db/repo'
 import { useNavigate } from 'react-router-dom'
 import type { Settings } from '../db/types'
@@ -170,6 +171,7 @@ export function SettingsPage() {
           <p className="mb-4 text-sm text-muted">
             Aberto pelo claude.ai, o Mendonça salva tudo na sua área privada da nuvem e sincroniza entre seus dispositivos (veja o selo ao lado do cronômetro). O backup é uma cópia extra, guardada por você.
           </p>
+          <CloudUsage />
           <div className="flex flex-wrap gap-2">
             <Btn variant="primary" onClick={doExport}>
               <Download size={16} /> Exportar backup
@@ -256,5 +258,31 @@ export function SettingsPage() {
         </Card>
       </div>
     </>
+  )
+}
+
+/** Quanto do limite da nuvem do claude.ai o site já usa. */
+function CloudUsage() {
+  const n = useCloudDocCount()
+  if (n === null) return null
+  const pct = n / CLOUD_DOC_LIMIT
+  const color = pct >= 0.8 ? '#ef4444' : pct >= 0.6 ? '#f59e0b' : '#10b981'
+  return (
+    <div className="mb-4 rounded-2xl bg-[#f6f7f9] px-4 py-3">
+      <div className="flex items-baseline justify-between text-sm">
+        <span className="font-semibold">Espaço na nuvem</span>
+        <span className="tabular-nums text-muted">
+          {n.toLocaleString('pt-BR')} de {CLOUD_DOC_LIMIT.toLocaleString('pt-BR')} registros
+        </span>
+      </div>
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#e6e8ee]">
+        <div className="h-full rounded-full" style={{ width: `${Math.max(1, pct * 100)}%`, background: color }} />
+      </div>
+      <p className="mt-2 text-xs text-muted">
+        {pct >= 0.8
+          ? 'Está chegando no limite. Exporte um backup e me peça para compactar os dados antigos.'
+          : 'Registros apagados há mais de 30 dias são limpos sozinhos.'}
+      </p>
+    </div>
   )
 }
