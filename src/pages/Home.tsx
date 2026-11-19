@@ -26,6 +26,7 @@ import { masteryColor, masteryLabel } from '../lib/mastery'
 import { ratingFromScore } from '../lib/challenge'
 import { Card, Ring, Tabs } from '../components/ui'
 import { StreakIcon, StudyDaysIcon } from '../components/StatIcons'
+import { LevelCard } from '../components/LevelCard'
 
 type Section = 'geral' | 'resultados' | 'metas' | 'conquistas' | 'rank'
 type Scope = 'hoje' | 'semana'
@@ -118,19 +119,7 @@ export function HomePage() {
         </div>
 
         {/* Nível e XP */}
-        <div className="flex w-56 items-center gap-3 rounded-2xl bg-gradient-to-r from-[#3e63f2] to-[#5b7cff] px-3 py-2.5 text-white shadow-[0_10px_24px_-12px_rgba(62,99,242,0.9)]">
-          <div className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#ffb648] to-[#ff7a2f] shadow-inner">
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-white font-display text-base font-extrabold text-[#3e63f2]">{lvl.level}</span>
-          </div>
-          <div className="flex-1">
-            <div className="mb-1.5 flex items-baseline justify-end gap-1 text-sm font-bold tabular-nums">
-              {lvl.inLevel} <span className="text-xs font-semibold text-white/70">/ {lvl.needed} XP</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-white/25">
-              <div className="h-full rounded-full bg-white" style={{ width: `${lvl.progress * 100}%` }} />
-            </div>
-          </div>
-        </div>
+        <LevelCard level={lvl.level} inLevel={lvl.inLevel} needed={lvl.needed} progress={lvl.progress} totalXp={totalXp} />
 
         <Stat tile={<StudyDaysIcon count={studyDays.size} />} value={`${studyDays.size}`} accent="#3e63f2" label={studyDays.size === 1 ? 'dia estudado' : 'dias estudados'} />
         <Stat tile={<StreakIcon streak={streak} />} value={`${streak}`} accent="#ff8a1f" label={streak === 1 ? 'dia seguido' : 'dias seguidos'} />

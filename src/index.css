@@ -254,3 +254,26 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 .st-ring { animation: st-ring 3.6s ease-in-out infinite; transform-box: fill-box; }
 .st-ring-2 { animation-delay: .08s; }
 .st-smoke { animation: st-smoke 2.6s ease-out infinite; transform-box: fill-box; }
+
+/* Caixa de nível do Início */
+@keyframes lv-bg { 0%, 100% { background-position: 0% 50% } 50% { background-position: 100% 50% } }
+@keyframes lv-shine { 0%, 62% { transform: translateX(0) skewX(-20deg) } 100% { transform: translateX(520%) skewX(-20deg) } }
+@keyframes lv-spin { to { transform: rotate(360deg) } }
+@keyframes lv-stripes { to { background-position: 16px 0 } }
+@keyframes lv-tip { 0%, 100% { box-shadow: 0 0 4px 1px rgba(255,255,255,.7); transform: translate(50%, -50%) scale(.85) } 50% { box-shadow: 0 0 12px 4px rgba(255,236,160,.95); transform: translate(50%, -50%) scale(1.1) } }
+@keyframes lv-spark { 0%, 100% { opacity: 0; transform: scale(.2) rotate(0deg) } 45% { opacity: 1; transform: scale(1) rotate(45deg) } 70% { opacity: 0; transform: scale(.4) rotate(90deg) } }
+@keyframes lv-num { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-1.5px) } }
+@keyframes lv-gain { 0% { opacity: 0; transform: translateY(6px) scale(.7) } 15% { opacity: 1; transform: translateY(-4px) scale(1.1) } 70% { opacity: 1; transform: translateY(-10px) scale(1) } 100% { opacity: 0; transform: translateY(-18px) } }
+@keyframes lv-pop { 0% { transform: scale(1) } 25% { transform: scale(1.08) rotate(-1deg) } 45% { transform: scale(.97) rotate(1deg) } 70% { transform: scale(1.03) } 100% { transform: scale(1) } }
+@keyframes lv-up { 0% { opacity: 0; transform: scale(.4) } 30% { opacity: 1; transform: scale(1.25) } 100% { opacity: 1; transform: scale(1) } }
+.lv-card { background: linear-gradient(110deg, #3e63f2, #5b7cff, #7b5cff, #3e63f2); background-size: 300% 100%; animation: lv-bg 9s ease-in-out infinite; }
+.lv-shine { animation: lv-shine 4.5s ease-in-out infinite; }
+.lv-ring { background: conic-gradient(from 0deg, #fff6c2, #ffb648, #ff7a2f, transparent 60%, #fff6c2); animation: lv-spin 3.2s linear infinite; }
+.lv-ring-hot { animation-duration: 1.1s; filter: drop-shadow(0 0 6px #ffd34d); }
+.lv-fill { background: repeating-linear-gradient(-45deg, #fff 0 6px, #e6ecff 6px 12px); background-size: 16px 100%; animation: lv-stripes .8s linear infinite; transition: width 1s cubic-bezier(.2, .8, .2, 1); }
+.lv-tip { animation: lv-tip 1.6s ease-in-out infinite; }
+.lv-spark { width: 7px; height: 7px; background: #fff6c2; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: lv-spark 2.6s ease-in-out infinite; }
+.lv-num { animation: lv-num 2.4s ease-in-out infinite; }
+.lv-gain { animation: lv-gain 2.2s ease-out forwards; }
+.lv-pop { animation: lv-bg 9s ease-in-out infinite, lv-pop .9s cubic-bezier(.3, 1.5, .5, 1); }
+.lv-up { animation: lv-up .5s cubic-bezier(.3, 1.6, .5, 1) both; }
