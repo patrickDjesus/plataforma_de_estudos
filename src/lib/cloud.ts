@@ -8,6 +8,7 @@
  */
 import { useSyncExternalStore } from 'react'
 import { db } from '../db/db'
+import { SUPABASE_TABLE, getSupabase, supabaseConfigured } from './supabase'
 
 // ---- Tipos mínimos da API do claude.ai (contrato 0.2.x) ----
 type DocSnap = { id: string; exists: boolean; data(): Record<string, unknown> | undefined }
@@ -29,7 +30,7 @@ export const SYNCED_TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 
 type TableName = (typeof SYNCED_TABLES)[number]
 
 // ---- Estado observável ----
-export type SyncStatus = 'carregando' | 'sincronizado' | 'enviando' | 'local' | 'erro'
+export type SyncStatus = 'carregando' | 'sincronizado' | 'enviando' | 'local' | 'erro' | 'entrar'
 let status: SyncStatus = 'carregando'
 let lastError = ''
 const listeners = new Set<() => void>()
@@ -81,13 +82,18 @@ const parseKey = (key: string) => {
 
 // ---- Captura de mudanças locais (ganchos do Dexie) ----
 let applyingRemote = 0
+/** >0 enquanto roda algo que deve perder para qualquer versão da nuvem (conteúdos padrão). */
+let lowStamps = 0
 let flushTimer: number | undefined
-let cloudCol: ColRef | null = null
+/** Para onde os registros alterados são enviados (nuvem do claude.ai ou Supabase). */
+type Sink = { set(key: string, body: Record<string, unknown>): Promise<void> }
+let cloudCol: Sink | null = null
 
 function markDirty(table: string, id: unknown) {
   if (applyingRemote || id === undefined || id === null) return
   const key = keyOf(table, String(id))
-  stamps[key] = Date.now()
+  if (lowStamps && stamps[key] !== undefined) return
+  stamps[key] = lowStamps ? 1 : Date.now()
   outbox.add(key)
   saveMeta()
   scheduleFlush()
@@ -131,7 +137,7 @@ async function flush() {
       const rec = await db.table(table).get(id)
       const u = stamps[key] ?? Date.now()
       const body = rec ? { t: table, id, u, v: JSON.parse(JSON.stringify(rec)) } : { t: table, id, u, del: true }
-      await cloudCol.doc(key).set(body)
+      await cloudCol.set(key, body)
       if ((stamps[key] ?? u) === u) outbox.delete(key)
       saveMeta()
     }
@@ -151,11 +157,11 @@ async function flush() {
 }
 
 // ---- Recebimento ----
-async function applyRemote(docs: DocSnap[]) {
+type Body = { t?: TableName; id?: string; u?: number; v?: unknown; del?: boolean }
+async function applyRemote(bodies: (Body | undefined | null)[]) {
   const puts = new Map<TableName, unknown[]>()
   const dels = new Map<TableName, string[]>()
-  for (const d of docs) {
-    const body = d.data() as { t?: TableName; id?: string; u?: number; v?: unknown; del?: boolean } | undefined
+  for (const body of bodies) {
     if (!body?.t || !body.id || !SYNCED_TABLES.includes(body.t)) continue
     const key = keyOf(body.t, body.id)
     const u = Number(body.u ?? 0)
@@ -200,6 +206,7 @@ export async function startCloudSync() {
   if (started) return
   started = true
   installHooks()
+  if (supabaseConfigured) return startSupabaseSync()
   const claude = window.claude
   if (!claude?.use) return setStatus('local')
   const [cdb, user] = await Promise.all([claude.use('db').catch(() => null), claude.use('user').catch(() => null)])
@@ -215,23 +222,103 @@ export async function startCloudSync() {
     async (snap) => {
       if (first) {
         if (snap.metadata.fromCache) {
-          await applyRemote(snap.docs)
+          await applyRemote(snap.docs.map((d) => d.data() as Body))
           return
         }
         first = false
         window.clearTimeout(timeout)
-        await applyRemote(snap.docs)
+        await applyRemote(snap.docs.map((d) => d.data() as Body))
         await seedOutbox()
-        cloudCol = col
+        cloudCol = { set: (key, body) => col.doc(key).set(body) }
         setStatus(outbox.size ? 'enviando' : 'sincronizado')
         scheduleFlush(200)
         return
       }
-      await applyRemote(snap.docChanges().filter((c) => c.type !== 'removed').map((c) => c.doc))
+      await applyRemote(snap.docChanges().filter((c) => c.type !== 'removed').map((c) => c.doc.data() as Body))
     },
     (e) => {
       window.clearTimeout(timeout)
       setStatus('erro', e.code === 'revoked' ? 'O acesso à nuvem foi encerrado nesta página.' : 'Perdi a conexão com a nuvem. Seus dados continuam salvos neste navegador.')
     },
   )
+}
+
+// ---- Supabase (site próprio na Vercel) ----
+
+/** Liga a sincronização com o Supabase quando há login; sem login, o app segue só neste navegador. */
+async function startSupabaseSync() {
+  const sb = await getSupabase().catch(() => null)
+  if (!sb) return setStatus('local')
+  let connectedAs: string | null = null
+  let stop: (() => void) | null = null
+
+  const connect = async (uid: string) => {
+    if (connectedAs === uid) return
+    stop?.()
+    connectedAs = uid
+    setStatus('carregando')
+    // Mudanças de outros aparelhos chegam ao vivo
+    const channel = sb
+      .channel(`mendonca-${uid}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: SUPABASE_TABLE, filter: `user_id=eq.${uid}` }, (p) => {
+        const body = (p.new as { body?: Body } | null)?.body
+        if (body) void applyRemote([body])
+      })
+      .subscribe()
+    stop = () => {
+      void sb.removeChannel(channel)
+      cloudCol = null
+    }
+    try {
+      // Carga inicial, em páginas de 1000 linhas
+      const all: Body[] = []
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await sb.from(SUPABASE_TABLE).select('body').range(from, from + 999)
+        if (error) throw error
+        all.push(...(data as { body: Body }[]).map((r) => r.body))
+        if (data.length < 1000) break
+      }
+      if (connectedAs !== uid) return
+      await applyRemote(all)
+      await seedOutbox()
+      cloudCol = {
+        async set(key, body) {
+          const { error } = await sb.from(SUPABASE_TABLE).upsert({ user_id: uid, key, body }, { onConflict: 'user_id,key' })
+          if (error) throw { code: error.code === '23514' || error.code === '54000' ? 'invalid_argument' : 'unavailable' }
+        },
+      }
+      setStatus(outbox.size ? 'enviando' : 'sincronizado')
+      scheduleFlush(200)
+    } catch {
+      setStatus('erro', 'Não consegui falar com o Supabase. Seus dados continuam salvos neste navegador.')
+    }
+  }
+
+  sb.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) void connect(session.user.id)
+    else {
+      stop?.()
+      stop = null
+      connectedAs = null
+      setStatus('entrar')
+    }
+  })
+  const { data } = await sb.auth.getSession()
+  if (data.session?.user) await connect(data.session.user.id)
+  else setStatus('entrar')
+}
+
+/**
+ * Roda `fn` marcando o que ela criar como "mais antigo que a nuvem": usado nos conteúdos padrão,
+ * para que um aparelho novo nunca sobrescreva o que você já editou em outro.
+ */
+export async function withLowStamps<T>(fn: () => Promise<T>): Promise<T> {
+  lowStamps++
+  try {
+    return await fn()
+  } finally {
+    // os ganchos do Dexie disparam ao fim de cada transação; espera um instante antes de voltar ao normal
+    await new Promise((r) => setTimeout(r, 0))
+    lowStamps--
+  }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { ensureSeed, restoreVividColors } from '../db/repo'
-import { useSyncStatus } from '../lib/cloud'
+import { useSyncStatus, withLowStamps } from '../lib/cloud'
 
 /**
  * Cria os conteúdos padrão no primeiro uso. Espera a nuvem responder antes,
@@ -12,8 +12,8 @@ export function SeedRunner() {
   useEffect(() => {
     if (sync === 'carregando' || done.current) return
     done.current = true
-    ensureSeed()
-      .then(() => restoreVividColors())
+    withLowStamps(() => ensureSeed())
+      .then(() => withLowStamps(() => restoreVividColors()))
       .catch(() => {
       done.current = false
     })

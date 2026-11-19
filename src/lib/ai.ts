@@ -7,6 +7,7 @@
  *   Contrato esperado do servidor: POST {prompt, tier, json} → {text}.
  */
 import type { ClaudeSample } from './cloud'
+import { getAccessToken } from './supabase'
 
 export type AITier = 'quick' | 'default' | 'complex'
 
@@ -47,6 +48,9 @@ const MESSAGES: Record<string, string> = {
   empty_completion: 'O Claude não devolveu resposta. Tente de novo.',
   session_expired: 'Sua sessão do claude.ai expirou. Recarregue a página.',
   unavailable: 'O Claude não está disponível aqui. Abra o Mendonça pelo claude.ai para usar as funções de IA.',
+  login: 'Entre com seu e-mail (botão Entrar, no topo) para usar as funções de IA.',
+  not_allowed: 'Este e-mail não tem permissão para usar a IA deste site.',
+  bad_api_key: 'A chave da API do Claude configurada no servidor não funcionou.',
 }
 
 function toAIError(e: unknown): AIError {
@@ -85,9 +89,10 @@ function serverProvider(endpoint: string): AIProvider {
   const call = async (prompt: string, json: boolean, o?: AIOptions) => {
     let res: Response
     try {
+      const token = await getAccessToken().catch(() => null)
       res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ prompt, tier: o?.tier ?? 'default', json }),
         signal: o?.signal,
         credentials: 'include',
@@ -96,8 +101,10 @@ function serverProvider(endpoint: string): AIProvider {
       if ((e as Error).name === 'AbortError') throw new AIError('cancelled', MESSAGES.cancelled)
       throw new AIError('upstream_error', 'Não consegui falar com o servidor de IA.')
     }
-    if (res.status === 429) throw new AIError('rate_limited', MESSAGES.rate_limited)
-    if (!res.ok) throw new AIError('upstream_error', 'O servidor de IA respondeu com erro.')
+    if (!res.ok) {
+      const code = ((await res.json().catch(() => ({}))) as { error?: string }).error ?? (res.status === 429 ? 'rate_limited' : 'upstream_error')
+      throw new AIError(code, MESSAGES[code] ?? 'O servidor de IA respondeu com erro. Tente de novo.')
+    }
     const { text } = (await res.json()) as { text: string }
     o?.onText?.(text)
     return text
@@ -123,7 +130,8 @@ let cached: Promise<AIProvider | null> | null = null
 /** A IA disponível neste ambiente, ou null (as funções de IA ficam escondidas). */
 export function getAI(): Promise<AIProvider | null> {
   if (cached) return cached
-  const endpoint = import.meta.env.VITE_AI_ENDPOINT as string | undefined
+  // No site próprio (build normal, fora do claude.ai), a IA passa pela função /api/ia da Vercel.
+  const endpoint = (import.meta.env.VITE_AI_ENDPOINT as string | undefined) ?? (import.meta.env.PROD && !import.meta.env.VITE_ARTIFACT ? '/api/ia' : undefined)
   if (endpoint) return (cached = Promise.resolve(serverProvider(endpoint)))
   cached = (async () => {
     const sample = (await window.claude?.use('sample').catch(() => null)) ?? null

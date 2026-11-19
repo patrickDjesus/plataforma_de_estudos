@@ -4,6 +4,7 @@ import { BrowserRouter, MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ConfirmHost } from './components/confirm'
 import { SeedRunner } from './components/SeedRunner'
 import { QuestionsPromptHost } from './components/QuestionsPrompt'
+import { LoginGate } from './components/LoginGate'
 import { startCloudSync } from './lib/cloud'
 import './index.css'
 import { Layout } from './components/Layout'
@@ -29,6 +30,7 @@ const Router = import.meta.env.VITE_ARTIFACT ? MemoryRouter : BrowserRouter
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Router>
+      <LoginGate>
       <Routes>
         {/* Check-in: tela cheia, separada do resto do site */}
         <Route path="checkin" element={<CheckInPage />} />
@@ -49,6 +51,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="config" element={<SettingsPage />} />
         </Route>
       </Routes>
+      </LoginGate>
       <ConfirmHost />
       <SeedRunner />
       <QuestionsPromptHost />
