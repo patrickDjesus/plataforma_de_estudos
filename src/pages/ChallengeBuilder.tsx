@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, BookOpenCheck, CheckSquare, FileText, ListChecks, MessageSquareText, PenLine, Search, Sparkles, ToggleLeft } from 'lucide-react'
+import { ArrowLeft, BookOpenCheck, CheckSquare, FileText, ListChecks, MessageSquareText, PenLine, Search, Sparkles, Swords, ToggleLeft } from 'lucide-react'
 import { AREAS, useNotes, useSubjects, useTopics, useSettings } from '../db/hooks'
 import type { ChallengeType, Difficulty } from '../lib/prompts'
 import { tint } from '../lib/colors'
@@ -8,6 +8,7 @@ import { Capybara } from '../components/Capybara'
 import { ChallengeModal } from '../components/ChallengeModal'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Card } from '../components/ui'
+import { PageHeader } from '../components/dash'
 import { VoiceTextarea } from '../components/Voice'
 
 const TYPES: { id: ChallengeType; label: string; hint: string; icon: ReactNode }[] = [
@@ -79,9 +80,17 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
   return (
     <>
       {!isQ && (
-        <button onClick={() => navigate('/recuperacao')} className="mb-3 flex items-center gap-1.5 rounded-xl px-2 py-1.5 text-sm font-semibold text-slate-600 hover:bg-white">
-          <ArrowLeft size={16} /> Recuperação
-        </button>
+        <PageHeader
+          icon={<Swords size={28} />}
+          color="#7b5cff"
+          title="Desafio livre"
+          subtitle="Escolha matéria, tópico, quantidade, dificuldade e tipos de questão."
+          back={
+            <button onClick={() => navigate('/recuperacao')} className="-ml-1 flex items-center gap-1 text-xs font-semibold text-muted hover:text-ink">
+              <ArrowLeft size={13} /> Recuperação
+            </button>
+          }
+        />
       )}
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_340px]">

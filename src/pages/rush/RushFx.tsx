@@ -99,7 +99,7 @@ export function Arena({ heat, boss, onFire, children }: { heat: number; boss: bo
     [],
   )
   return (
-    <div className="essential-motion relative isolate overflow-hidden rounded-[32px] p-3 transition-[background-color] duration-[1200ms] sm:p-5" style={{ backgroundColor: arenaColor(h) }}>
+    <div data-arena className="essential-motion relative isolate overflow-hidden rounded-[32px] p-3 transition-[background-color] duration-[1200ms] sm:p-5" style={{ backgroundColor: arenaColor(h) }}>
       {/* brilho vermelho que sobe do chão */}
       <div
         className={`pointer-events-none absolute inset-0 -z-10 transition-opacity duration-1000 ${h >= 0.8 ? 'rk-heartbeat' : ''}`}

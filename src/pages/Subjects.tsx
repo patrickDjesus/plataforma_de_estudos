@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { GripVertical, Layers, Plus, Trash2 } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
+import { GraduationCap, GripVertical, Languages, Layers, ListTree, Plus, School, Trash2 } from 'lucide-react'
 import { AREAS, useSubjects, useTopics } from '../db/hooks'
 import { addSubject, addTopic, deleteSubject, deleteTopic, reorderTopics, setTopicDone, updateSubject, updateTopic } from '../db/repo'
 import type { AreaId, Subject, Topic } from '../db/types'
@@ -9,34 +9,50 @@ import { askConfirm } from '../components/confirm'
 import { useMastery } from '../db/mastery'
 import { masteryColor, masteryLabel } from '../lib/mastery'
 import { SUBJECT_ICONS, SubjectIcon, guessIcon } from '../components/SubjectIcon'
-import { Btn, Card, Field, Modal, PageHeader, inputCls } from '../components/ui'
+import { Btn, Card, Field, Modal, inputCls } from '../components/ui'
+import { DashShell, HeroStat, PageHeader, TileIcon } from '../components/dash'
 
 export function SubjectsPage() {
   const subjects = useSubjects()
   const topics = useTopics()
   const [openId, setOpenId] = useState<string | null>(null)
   const open = subjects.find((s) => s.id === openId)
+  const [area, setArea] = useState<AreaId>('faculdade')
+  const current = AREAS.find((a) => a.id === area)!
+  const doneTopics = topics.filter((t) => t.done).length
   return (
     <>
-      <PageHeader icon={<Layers size={24} />} title="Matérias" subtitle="Organize suas áreas, matérias e tópicos. O planejador usa peso, obrigatoriedade e prazo." />
-      <div className="space-y-6">
-        {AREAS.map((area) => (
-          <AreaSection
-            key={area.id}
-            areaId={area.id}
-            name={area.name}
-            subjects={subjects.filter((s) => s.areaId === area.id)}
-            topics={topics}
-            onOpen={setOpenId}
-          />
-        ))}
-      </div>
+      <PageHeader
+        icon={<Layers size={28} />}
+        color="#14b8a6"
+        title="Matérias"
+        subtitle="O planejador usa peso, obrigatoriedade e prazo."
+        stats={
+          <>
+            <HeroStat tile={<TileIcon color="#14b8a6"><Layers size={22} /></TileIcon>} value={subjects.length} label="matérias cadastradas" />
+            <HeroStat tile={<TileIcon color="#3e63f2"><ListTree size={22} /></TileIcon>} value={<>{doneTopics}<span className="text-sm text-muted">/{topics.length}</span></>} label="tópicos estudados" />
+          </>
+        }
+      />
+      <DashShell<AreaId>
+        value={area}
+        onChange={setArea}
+        items={AREAS.map((a) => ({ id: a.id, label: a.name, icon: AREA_ICON[a.id] }))}
+      >
+        <AreaSection bare areaId={current.id} name={current.name} subjects={subjects.filter((s) => s.areaId === current.id)} topics={topics} onOpen={setOpenId} />
+      </DashShell>
       {open && <SubjectModal subject={open} topics={topics.filter((t) => t.subjectId === open.id)} onClose={() => setOpenId(null)} />}
     </>
   )
 }
 
-function AreaSection({ areaId, name, subjects, topics, onOpen }: { areaId: AreaId; name: string; subjects: Subject[]; topics: Topic[]; onOpen: (id: string) => void }) {
+const AREA_ICON: Record<AreaId, ReactNode> = {
+  faculdade: <GraduationCap size={20} />,
+  ensino: <School size={20} />,
+  idiomas: <Languages size={20} />,
+}
+
+function AreaSection({ areaId, name, subjects, topics, onOpen, bare = false }: { areaId: AreaId; name: string; subjects: Subject[]; topics: Topic[]; onOpen: (id: string) => void; bare?: boolean }) {
   const mastery = useMastery()
   const [newName, setNewName] = useState('')
   const add = async () => {
@@ -46,7 +62,7 @@ function AreaSection({ areaId, name, subjects, topics, onOpen }: { areaId: AreaI
     setNewName('')
   }
   return (
-    <Card className="p-6">
+    <Card className={bare ? 'border-0 p-0 shadow-none' : 'p-6'}>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2.5 text-xl font-bold">
           <span className="h-3 w-3 rounded-full" style={{ background: AREA_COLOR[areaId], boxShadow: `0 0 0 4px ${tint(AREA_COLOR[areaId], 0.15)}` }} />

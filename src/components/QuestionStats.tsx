@@ -1,11 +1,12 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowRight, ListChecks } from 'lucide-react'
+import { ArrowRight, Flame, ListChecks, Percent, Target } from 'lucide-react'
 import { db } from '../db/db'
 import { useSettings, useSubjectMap } from '../db/hooks'
 import { DEFAULT_DAILY_GOAL, goalStreak } from '../lib/dailyGoal'
 import { addDays, fromISODate, toISODate, weekIdOf } from '../lib/dates'
 import { tint } from '../lib/colors'
 import { SubjectIcon } from './SubjectIcon'
+import { HeroStat, TileIcon } from './dash'
 
 interface Bucket {
   done: number
@@ -260,5 +261,25 @@ function DailyGoalMini({ s }: { s: QuestionStats }) {
         <span className="text-[11px] text-muted">hoje{streak > 0 ? ` · 🔥 ${streak} dia${streak > 1 ? 's' : ''}` : ''}</span>
       </span>
     </span>
+  )
+}
+
+/** Números do cabeçalho da página Questões. */
+export function QuestionsHeroStats() {
+  const s = useQuestionStats()
+  const settings = useSettings()
+  if (!s) return null
+  const goal = settings.dailyGoal ?? DEFAULT_DAILY_GOAL
+  const today = toISODate(new Date())
+  const done = s.byDay.get(today) ?? 0
+  const streak = goalStreak(s.byDay, goal, today)
+  const p = pct(s.total)
+  return (
+    <>
+      <HeroStat tile={<TileIcon color="#3e63f2"><Target size={22} /></TileIcon>} value={<>{done}<span className="text-sm text-muted">/{goal}</span></>} label="hoje meta do dia" accent={done >= goal ? '#22b573' : '#3e63f2'} />
+      <HeroStat tile={<TileIcon color="#ff8a1f"><Flame size={22} /></TileIcon>} value={streak} label={streak === 1 ? 'dia batendo a meta' : 'dias batendo a meta'} accent="#ff8a1f" />
+      <HeroStat tile={<TileIcon color="#8b5cf6"><ListChecks size={22} /></TileIcon>} value={s.week.done} label="questões na semana" />
+      <HeroStat tile={<TileIcon color="#10b981"><Percent size={22} /></TileIcon>} value={p === null ? '—' : `${p}%`} label="acerto geral" accent={accColor(p)} />
+    </>
   )
 }

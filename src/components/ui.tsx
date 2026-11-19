@@ -4,7 +4,7 @@ import { tint } from '../lib/colors'
 
 export function Card({ children, className = '', style }: { children: ReactNode; className?: string; style?: React.CSSProperties }) {
   return (
-    <div className={`rounded-[22px] border border-line bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_-12px_rgba(16,24,40,0.08)] ${className}`} style={style}>
+    <div className={`card rounded-[22px] border border-line bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_-12px_rgba(16,24,40,0.08)] ${className}`} style={style}>
       {children}
     </div>
   )
@@ -97,22 +97,6 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 
 export const inputCls =
   'w-full rounded-xl border border-line bg-[#f8f9fb] px-3 py-2.5 text-sm outline-none transition focus:border-brand/50 focus:bg-white focus:ring-4 focus:ring-brand/10'
-
-/** Cabeçalho de página: ícone em círculo, título e subtítulo. */
-export function PageHeader({ icon, title, subtitle, actions }: { icon: ReactNode; title: string; subtitle?: string; actions?: ReactNode }) {
-  return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-      <div className="flex items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f1f2f5] text-ink">{icon}</div>
-        <div>
-          <h1 className="text-[22px] font-bold">{title}</h1>
-          {subtitle && <p className="text-sm text-muted">{subtitle}</p>}
-        </div>
-      </div>
-      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
-    </div>
-  )
-}
 
 /** Anel de progresso circular. */
 export function Ring({ value, size = 150, stroke = 12, color = '#3e63f2', children }: { value: number; size?: number; stroke?: number; color?: string; children?: ReactNode }) {

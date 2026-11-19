@@ -31,7 +31,8 @@ import { useMastery } from '../db/mastery'
 import { askConfirm } from '../components/confirm'
 import { Capybara } from '../components/Capybara'
 import { SubjectIcon } from '../components/SubjectIcon'
-import { Btn, Card, PageHeader, Tabs, inputCls } from '../components/ui'
+import { Btn, Card, Tabs, inputCls } from '../components/ui'
+import { PageHeader } from '../components/dash'
 
 type NodeData = GNode & Record<string, unknown>
 
@@ -193,7 +194,8 @@ function MindMap() {
   return (
     <>
       <PageHeader
-        icon={<Waypoints size={24} />}
+        icon={<Waypoints size={28} />}
+        color="#8b5cf6"
         title="Mapa mental"
         subtitle="Suas matérias, tópicos e notas conectados. As ligações [[…]] do caderno aparecem sozinhas."
         actions={

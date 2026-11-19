@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ArrowLeft, BookX, Check, Eye, Trash2, X } from 'lucide-react'
+import { Check, Eye, Trash2, X } from 'lucide-react'
 import { db } from '../db/db'
 import { useSubjectMap } from '../db/hooks'
 import { deleteErrorEntry, reviewErrorEntry, setErrorReason } from '../db/repo'
@@ -10,13 +9,12 @@ import { CATEGORY_LABEL, REASON_LABEL } from '../lib/errors'
 import { toISODate } from '../lib/dates'
 import { Capybara } from '../components/Capybara'
 import { SubjectIcon } from '../components/SubjectIcon'
-import { Card, PageHeader, Tabs } from '../components/ui'
+import { Card, Tabs } from '../components/ui'
 
 const SOURCE_LABEL = { desafio: 'Desafio', questoes: 'Questões', flashcard: 'Flashcard', escrita: 'Escrita', rush: 'Rush', simulado: 'Simulado' }
 
-/** Caderno de erros: revise cada erro até acertar 2 vezes seguidas. */
-export function ErrorsPage() {
-  const navigate = useNavigate()
+/** Caderno de erros (seção da Recuperação): revise cada erro até acertar 2 vezes seguidas. */
+export function ErrorsSection() {
   const today = toISODate(new Date())
   const all = useLiveQuery(() => db.errors.orderBy('createdAt').reverse().toArray(), [], [])
   const subjects = useSubjectMap()
@@ -32,10 +30,7 @@ export function ErrorsPage() {
 
   return (
     <>
-      <button onClick={() => navigate('/recuperacao')} className="mb-3 flex items-center gap-1.5 rounded-xl px-2 py-1.5 text-sm font-semibold text-slate-600 hover:bg-white">
-        <ArrowLeft size={16} /> Recuperação
-      </button>
-      <PageHeader icon={<BookX size={24} />} title="Caderno de erros" subtitle="Cada erro volta até você acertar 2 vezes seguidas. É aqui que o estudo vira resultado." />
+      <p className="mb-4 text-sm text-muted">Cada erro volta até você acertar 2 vezes seguidas.</p>
       <div className="mb-5 grid gap-3 sm:grid-cols-4">
         <Stat label="Para revisar hoje" value={due.length} color="#ef4444" />
         <Stat label="Em aberto" value={open.length} color="#f59e0b" />

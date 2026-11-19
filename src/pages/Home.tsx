@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Crown, Layers, Settings, ArrowRight, BarChart3, BookOpen, RotateCcw, CalendarCheck2, Check, ChevronRight, Clock3, Flame, Globe2, Medal, Play, Target, Trophy, Zap } from 'lucide-react'
+import { Crown, Layers, Settings, BarChart3, BookOpen, RotateCcw, CalendarCheck2, Check, ChevronRight, Clock3, Flame, Globe2, Medal, Play, Target, Trophy, Zap } from 'lucide-react'
 import { db } from '../db/db'
 import { AREAS, useSessions, useSettings, useSubjectMap, useTimer, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
 import { currentWeekId, rateReview } from '../db/repo'
@@ -24,6 +24,7 @@ import { useMastery } from '../db/mastery'
 import { masteryColor, masteryLabel } from '../lib/mastery'
 import { ratingFromScore } from '../lib/challenge'
 import { Card, Ring, Tabs } from '../components/ui'
+import { ActionBox, HeroStat, Panel as DashPanel, SideItem, TileIcon } from '../components/dash'
 
 type Section = 'geral' | 'resultados' | 'metas' | 'conquistas' | 'rank'
 type Scope = 'hoje' | 'semana'
@@ -135,12 +136,12 @@ export function HomePage() {
           </div>
         </div>
 
-        <Stat tile={<TileIcon color="#ff5d6c"><CalendarCheck2 size={22} /></TileIcon>} value={`${studyDays.size}`} accent="#3e63f2" label="dias estudados" />
-        <Stat tile={<TileIcon color="#ff8a1f"><Flame size={22} /></TileIcon>} value={`${streak}`} accent="#ff8a1f" label={streak === 1 ? 'dia seguido' : 'dias seguidos'} />
+        <HeroStat tile={<TileIcon color="#ff5d6c"><CalendarCheck2 size={22} /></TileIcon>} value={`${studyDays.size}`} accent="#3e63f2" label="dias estudados" />
+        <HeroStat tile={<TileIcon color="#ff8a1f"><Flame size={22} /></TileIcon>} value={`${streak}`} accent="#ff8a1f" label={streak === 1 ? 'dia seguido' : 'dias seguidos'} />
         {themeSubject ? (
-          <Stat tile={<SubjectIcon subject={themeSubject} size={48} />} caption="🎯 Semana de" value={themeSubject.name} />
+          <HeroStat tile={<SubjectIcon subject={themeSubject} size={48} />} caption="🎯 Semana de" value={themeSubject.name} />
         ) : (
-          <Stat
+          <HeroStat
             tile={<TileIcon color={AREA_COLOR[focusArea.id]}><span className="font-display text-lg font-extrabold">{focusArea.name[0]}</span></TileIcon>}
             caption="Foco da semana"
             value={focusArea.name}
@@ -225,7 +226,7 @@ export function HomePage() {
               <QuestionsStrip onMore={() => setSection('resultados')} onRegister={phone ? undefined : () => navigate('/questoes?aba=registrar')} />
               <div className="grid gap-5 lg:grid-cols-3">
                 {/* XP */}
-                <Panel title={scope === 'hoje' ? 'XP do dia' : 'XP da semana'} icon={<Medal size={18} />}>
+                <DashPanel className="sm:min-h-[440px]" title={scope === 'hoje' ? 'XP do dia' : 'XP da semana'} icon={<Medal size={18} />}>
                   <div className="flex flex-col items-center pt-1">
                     <Ring value={scopeGoal ? scopeXp / scopeGoal : 0} size={168} stroke={13}>
                       <span className="mb-1 rounded-full bg-brand px-2.5 py-0.5 text-xs font-bold text-white">{scopeGoal ? Math.round((scopeXp / scopeGoal) * 100) : 0}%</span>
@@ -249,10 +250,10 @@ export function HomePage() {
                     </p>
                   </div>
                   {!phone && <ActionBox label="Continuar de onde parei" onClick={() => startBlock(nextBlock)} />}
-                </Panel>
+                </DashPanel>
 
                 {/* Tarefas */}
-                <Panel title={scope === 'hoje' ? 'Tarefas do dia' : 'Tarefas da semana'} icon={<CalendarCheck2 size={18} />}>
+                <DashPanel className="sm:min-h-[440px]" title={scope === 'hoje' ? 'Tarefas do dia' : 'Tarefas da semana'} icon={<CalendarCheck2 size={18} />}>
                   <div className="thin-scroll -mx-1 max-h-[300px] flex-1 divide-y divide-line overflow-y-auto px-1">
                     {scoped.length === 0 && (
                       <div className="flex flex-col items-center py-4 text-center">
@@ -293,10 +294,10 @@ export function HomePage() {
                     })}
                   </div>
                   <ActionBox label="Ir para a semana" onClick={() => navigate('/calendario')} />
-                </Panel>
+                </DashPanel>
 
                 {/* Metas */}
-                <Panel title="Metas" icon={<Target size={18} />}>
+                <DashPanel className="sm:min-h-[440px]" title="Metas" icon={<Target size={18} />}>
                   <div className="flex-1 space-y-6 pt-1">
                     <Goal icon={<Check size={16} />} color="#3e63f2" value={scoped.filter((b) => b.done).length} total={scoped.length} label="Blocos concluídos" />
                     <Goal
@@ -308,7 +309,7 @@ export function HomePage() {
                     />
                     <Goal icon={<Zap size={16} />} color="#14b8a6" value={scopeSessions.length} total={Math.max(scoped.length, scopeSessions.length)} label="Sessões de foco" />
                   </div>
-                </Panel>
+                </DashPanel>
               </div>
             </>
           )}
@@ -327,61 +328,6 @@ export function HomePage() {
         </div>
       </div>
     </div>
-  )
-}
-
-function TileIcon({ color, children }: { color: string; children: ReactNode }) {
-  return (
-    <span className="subject-icon h-12 w-12 rounded-[14px]" style={{ background: `linear-gradient(145deg, ${color}, color-mix(in srgb, ${color} 72%, #000))` }}>
-      <span className="relative z-10 flex">{children}</span>
-    </span>
-  )
-}
-
-function Stat({ tile, value, label, caption, accent }: { tile: ReactNode; value: string; label?: string; caption?: string; accent?: string }) {
-  return (
-    <div className="flex items-center gap-3">
-      {tile}
-      <div className="leading-tight">
-        {caption && <div className="text-xs text-muted">{caption}</div>}
-        <div className="font-display text-lg font-bold" style={accent ? { color: accent } : undefined}>
-          {value}
-          {label && <span className="ml-1.5 font-sans text-sm font-medium text-ink">{label.split(' ')[0]}</span>}
-        </div>
-        {label && <div className="text-xs text-muted">{label.split(' ').slice(1).join(' ') || ' '}</div>}
-      </div>
-    </div>
-  )
-}
-
-function SideItem({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: ReactNode; label: string }) {
-  return (
-    <button onClick={onClick} className={`flex w-full flex-col items-center gap-1 py-1.5 text-[11px] font-semibold transition ${active ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>
-      <span className={`grid h-10 w-10 place-items-center rounded-full transition ${active ? 'bg-gradient-to-br from-[#5b7cff] to-[#3e63f2] shadow-[0_0_18px_rgba(91,124,255,0.6)]' : 'bg-white/5'}`}>{icon}</span>
-      {label}
-    </button>
-  )
-}
-
-function Panel({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
-  return (
-    <div className="flex flex-col rounded-[18px] border border-line p-5 sm:min-h-[440px]">
-      <h3 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold">
-        {icon} {title}
-      </h3>
-      {children}
-    </div>
-  )
-}
-
-function ActionBox({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="group mt-5 flex items-center justify-between rounded-2xl bg-brand-soft px-4 py-3.5 text-left text-sm font-bold text-ink transition hover:brightness-95">
-      {label}
-      <span className="grid h-8 w-8 place-items-center rounded-full bg-brand text-white transition group-hover:translate-x-0.5">
-        <ArrowRight size={16} />
-      </span>
-    </button>
   )
 }
 

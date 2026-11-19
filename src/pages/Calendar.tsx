@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarRange, Check, Clock3, Flag, LayoutGrid, Plus, RefreshCw, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { CalendarRange, Check, CheckCheck, Clock3, Flag, LayoutGrid, Plus, RefreshCw, RotateCcw, SlidersHorizontal, Sun, Trash2 } from 'lucide-react'
 import { tint } from '../lib/colors'
 import { useSubjectMap, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
 import { currentWeekId, deleteBlock, regeneratePlan, setBlockDone, updateBlock } from '../db/repo'
@@ -9,7 +9,8 @@ import { DAY_SHORT, addDays, fmtDayMonth, fmtDuration, fmtTime, fmtWeekRange, mi
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { BlockDialog, type Draft } from '../components/BlockDialog'
-import { Btn, Card, Chip, PageHeader, Tabs } from '../components/ui'
+import { Btn, Card, Chip, Tabs } from '../components/ui'
+import { HeroStat, PageHeader, TileIcon } from '../components/dash'
 import type { Subject, Topic } from '../db/types'
 
 const PPM = 0.85 // pixels por minuto
@@ -73,6 +74,18 @@ export function CalendarPage() {
     return [...acc.entries()]
   }, [blocks])
 
+  const weekStats = useMemo(() => {
+    const study = blocks.filter((b) => b.kind === 'study' || b.kind === 'revisao')
+    const done = study.filter((b) => b.done)
+    return {
+      total: study.length,
+      done: done.length,
+      plannedMin: study.reduce((a, b) => a + b.end - b.start, 0),
+      doneMin: done.reduce((a, b) => a + b.end - b.start, 0),
+      today: study.filter((b) => b.date === todayIso && !b.done).length,
+    }
+  }, [blocks, todayIso])
+
   const snap = (m: number) => Math.round(m / SNAP) * SNAP
 
   const onPointerDown = (e: RPointerEvent, b: Block, mode: DragState['mode']) => {
@@ -123,7 +136,19 @@ export function CalendarPage() {
 
   return (
     <>
-      <PageHeader icon={<CalendarRange size={24} />} title="Mapa da semana" subtitle="Veja seu progresso e organize sua rotina de estudos." />
+      <PageHeader
+        icon={<CalendarRange size={28} />}
+        color="#3e63f2"
+        title="Mapa da semana"
+        subtitle="Seu progresso e sua rotina de estudos."
+        stats={
+          <>
+            <HeroStat tile={<TileIcon color="#3e63f2"><CheckCheck size={22} /></TileIcon>} value={<>{weekStats.done}<span className="text-sm text-muted">/{weekStats.total}</span></>} label="blocos feitos" />
+            <HeroStat tile={<TileIcon color="#ec4899"><Clock3 size={22} /></TileIcon>} value={`${Math.round(weekStats.doneMin / 60)}h`} label={`estudadas de ${Math.round(weekStats.plannedMin / 60)}h`} accent="#ec4899" />
+            <HeroStat tile={<TileIcon color="#ff8a1f"><Sun size={22} /></TileIcon>} value={weekStats.today} label={weekStats.today === 1 ? 'bloco hoje' : 'blocos hoje'} accent="#ff8a1f" />
+          </>
+        }
+      />
 
       <Card className="overflow-hidden p-0">
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 pb-4">

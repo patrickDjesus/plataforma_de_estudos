@@ -1,11 +1,12 @@
 import { useRef, useState } from 'react'
-import { Download, RotateCcw, Settings2, Upload } from 'lucide-react'
+import { Database, Download, RotateCcw, Settings2, SlidersHorizontal, Upload, UserRound } from 'lucide-react'
 import { useSettings } from '../db/hooks'
 import { applySeed, ensureSeed, exportBackup, importBackup, resetAllData, updateSettings } from '../db/repo'
 import { useNavigate } from 'react-router-dom'
 import type { Settings } from '../db/types'
 import { toISODate } from '../lib/dates'
-import { Btn, Card, Field, PageHeader, inputCls } from '../components/ui'
+import { Btn, Card, Field, inputCls } from '../components/ui'
+import { DashShell, PageHeader } from '../components/dash'
 import { askConfirm } from '../components/confirm'
 import { CAPI_POSES, Capybara, type CapiPose } from '../components/Capybara'
 import { showMascot } from '../lib/mascotBus'
@@ -47,11 +48,14 @@ const NUMBER_FIELDS: { key: keyof Settings; label: string; min: number; max: num
   { key: 'dailyGoal', label: 'Meta de questões por dia', min: 1, max: 300, def: 20 },
 ]
 
+type Section = 'perfil' | 'planejador' | 'dados'
+
 export function SettingsPage() {
   const settings = useSettings()
   const fileRef = useRef<HTMLInputElement>(null)
   const [msg, setMsg] = useState('')
   const [resetting, setResetting] = useState(false)
+  const [section, setSection] = useState<Section>('perfil')
   const navigate = useNavigate()
   const [backupText, setBackupText] = useState('')
   const [pasted, setPasted] = useState('')
@@ -85,11 +89,21 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader icon={<Settings2 size={22} />} title="Ajustes" subtitle="Regras do planejador e backup dos seus dados." />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="lg:col-span-2">
+      <PageHeader icon={<Settings2 size={28} />} color="#475569" title="Ajustes" subtitle="Seu perfil, as regras do planejador e os seus dados." />
+      <DashShell<Section>
+        value={section}
+        onChange={setSection}
+        items={[
+          { id: 'perfil', label: 'Perfil', icon: <UserRound size={20} /> },
+          { id: 'planejador', label: 'Planejador', icon: <SlidersHorizontal size={20} /> },
+          { id: 'dados', label: 'Dados', icon: <Database size={20} /> },
+        ]}
+      >
+      {section === 'perfil' && (
+      <div className="grid gap-5">
+        <Card>
           <h2 className="mb-4 text-lg font-bold">Perfil</h2>
-          <div className="max-w-sm">
+          <div className="max-w-sm space-y-4">
             <Field label="Como quer ser chamado?">
               <input
                 id="user-name"
@@ -100,9 +114,20 @@ export function SettingsPage() {
                 onBlur={(e) => updateSettings({ userName: e.target.value.trim() || undefined })}
               />
             </Field>
+            <label className="block max-w-sm">
+              <span className="mb-1.5 block text-sm font-bold">Prova alvo (opcional)</span>
+              <input
+                defaultValue={settings.targetExam ?? ''}
+                key={`exam-${settings.targetExam ?? ''}`}
+                onBlur={(e) => updateSettings({ targetExam: e.target.value.trim() || undefined })}
+                placeholder="Ex.: ENEM, Fuvest, Unicamp"
+                className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm outline-none focus:border-brand"
+              />
+              <span className="mt-1 block text-[11px] text-muted">O Rush, o Simulado e as listas passam a imitar o estilo dessa prova. Vazio = nível ENEM/vestibular em geral.</span>
+            </label>
           </div>
         </Card>
-        <Card className="lg:col-span-2">
+        <Card>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold">Conheça o Capi</h2>
@@ -118,17 +143,6 @@ export function SettingsPage() {
               />
               Boas-vindas ao abrir o site
             </label>
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-bold">Prova alvo (opcional)</span>
-              <input
-                defaultValue={settings.targetExam ?? ''}
-                key={`exam-${settings.targetExam ?? ''}`}
-                onBlur={(e) => updateSettings({ targetExam: e.target.value.trim() || undefined })}
-                placeholder="Ex.: ENEM, Fuvest, Unicamp"
-                className="w-full rounded-xl border border-line bg-white px-3 py-2.5 text-sm outline-none focus:border-brand"
-              />
-              <span className="mt-1 block text-[11px] text-muted">O Rush, o Simulado e as listas passam a imitar o estilo dessa prova. Vazio = nível ENEM/vestibular em geral.</span>
-            </label>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-9">
             {CAPI_POSES.map((p) => (
@@ -143,6 +157,9 @@ export function SettingsPage() {
             ))}
           </div>
         </Card>
+      </div>
+      )}
+      {section === 'planejador' && (
         <Card>
           <h2 className="mb-4 text-lg font-bold">Planejador</h2>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -165,6 +182,9 @@ export function SettingsPage() {
           <p className="mt-4 text-xs text-muted">As mudanças valem na próxima vez que o plano for gerado (check-in ou “Regerar plano”).</p>
         </Card>
 
+      )}
+      {section === 'dados' && (
+      <div className="grid gap-5">
         <Card>
           <h2 className="mb-1 text-lg font-bold">Backup</h2>
           <p className="mb-4 text-sm text-muted">
@@ -209,7 +229,7 @@ export function SettingsPage() {
           {msg && <p className="mt-3 text-sm font-semibold">{msg}</p>}
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="max-w-xl">
               <h2 className="text-lg font-bold">Conteúdos padrão</h2>
@@ -229,7 +249,7 @@ export function SettingsPage() {
           </div>
         </Card>
 
-        <Card className="border-rose-100 lg:col-span-2">
+        <Card className="border-rose-100">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="max-w-xl">
               <h2 className="text-lg font-bold text-rose-700">Reiniciar todos os dados</h2>
@@ -255,6 +275,8 @@ export function SettingsPage() {
           </div>
         </Card>
       </div>
+      )}
+      </DashShell>
     </>
   )
 }

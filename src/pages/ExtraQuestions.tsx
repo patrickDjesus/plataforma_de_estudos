@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Minus, Plus, Trash2 } from 'lucide-react'
 import { db } from '../db/db'
@@ -10,7 +9,6 @@ import { Capybara } from '../components/Capybara'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Card } from '../components/ui'
 import { askConfirm } from '../components/confirm'
-import { QuestionsStrip } from '../components/QuestionStats'
 import { showMascot } from '../lib/mascotBus'
 
 const QUICK = [5, 10, 15, 20, 30, 50]
@@ -32,7 +30,6 @@ function Stepper({ value, onChange, label, max }: { value: number; onChange: (n:
 
 /** Registrar questões feitas fora do site (livro, lista, simulado…). */
 export function ExtraQuestions() {
-  const navigate = useNavigate()
   const subjects = useSubjects()
   const topics = useTopics()
   const today = toISODate(new Date())
@@ -64,7 +61,6 @@ export function ExtraQuestions() {
 
   return (
     <div className="space-y-5">
-      <QuestionsStrip onMore={() => navigate('/')} />
       <div className="grid gap-5 lg:grid-cols-[1.2fr_1fr]">
         <Card className="p-6">
           <div className="mb-5 flex items-center gap-3">

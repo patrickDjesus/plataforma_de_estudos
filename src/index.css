@@ -231,3 +231,8 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
   .home-panel .grid:not([class*=" grid-cols-"]):not([class^="grid-cols-"]) { grid-template-columns: minmax(0, 1fr); }
   .home-panel .grid > * { min-width: 0; }
 }
+
+/* Dentro do painel com barra lateral, cartões viram caixas de borda fina (como no Início) */
+.dash-body .card { box-shadow: none; border-radius: 18px; }
+.dash-flush > * { flex: 1; }
+.dash-flush [data-arena] { border-radius: 0; min-height: 100%; }
