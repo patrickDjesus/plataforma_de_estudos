@@ -7,7 +7,7 @@ import { useSubjectMap, useTopics } from '../db/hooks'
 import type { Challenge } from '../db/types'
 import { ChallengeBuilderPage } from './ChallengeBuilder'
 import { ResultView } from '../components/ChallengeRunner'
-import { WritingTraining } from '../components/WritingTraining'
+import { CodeLab } from '../components/CodeLab'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
 import { Card, PageHeader } from '../components/ui'
@@ -16,13 +16,14 @@ import { RushPage } from './rush/RushPage'
 import { ExtraQuestions } from './ExtraQuestions'
 import { Simulado } from './Simulado'
 
-type Tab = 'rush' | 'simulado' | 'gerar' | 'escrita' | 'registrar' | 'historico'
-const TABS: Tab[] = ['rush', 'simulado', 'gerar', 'escrita', 'registrar', 'historico']
+type Tab = 'rush' | 'simulado' | 'gerar' | 'codigo' | 'registrar' | 'historico'
+const TABS: Tab[] = ['rush', 'simulado', 'gerar', 'codigo', 'registrar', 'historico']
 
 export function QuestionsPage() {
   const [params] = useSearchParams()
   const location = useLocation()
-  const asked = params.get('aba') as Tab | null
+  const aba = params.get('aba')
+  const asked = (aba === 'escrita' ? 'codigo' : aba) as Tab | null
   const initial = asked && TABS.includes(asked) ? asked : null
   const [tab, setTab] = useState<Tab | null>(initial)
   // Clicar em "Questões" no menu de cima (mesmo já estando aqui) volta para a escolha de modo
@@ -52,7 +53,7 @@ export function QuestionsPage() {
             {tab === 'simulado' && <Simulado />}
             {tab === 'gerar' && <ChallengeBuilderPage mode="questoes" />}
             {tab === 'registrar' && <ExtraQuestions />}
-            {tab === 'escrita' && <WritingTraining />}
+            {tab === 'codigo' && <CodeLab />}
             {tab === 'historico' && <QuestionHistory />}
           </div>
         </>

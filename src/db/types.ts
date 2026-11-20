@@ -296,3 +296,22 @@ export interface Practice {
   note?: string
   createdAt: number
 }
+
+/** Desafio de programação (aba Código das Questões). */
+export interface CodeChallenge {
+  id: string
+  createdAt: number
+  lang: 'python' | 'javascript'
+  level: string
+  title: string
+  statement: string
+  examples: { input: string; output: string }[]
+  hint?: string
+  solution?: string
+  fn?: string
+  tests?: { args: unknown[]; expected: unknown }[]
+  code: string
+  solved: boolean
+  attempts: number
+  feedback?: string
+}

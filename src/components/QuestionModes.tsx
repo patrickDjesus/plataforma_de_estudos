@@ -3,7 +3,7 @@ import { ClipboardPlus, History } from 'lucide-react'
 import { Capybara, type CapiPose } from './Capybara'
 import { playSfx } from '../lib/sfx'
 
-export type ModeId = 'rush' | 'simulado' | 'gerar' | 'escrita'
+export type ModeId = 'rush' | 'simulado' | 'gerar' | 'codigo'
 
 type Mode = { id: ModeId; title: string; tag: string; from: string; to: string; ink: string; pose: CapiPose; back: ReactNode; front?: ReactNode }
 
@@ -255,14 +255,21 @@ const writeBack = (
     <rect x="74" y="168" width="10" height="32" rx="2" fill="#fff" transform="rotate(14 79 200)" />
     <path d="M96 200 h14 l-3 -14 h-8 Z" fill="#ff8f6b" />
     <path className="qm-sway" style={{ transformOrigin: '103px 186px' }} d="M103 186 C96 176 96 168 100 162 C104 168 106 176 103 186 C108 178 114 174 118 174 C114 182 108 186 103 186 Z" fill="#169a6c" />
-    {/* bloquinho na parede, se escrevendo */}
-    <g transform="rotate(-5 46 300)">
-      <rect x="16" y="252" width="62" height="86" rx="6" fill="#fff" />
-      <rect x="16" y="252" width="62" height="12" rx="6" fill="#d9f7ec" />
-      <circle cx="47" cy="250" r="4" fill="#ff6b7a" />
-      {[278, 292, 306, 320].map((y, i) => (
-        <path key={y} className="qm-write" style={{ animationDelay: `${i * 0.55}s` }} d={`M24 ${y} q5 -4 10 0 t10 0 t10 0 t${i === 3 ? 6 : 12} 0`} fill="none" stroke="#0f8a63" strokeWidth="2.4" strokeLinecap="round" pathLength="100" strokeDasharray="100" />
+    {/* monitor com código se digitando */}
+    <g transform="rotate(-4 52 290)">
+      <rect x="10" y="244" width="86" height="66" rx="8" fill="#23263a" />
+      <rect x="15" y="249" width="76" height="56" rx="4" fill="#16181d" />
+      {[
+        [262, '#7cc4ff', 34],
+        [272, '#ffd34d', 46],
+        [282, '#7ef0b5', 28],
+        [292, '#ff8fa3', 40],
+      ].map(([y, c, w], i) => (
+        <path key={String(y)} className="qm-write" style={{ animationDelay: `${i * 0.55}s` }} d={`M${20 + (i % 2) * 6} ${y} h${w}`} stroke={String(c)} strokeWidth="3.4" strokeLinecap="round" pathLength="100" strokeDasharray="100" />
       ))}
+      <rect className="qm-blink" x="72" y="288" width="3" height="8" fill="#fff" />
+      <rect x="46" y="310" width="14" height="14" fill="#23263a" />
+      <rect x="32" y="322" width="42" height="5" rx="2.5" fill="#23263a" />
     </g>
     {/* chão */}
     <rect y="372" width={W} height="148" fill="#22b07f" />
@@ -277,14 +284,12 @@ const writeBack = (
   </>
 )
 const writeFront = (
-  <g className="qm-pencil">
-    <g transform="rotate(32 92 290)">
-      <rect x="86" y="246" width="10" height="40" rx="2" fill="#ffc83d" />
-      <rect x="86" y="246" width="10" height="7" rx="2" fill="#ff8fa3" />
-      <rect x="86" y="252" width="10" height="3" fill="#c9ccd6" />
-      <path d="M86 286 L91 298 L96 286 Z" fill="#f3d2a2" />
-      <path d="M89.5 294 L91 298 L92.5 294 Z" fill="#23263a" />
-    </g>
+  <g className="qm-float">
+    <rect x="166" y="236" width="56" height="34" rx="12" fill="#fff" />
+    <path d="M206 270 l6 10 l2 -10 Z" fill="#fff" />
+    <text x="194" y="259" textAnchor="middle" fill="#0f8a63" fontFamily="ui-monospace, monospace" fontWeight="800" fontSize="16">
+      {'</>'}
+    </text>
   </g>
 )
 
@@ -292,7 +297,7 @@ const MODES: Mode[] = [
   { id: 'rush', title: 'Rush', tag: 'Questões sem parar. Até errar.', from: '#ff9a3d', to: '#e2401b', ink: '#e2401b', pose: 'focado', back: rushBack, front: rushFront },
   { id: 'simulado', title: 'Simulado', tag: 'Prova com tempo, nota no final.', from: '#5b7cff', to: '#2a3fb8', ink: '#2a3fb8', pose: 'pensando', back: simBack, front: simFront },
   { id: 'gerar', title: 'Gerar lista', tag: 'Questões sob medida.', from: '#a77bff', to: '#6233d6', ink: '#6233d6', pose: 'acenando', back: magicBack, front: magicFront },
-  { id: 'escrita', title: 'Escrita', tag: 'Escreva, a Capi corrige.', from: '#2fcf9b', to: '#0f8a63', ink: '#0f8a63', pose: 'estudando', back: writeBack, front: writeFront },
+  { id: 'codigo', title: 'Código', tag: 'Lógica, desafios e dúvidas.', from: '#2fcf9b', to: '#0f8a63', ink: '#0f8a63', pose: 'focado', back: writeBack, front: writeFront },
 ]
 
 export function modeInfo(id: string) {
