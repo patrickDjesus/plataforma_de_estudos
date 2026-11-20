@@ -125,7 +125,7 @@ export const settingsScene = (
   </>
 )
 export const settingsFront = (
-  <g transform="translate(40 42)">
+  <g transform="translate(14 18)">
   <g className="sc-wrench" style={{ transformOrigin: '1106px 150px' }}>
     <g transform="rotate(-38 1106 130)">
       <rect x="1100" y="98" width="12" height="56" rx="5" fill="#c9ccd6" />
