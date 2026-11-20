@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Check, Pause, Play, Square, Timer } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
@@ -38,6 +38,14 @@ export function TimerPill() {
   const goal = block ? (block.end - block.start) * 60 : 0
   const progress = goal ? Math.min(1, (elapsed + (block?.studiedSeconds ?? 0)) / goal) : timer ? 1 : 0
   const running = !!timer?.startedAt
+
+  // Bateu o tempo do bloco: conclui sozinho (você estudou o combinado)
+  const autoDone = useRef<string | null>(null)
+  useEffect(() => {
+    if (!running || !block || block.done || !goal || progress < 1 || autoDone.current === block.id) return
+    autoDone.current = block.id
+    stopTimer(true)
+  }, [running, block, goal, progress])
 
   return (
     <div className="flex items-center gap-1 rounded-full bg-[#16181d] py-1 pr-1 pl-1 text-sm font-semibold text-white shadow-[0_8px_20px_-10px_rgba(0,0,0,0.6)]">

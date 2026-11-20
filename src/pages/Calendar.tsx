@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Clock3, Flag, LayoutGrid, Plus, RefreshCw, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { Check, Clock3, Play, Flag, LayoutGrid, Plus, RefreshCw, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { tint } from '../lib/colors'
 import { useSubjectMap, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
 import { blockWhen } from '../lib/blockTime'
-import { currentWeekId, deleteBlock, isPending, regeneratePlan, setBlockDone, updateBlock } from '../db/repo'
+import { convertWeekToHours, currentWeekId, deleteBlock, startTimer, isPending, regeneratePlan, setBlockDone, updateBlock } from '../db/repo'
 import type { Block } from '../db/types'
 import { DAY_SHORT, addDays, fmtDayMonth, fmtDuration, fmtTime, fmtWeekRange, minutesNow, toISODate, weekDates } from '../lib/dates'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -13,6 +13,8 @@ import { BlockDialog, type Draft } from '../components/BlockDialog'
 import { Card, Chip, Tabs } from '../components/ui'
 import { SceneBanner, weekScene } from '../components/Scenes'
 import { SubjectIcon } from '../components/SubjectIcon'
+import { Capybara } from '../components/Capybara'
+import { useTimer } from '../db/hooks'
 import type { Subject, Topic } from '../db/types'
 
 const PPM = 0.85 // pixels por minuto
@@ -193,6 +195,19 @@ export function CalendarPage() {
             </ActionBtn>
           </div>
         </div>
+
+        {week && !week.dailyMinutes && (
+          <div className="mx-5 mb-4 flex flex-wrap items-center gap-3 rounded-2xl bg-gradient-to-r from-[#fff4e6] to-[#ffe9d6] px-4 py-3">
+            <Capybara pose="pensando" size={46} />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-bold">Essa semana ainda está com horário marcado.</div>
+              <div className="text-xs text-muted">Troque por horas por dia: cada bloco vira só "estudar 1h", sem hora fixa.</div>
+            </div>
+            <ActionBtn from="#ff9a3d" to="#e2551b" onClick={() => convertWeekToHours(weekId)} icon={<Clock3 size={16} className="act-ic act-spin" />}>
+              Usar horas por dia
+            </ActionBtn>
+          </div>
+        )}
 
         {(view === 'cartoes' || week?.dailyMinutes) && (
           <div className="sm:hidden">
@@ -448,9 +463,11 @@ function CardsView({
                     {!b.missed && !isPending(b) && b.kind === 'study' && topic && <div className="-mt-1 truncate text-[11px] font-semibold text-white/80">{subject?.name}</div>}
                     {b.kind !== 'study' && !isReview && <div className="-mt-1 truncate text-[11px] font-semibold text-white/80">{b.kind === 'prova' ? `Prova${subject ? ` · ${subject.name}` : ''}` : 'Compromisso'}</div>}
                     <div className={`mt-2 flex items-end justify-between gap-1 text-[11px] font-medium ${isReview ? 'opacity-80' : 'text-white/85'}`}>
-                      <span className="min-w-0 truncate tabular-nums">
-                        {b.flex ? '' : blockWhen(b)}
-                      </span>
+                      {b.flex && !b.done && (b.kind === 'study' || isReview) ? (
+                        <FlexProgress block={b} label={title} light={!isReview} />
+                      ) : (
+                        <span className="min-w-0 truncate tabular-nums">{b.flex ? '' : blockWhen(b)}</span>
+                      )}
                       <span className="flex shrink-0 gap-0.5">
                         {(b.kind === 'study' || (isReview && b.done)) && (
                           <button
@@ -595,5 +612,32 @@ function ActionBtn({ from, to, icon, children, onClick, title, busy = false }: {
       <span className="grid h-6 w-6 place-items-center rounded-lg bg-white/25">{icon}</span>
       {children}
     </button>
+  )
+}
+
+/** Bloco sem hora: botão de play que liga o cronômetro nele e barrinha do quanto já estudou. */
+function FlexProgress({ block, label, light }: { block: Block; label: string; light: boolean }) {
+  const timer = useTimer()
+  const goal = (block.end - block.start) * 60
+  const pct = Math.min(1, block.studiedSeconds / goal)
+  const running = timer?.blockId === block.id
+  return (
+    <span className="flex min-w-0 flex-1 items-center gap-1.5">
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          if (!running) startTimer({ blockId: block.id, subjectId: block.subjectId, topicId: block.topicId, label })
+        }}
+        className={`grid h-6 w-6 shrink-0 place-items-center rounded-full transition hover:scale-110 ${light ? 'bg-white text-ink' : 'bg-white/80 text-ink'} ${running ? 'animate-pulse' : ''}`}
+        title={running ? 'Cronômetro ligado' : 'Começar a estudar (conclui sozinho ao bater o tempo)'}
+      >
+        {running ? <Clock3 size={12} /> : <Play size={11} fill="currentColor" className="ml-px" />}
+      </button>
+      {block.studiedSeconds > 0 && (
+        <span className={`h-1.5 min-w-0 flex-1 overflow-hidden rounded-full ${light ? 'bg-white/30' : 'bg-black/10'}`} title={`${fmtDuration(block.studiedSeconds)} de ${fmtDuration(goal)}`}>
+          <span className={`block h-full rounded-full ${light ? 'bg-white' : 'bg-current'}`} style={{ width: `${Math.max(6, pct * 100)}%` }} />
+        </span>
+      )}
+    </span>
   )
 }

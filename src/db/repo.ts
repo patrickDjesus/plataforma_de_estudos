@@ -649,3 +649,23 @@ export async function restoreVividColors() {
     if (orig) await db.subjects.update(s.id, { color: orig })
   }
 }
+
+/**
+ * Passa uma semana de horários fixos para "horas por dia": a meta de cada dia vira a soma
+ * dos blocos de estudo/revisão daquele dia, e os blocos ainda por fazer deixam de ter hora marcada.
+ */
+export async function convertWeekToHours(weekId: string) {
+  const week = await db.weeks.get(weekId)
+  if (!week || week.dailyMinutes) return
+  const blocks = await db.blocks.where('weekId').equals(weekId).toArray()
+  const today = toISODate(new Date())
+  const daily = Array.from({ length: 7 }, (_, i) => {
+    const d = addDays(weekId, i)
+    return blocks.filter((b) => b.date === d && (b.kind === 'study' || b.kind === 'revisao') && !b.missed).reduce((a, b) => a + (b.end - b.start), 0)
+  })
+  await db.transaction('rw', [db.weeks, db.blocks, db.settings], async () => {
+    await db.weeks.update(weekId, { dailyMinutes: daily })
+    for (const b of blocks) if ((b.kind === 'study' || b.kind === 'revisao') && !b.done && b.date >= today) await db.blocks.update(b.id, { flex: true, missed: false })
+    await updateSettings({ scheduleMode: 'horas' })
+  })
+}
