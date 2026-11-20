@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type TextareaHTMLAttributes } from 'react'
 import { Mic, Square } from 'lucide-react'
 import { getVoice, VOICE_ERRORS, type VoiceEngine } from '../lib/voice'
+import { Fx } from './Fx'
 
 /** Indicador de carregamento animado (continua girando mesmo com "reduzir movimento"). */
 export function Spinner({ size = 18, color = 'currentColor' }: { size?: number; color?: string }) {
@@ -75,7 +76,7 @@ export function VoiceTextarea({ value, onValue, color, ...rest }: Omit<TextareaH
           onValue(cur + (cur && !/\s$/.test(cur) ? ' ' : '') + t)
         }}
       />
-      {partial && <p className="mt-1 text-xs text-muted italic">🎙️ {partial}…</p>}
+      {partial && <p className="mt-1 text-xs text-muted italic"><Fx name="mic" /> {partial}…</p>}
     </div>
   )
 }

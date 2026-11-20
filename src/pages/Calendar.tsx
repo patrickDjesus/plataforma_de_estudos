@@ -16,6 +16,7 @@ import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
 import { useTimer } from '../db/hooks'
 import type { Subject, Topic } from '../db/types'
+import { Fx } from '../components/Fx'
 
 const PPM = 0.85 // pixels por minuto
 const SNAP = 15
@@ -589,7 +590,7 @@ function DayGoal({ goal, done }: { goal: number; done: number }) {
   return (
     <div className="mx-auto mt-1.5 w-[86%]">
       <div className={`text-[11px] font-bold tabular-nums ${pct >= 1 ? 'text-emerald-600' : 'text-muted'}`}>
-        {pct >= 1 ? '✓ ' : ''}
+        {pct >= 1 ? <><Fx name="check" size="1.1em" />{' '}</> : ''}
         {fmt(done)} de {fmt(goal)}
       </div>
       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#eceef3]">

@@ -9,6 +9,7 @@ import { RushCapi, type CapiMood } from './RushCapi'
 import { askAboutQuestion, errCopy, finishAnswer, goNext, markDoubt, overrideWrong, say, sfx, skipQuestion, submit, togglePause, applyFifty } from './actions'
 import { centerOf, confetti } from '../../lib/sfx'
 import { fx, Ring } from './RushFx'
+import { FxText, Fx } from '../../components/Fx'
 
 const OK_WORDS = ['Acertou!', 'Mandou bem!', 'Isso aí!', 'Arrasou!', 'Boa!!']
 
@@ -155,7 +156,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
       {/* faixa da matéria e número da questão */}
       <span className="absolute -top-[3px] right-28 left-8 h-[7px] rounded-b-lg" style={{ background: `linear-gradient(90deg, ${color}, color-mix(in srgb, ${color} 70%, #000))` }} />
       <span className="absolute -top-4 left-6 z-[2] rounded-full px-3 py-0.5 font-display text-[13px] font-bold text-white" style={{ background: color, boxShadow: `0 3px 0 color-mix(in srgb, ${color} 70%, #000)` }}>
-        {onFire && <span className="rk-flame mr-1">🔥</span>}Q {S.stats.done + (answered ? 0 : 1)}
+        {onFire && <Fx name="fire" className="mr-1" />}Q {S.stats.done + (answered ? 0 : 1)}
       </span>
       {ph !== 'feedback' && (
         <div className="absolute -top-12 right-4 z-[3]">
@@ -165,7 +166,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
 
       {q.boss && (
         <div className="rush-enter mb-4 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-[#2a0409] via-[#8f0c22] to-[#2a0409] px-4 py-2.5 text-white">
-          <span className="text-2xl">💀</span>
+          <Fx name="skull" size={28} />
           <div>
             <div className="font-display text-xl font-extrabold tracking-wide">QUESTÃO CHEFÃO</div>
             <div className="text-xs font-semibold opacity-85">Vale 3x os pontos. Respira fundo, lê duas vezes e vai com tudo.</div>
@@ -181,7 +182,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
               <i key={i} className="block h-2.5 w-1.5 rounded-[2px]" style={{ background: i < di.d ? (i < 4 ? '#94a3b8' : i < 6 ? '#f59e0b' : i < 8 ? '#ef4444' : '#b91c1c') : di.tier >= 4 ? 'rgba(255,255,255,.15)' : '#dfe3ea' }} />
             ))}
           </span>
-          {di.emoji} {di.d}/10 · {di.label}
+          <FxText text={di.emoji} /> {di.d}/10 · {di.label}
         </span>
         <span className="rounded-full px-3 py-1 text-xs font-extrabold" style={{ background: tint(color, 0.14), color: `color-mix(in srgb, ${color} 75%, #000)` }}>
           {sub?.name ?? 'Matéria'}
@@ -282,7 +283,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
         <>
           {hintUsed && q.dica && (
             <div className="rush-enter mt-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold">
-              <b>💡 Dica: </b>
+              <b><Fx name="bulb" /> Dica: </b>
               <MathText as="span" text={q.dica} />
             </div>
           )}
@@ -306,7 +307,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
                 }}
                 className={`rounded-full border-2 px-3.5 py-1 text-sm font-bold transition ${conf === v ? 'scale-105 border-brand bg-brand text-white' : 'border-line bg-white hover:border-brand/50'}`}
               >
-                {l}
+                <FxText text={l} />
               </button>
             ))}
           </div>
@@ -406,9 +407,9 @@ function Feedback({ S, q, color }: { S: RushState; q: RushQ; color: string }) {
           <div className={`flex flex-wrap items-center gap-2 font-display text-3xl leading-none font-extrabold ${ok ? 'text-emerald-700' : 'text-rose-600'}`}>
             {word}
             {ok && L.pts ? <span className="rk-pop-in rounded-full bg-[#16181d] px-2.5 py-0.5 font-sans text-sm text-amber-300">+{L.pts} pts</span> : null}
-            {ok && S.stats.streak >= 3 && <span className="rush-bump rounded-full bg-orange-100 px-2.5 py-0.5 font-sans text-sm text-orange-700">🔥 combo x{(1 + Math.min(S.stats.streak - 1, 9) / 10).toFixed(1)}</span>}
-            {ok && L.fast && <span className="rounded-full bg-amber-100 px-2.5 py-0.5 font-sans text-xs text-amber-800">⚡ rápido +25%</span>}
-            {L.shielded && <span className="rounded-full bg-blue-100 px-2.5 py-0.5 font-sans text-xs text-blue-700">🛡️ escudo segurou o combo</span>}
+            {ok && S.stats.streak >= 3 && <span className="rush-bump rounded-full bg-orange-100 px-2.5 py-0.5 font-sans text-sm text-orange-700"><Fx name="fire" /> combo x{(1 + Math.min(S.stats.streak - 1, 9) / 10).toFixed(1)}</span>}
+            {ok && L.fast && <span className="rounded-full bg-amber-100 px-2.5 py-0.5 font-sans text-xs text-amber-800"><Fx name="bolt" /> rápido +25%</span>}
+            {L.shielded && <span className="rounded-full bg-blue-100 px-2.5 py-0.5 font-sans text-xs text-blue-700"><Fx name="shield" /> escudo segurou o combo</span>}
           </div>
           {L.comment ? <MathText as="p" text={L.comment} className="mt-1.5 font-semibold whitespace-pre-wrap" /> : !ok ? <p className="mt-1.5 font-semibold">Olha a resolução aqui embaixo. Essa ideia vai voltar daqui a pouco.</p> : null}
         </div>
@@ -449,7 +450,7 @@ function SpawnLine({ S }: { S: RushState }) {
   if (sp.status === 'skip')
     return (
       <p className="text-sm font-bold">
-        <span className="mr-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs text-amber-800">🔁 Na fila</span> Essa ideia já tem revisões esperando na fila.
+        <span className="mr-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs text-amber-800"><Fx name="repeat" /> Na fila</span> Essa ideia já tem revisões esperando na fila.
       </p>
     )
   const quando = (() => {
@@ -465,7 +466,7 @@ function SpawnLine({ S }: { S: RushState }) {
           </>
         ) : sp.status === 'pronto' ? (
           <>
-            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs text-amber-800">📌 Checagem final</span> Daqui a 19 questões vem mais uma dessa ideia, para ver se fixou.
+            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs text-amber-800"><Fx name="pin" /> Checagem final</span> Daqui a 19 questões vem mais uma dessa ideia, para ver se fixou.
           </>
         ) : null}
       </p>
@@ -479,7 +480,7 @@ function SpawnLine({ S }: { S: RushState }) {
       )}
       {sp.status === 'pronto' && (
         <>
-          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs text-amber-800">🔁 Na fila</span> {sp.n} {sp.n > 1 ? 'variações entraram' : 'variação entrou'}: daqui a {quando} questões.
+          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs text-amber-800"><Fx name="repeat" /> Na fila</span> {sp.n} {sp.n > 1 ? 'variações entraram' : 'variação entrou'}: daqui a {quando} questões.
         </>
       )}
       {sp.status === 'erro' && (
@@ -537,7 +538,7 @@ function Solution({ q, interactive }: { q: RushQ; interactive: boolean }) {
       )}
       {q.ideia && (
         <div className="rush-enter rounded-2xl bg-amber-50 px-4 py-3 text-sm">
-          <b>💡 Ideia-chave: </b>
+          <b><Fx name="bulb" /> Ideia-chave: </b>
           <MathText as="span" text={q.ideia} />
         </div>
       )}
@@ -578,7 +579,7 @@ function AskBox({ q, S, ok }: { q: RushQ; S: RushState; ok: boolean }) {
       <div className="flex flex-wrap gap-1.5">
         {chips.map(([l, t]) => (
           <button key={l} type="button" onClick={() => (setDoubt(t), ask(t))} className="rounded-full border-2 border-line bg-white px-3 py-1 text-[13px] font-bold transition hover:-translate-y-0.5 hover:border-brand">
-            {l}
+            <FxText text={l} />
           </button>
         ))}
       </div>

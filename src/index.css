@@ -369,3 +369,84 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 .act-btn:hover .act-plus { transform: rotate(90deg) scale(1.15); }
 .act-btn:hover .act-wiggle { animation: qm-wand .7s ease-in-out; }
 .act-btn.busy .act-spin { animation: qm-hand .8s linear infinite; }
+
+/* ===== Ícones desenhados (substituem emojis) ===== */
+.fx :where(g, path, rect, circle, ellipse, text) { transform-box: fill-box; transform-origin: center; }
+.fx-bob { animation: fx-bob 2.4s ease-in-out infinite; }
+.fx-blink { animation: fx-blink 3.6s infinite; }
+.fx-flame { animation: rk-flame .8s ease-in-out infinite; transform-origin: 50% 100% !important; }
+.fx-d1 { animation-delay: .25s; }
+.fx-twinkle { animation: rk-twinkle 1.8s ease-in-out infinite; }
+.fx-pulse { animation: fx-pulse 1.8s ease-in-out infinite; }
+.fx-glow { animation: sc-glow 1.6s ease-in-out infinite; }
+.fx-flash { animation: fx-flash 1.6s ease-in-out infinite; }
+.fx-draw { stroke-dashoffset: 20; animation: fx-draw 2.6s ease-out infinite; }
+.fx-write { stroke-dashoffset: 30; animation: fx-write 3s ease-in-out infinite; }
+.fx-pencil { animation: fx-pencil 1.5s ease-in-out infinite; }
+.fx-shake { animation: fx-shake 2.4s ease-in-out infinite; }
+.fx-spin { animation: qm-hand 2.4s linear infinite; transform-box: view-box !important; }
+.fx-tick { animation: qm-hand 4s steps(12) infinite; transform-box: view-box !important; }
+.fx-roll { animation: fx-roll 2.6s cubic-bezier(.5,0,.3,1) infinite; transform-box: view-box !important; }
+.fx-flip { animation: fx-flip 3s ease-in-out infinite; transform-box: view-box !important; }
+.fx-sand { animation: lv-stripes .6s linear infinite; }
+.fx-wobble { animation: fx-wobble 2s ease-in-out infinite; }
+.fx-clashL { animation: fx-clashL 1.6s ease-in-out infinite; }
+.fx-clashR { animation: fx-clashR 1.6s ease-in-out infinite; }
+.fx-sheen { animation: fx-sheen 2.8s ease-in-out infinite; }
+.fx-confetti { animation: fx-pop 1.6s ease-out infinite; transform-origin: 0% 100% !important; }
+.fx-dart { animation: fx-dart 2.2s cubic-bezier(.3,1.4,.5,1) infinite; }
+.fx-look { animation: fx-look 3s ease-in-out infinite; }
+.fx-nudge { animation: fx-nudge 1.2s ease-in-out infinite; }
+.fx-wave { animation: fx-wavefade 1.2s ease-in-out infinite; }
+.fx-tassel { animation: qm-sway 1.6s ease-in-out infinite; transform-box: view-box !important; }
+.fx-buzz { animation: fx-buzz 2s ease-in-out infinite; }
+.fx-hand { animation: fx-hand 1.4s ease-in-out infinite; transform-box: view-box !important; }
+.fx-leaf { animation: qm-sway 2s ease-in-out infinite; transform-origin: 0% 100% !important; }
+.fx-dot { animation: fx-dot 1.2s ease-in-out infinite; }
+.fx-sway { animation: qm-sway 2.4s ease-in-out infinite; transform-box: view-box !important; }
+.fx-hover { animation: fx-hover 1.6s ease-in-out infinite; }
+.fx-turn { animation: fx-turn 6s linear infinite; }
+.fx-march { animation: fx-march 1s linear infinite; }
+.fx-scan { animation: fx-scan 2.4s ease-in-out infinite; }
+.fx-flex { animation: fx-flexarm 1.4s ease-in-out infinite; transform-box: view-box !important; }
+.fx-lid { animation: fx-lid 2s ease-in-out infinite; }
+.fx-tap { animation: fx-tap 1.2s ease-in-out infinite; }
+.fx-puff { animation: fx-puff 1.4s ease-out infinite; }
+.fx-shrug { animation: fx-shrug 1.8s ease-in-out infinite; }
+.fx-peek { animation: fx-peek 2.6s ease-in-out infinite; }
+.fx-zz { animation: fx-zz 2.2s ease-in-out infinite; }
+.fx-glint { animation: fx-glint 2.6s ease-in-out infinite; }
+@keyframes fx-bob { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-1.2px) } }
+@keyframes fx-blink { 0%, 92%, 100% { transform: scaleY(1) } 95% { transform: scaleY(.1) } }
+@keyframes fx-pulse { 0%, 100% { transform: scale(1) } 50% { transform: scale(1.1) } }
+@keyframes fx-flash { 0%, 100% { transform: scale(1) rotate(0); opacity: 1 } 40% { transform: scale(1.12) rotate(-6deg) } 50% { opacity: .55 } 60% { opacity: 1 } }
+@keyframes fx-draw { 0% { stroke-dashoffset: 20 } 35%, 100% { stroke-dashoffset: 0 } }
+@keyframes fx-write { 0% { stroke-dashoffset: 30 } 60%, 85% { stroke-dashoffset: 0; opacity: 1 } 100% { stroke-dashoffset: 0; opacity: 0 } }
+@keyframes fx-pencil { 0%, 100% { transform: translate(0, 0) rotate(0) } 25% { transform: translate(-1.2px, .6px) rotate(-4deg) } 75% { transform: translate(1.2px, -.4px) rotate(3deg) } }
+@keyframes fx-shake { 0%, 70%, 100% { transform: rotate(0) } 76% { transform: rotate(-10deg) } 84% { transform: rotate(9deg) } 92% { transform: rotate(-5deg) } }
+@keyframes fx-roll { 0%, 55% { transform: rotate(0) } 85%, 100% { transform: rotate(360deg) } }
+@keyframes fx-flip { 0%, 70% { transform: rotate(0) } 90%, 100% { transform: rotate(180deg) } }
+@keyframes fx-wobble { 0%, 100% { transform: rotate(0) } 25% { transform: rotate(-6deg) } 75% { transform: rotate(6deg) } }
+@keyframes fx-clashL { 0%, 100% { transform: rotate(0) } 45% { transform: rotate(-12deg) } 55% { transform: rotate(4deg) } }
+@keyframes fx-clashR { 0%, 100% { transform: rotate(0) } 45% { transform: rotate(12deg) } 55% { transform: rotate(-4deg) } }
+@keyframes fx-sheen { 0%, 55% { transform: skewX(-20deg) translateX(0) } 100% { transform: skewX(-20deg) translateX(40px) } }
+@keyframes fx-pop { 0% { transform: scale(.4); opacity: 0 } 25% { opacity: 1 } 70% { transform: scale(1.1); opacity: 1 } 100% { transform: scale(1.2); opacity: 0 } }
+@keyframes fx-dart { 0% { transform: translate(6px, -6px); opacity: 0 } 20% { opacity: 1 } 35%, 85% { transform: translate(0, 0); opacity: 1 } 100% { transform: translate(0, 0); opacity: 0 } }
+@keyframes fx-look { 0%, 100% { transform: translate(0, 0) } 25% { transform: translate(-1.4px, -.6px) } 60% { transform: translate(1.4px, -.6px) } }
+@keyframes fx-nudge { 0%, 100% { transform: translateX(0) } 50% { transform: translateX(2px) } }
+@keyframes fx-wavefade { 0%, 100% { opacity: .2 } 50% { opacity: 1 } }
+@keyframes fx-buzz { 0%, 70%, 100% { transform: rotate(0) } 74% { transform: rotate(-8deg) } 78% { transform: rotate(8deg) } 82% { transform: rotate(-6deg) } 86% { transform: rotate(6deg) } }
+@keyframes fx-hand { 0%, 100% { transform: rotate(-10deg) } 50% { transform: rotate(14deg) } }
+@keyframes fx-dot { 0%, 100% { transform: translateY(0); opacity: .5 } 40% { transform: translateY(-1.6px); opacity: 1 } }
+@keyframes fx-hover { 0%, 100% { transform: translate(0, 0) } 50% { transform: translate(1.2px, -1.6px) } }
+@keyframes fx-turn { to { transform: translateX(-20px) } }
+@keyframes fx-march { to { transform: translateX(6px) } }
+@keyframes fx-scan { 0%, 100% { transform: translate(0, 0) rotate(0) } 50% { transform: translate(1.4px, .8px) rotate(8deg) } }
+@keyframes fx-flexarm { 0%, 100% { transform: rotate(0) } 50% { transform: rotate(-8deg) scale(1.05) } }
+@keyframes fx-lid { 0%, 60%, 100% { transform: translateY(0) rotate(0) } 75% { transform: translateY(-3px) rotate(-6deg) } }
+@keyframes fx-tap { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-.8px) } }
+@keyframes fx-puff { 0% { transform: scale(.4); opacity: .9 } 100% { transform: scale(1.4) translateY(-2px); opacity: 0 } }
+@keyframes fx-shrug { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-1.6px) } }
+@keyframes fx-peek { 0%, 60%, 100% { transform: translateY(0) } 75% { transform: translateY(3px) } }
+@keyframes fx-zz { 0% { transform: translate(0, 2px); opacity: 0 } 40% { opacity: 1 } 100% { transform: translate(2px, -3px); opacity: 0 } }
+@keyframes fx-glint { 0%, 60% { transform: translateX(0); opacity: 0 } 70% { opacity: .8 } 100% { transform: translateX(10px); opacity: 0 } }

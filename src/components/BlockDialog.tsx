@@ -9,6 +9,7 @@ import { tint } from '../lib/colors'
 import { DAY_NAMES, DAY_SHORT, fmtDayMonth, fmtDuration, fmtTime, parseTime, toISODate, weekDates } from '../lib/dates'
 import { SubjectIcon } from './SubjectIcon'
 import { Capybara } from './Capybara'
+import { FxText, Fx } from './Fx'
 
 export interface Draft {
   date: string
@@ -213,7 +214,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
                   <div className="grid grid-cols-3 gap-1.5">
                     {(['dificil', 'ok', 'facil'] as ReviewRating[]).map((r) => (
                       <button key={r} onClick={() => rateReview(block.topicId!, r, block.id).then(onClose)} className="rounded-xl bg-white/20 py-2 text-xs font-bold hover:bg-white/30">
-                        <span className="block text-base">{RATING_LABEL[r].emoji}</span>
+                        <span className="block text-base"><FxText text={RATING_LABEL[r].emoji} /></span>
                         {RATING_LABEL[r].label}
                       </button>
                     ))}
@@ -434,7 +435,7 @@ function QuestionsFields({ block, color }: { block: Block; color: string }) {
   const k = c.trim() === '' ? null : Math.min(n, Number(c) || 0)
   return (
     <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-[#f6f7f9] p-3 text-sm">
-      <span className="font-bold">📝 Questões</span>
+      <span className="font-bold"><Fx name="note" /> Questões</span>
       <label className="flex items-center gap-1.5">
         <input type="number" min={0} value={q} onChange={(e) => setQ(e.target.value)} onBlur={() => save(q, c)} className="w-16 rounded-lg border border-line bg-white px-2 py-1 text-center font-bold outline-none focus:border-brand" aria-label="Questões feitas" />
         feitas

@@ -9,6 +9,7 @@ import { ChallengeModal } from '../components/ChallengeModal'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Card } from '../components/ui'
 import { VoiceTextarea } from '../components/Voice'
+import { FxText, Fx } from '../components/Fx'
 
 const TYPES: { id: ChallengeType; label: string; hint: string; icon: ReactNode }[] = [
   { id: 'multipla', label: 'Múltipla escolha', hint: '4 alternativas', icon: <ListChecks size={18} /> },
@@ -138,7 +139,7 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
               </div>
               <div className="thin-scroll flex max-h-64 flex-wrap gap-2 overflow-y-auto pr-1">
                 <Pill on={!topicId} color={color} onClick={() => setTopicId('')}>
-                  ✨ Matéria inteira
+                  <Fx name="sparkle" /> Matéria inteira
                 </Pill>
                 {visibleTopics.map((t) => (
                   <Pill key={t.id} on={t.id === topicId} color={color} onClick={() => setTopicId(t.id)} title={notedTopics.has(t.id) ? 'Tem anotações suas' : 'Sem anotações ainda'}>
@@ -174,7 +175,7 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
                   <div className="grid grid-cols-3 gap-2">
                     {LEVELS.map((l) => (
                       <button key={l.id} onClick={() => setDifficulty(l.id)} className={`rounded-2xl border py-2.5 text-center transition ${difficulty === l.id ? 'border-transparent text-white' : 'border-line hover:bg-slate-50'}`} style={difficulty === l.id ? { background: color } : undefined}>
-                        <div className="text-xl">{l.emoji}</div>
+                        <div className="text-xl"><FxText text={l.emoji} /></div>
                         <div className="text-xs font-bold">{l.label}</div>
                       </button>
                     ))}
@@ -208,7 +209,7 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
                       <div className="flex rounded-2xl bg-[#f1f2f5] p-1">
                         {(['notas', 'geral'] as const).map((b) => (
                           <button key={b} onClick={() => setBase(b)} className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${base === b ? 'bg-white shadow-sm' : 'text-muted'}`} style={base === b ? { color } : undefined}>
-                            {b === 'notas' ? '📄 Minhas anotações' : '🌎 Conhecimento geral'}
+                            {b === 'notas' ? <><Fx name="page" /> Minhas anotações</> : <><Fx name="globe" /> Conhecimento geral</>}
                           </button>
                         ))}
                       </div>

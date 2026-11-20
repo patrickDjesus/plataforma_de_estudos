@@ -7,6 +7,7 @@ import { Spinner } from '../../components/Voice'
 import { RushCapi } from './RushCapi'
 import { diagnose, errCopy, subjectName } from './actions'
 import { generatingFor, rush } from './store'
+import { Fx, FxText } from '../../components/Fx'
 
 const accColor = (p: number) => (p < 50 ? '#ff5c7a' : p < 75 ? '#f5b400' : '#22b573')
 
@@ -60,7 +61,7 @@ function Bar({ label, right, pct, color }: { label: React.ReactNode; right: stri
   return (
     <div>
       <div className="mb-1 flex justify-between gap-2 text-sm font-bold">
-        <span className="min-w-0 truncate">{label}</span>
+        <span className="min-w-0 truncate">{typeof label === 'string' ? <FxText text={label} /> : label}</span>
         <span className="shrink-0 text-muted">{right}</span>
       </div>
       <div className="h-3 overflow-hidden rounded-full bg-[#eef0f4]">
@@ -211,9 +212,9 @@ ${errs}`,
           ))}
         </div>
         <div className="flex flex-wrap gap-4 text-xs font-bold text-muted">
-          <span>🟩 acertou</span>
-          <span>🟥 errou</span>
-          <span>🟨 contorno = revisão</span>
+          <span><Fx name="sqGreen" /> acertou</span>
+          <span><Fx name="sqRed" /> errou</span>
+          <span><Fx name="sqYellow" /> contorno = revisão</span>
         </div>
       </Sec>
 

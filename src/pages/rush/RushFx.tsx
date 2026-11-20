@@ -4,6 +4,7 @@ import type { RushState } from '../../lib/rush'
 import { qHeat } from '../../lib/rush'
 import { sfx } from './actions'
 import { FireCanvas } from './FireCanvas'
+import { FxText, Fx } from '../../components/Fx'
 
 // ---------- Barramento de efeitos ----------
 type FxEvent = { type: 'flash'; tone: 'ok' | 'bad' | 'gold' } | { type: 'fly'; text: string; from: [number, number] }
@@ -178,7 +179,7 @@ export function Banner({ text, k }: { text: string; k: number }) {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-[18%] z-[75] flex justify-center px-4">
       <div key={k} className="rk-banner flex items-center gap-3 rounded-2xl border border-white/10 bg-[#16181d]/92 px-6 py-3.5 text-white shadow-[0_20px_50px_-15px_rgba(0,0,0,.6)] backdrop-blur">
-        {hasIcon && <span className="text-3xl">{icon}</span>}
+        {hasIcon && <span className="text-3xl"><FxText text={icon} /></span>}
         <div>
           <div className="font-display text-2xl leading-none font-extrabold tracking-wide uppercase sm:text-3xl">{hasIcon ? rest.join(' ') : text}</div>
           <div className="mt-2 h-[3px] w-16 rounded-full bg-gradient-to-r from-amber-400 to-orange-500" />
@@ -230,7 +231,7 @@ export function ComboMeter({ streak, best }: { streak: number; best: number }) {
   return (
     <span key={streak} title={`Combo atual: ${streak} (recorde ${best})`} className={`rush-bump flex items-center gap-2 rounded-full py-1 pr-3 pl-1.5 transition-colors ${hot ? 'bg-[#16181d] text-white shadow-[0_0_18px_-2px_rgba(255,120,30,.6)]' : 'bg-[#f1f2f5]'}`}>
       <span className={`grid h-7 w-7 place-items-center rounded-full text-[15px] ${hot ? 'bg-orange-500/20' : 'bg-white'}`}>
-        <span className={streak >= 3 ? 'rk-flame' : 'opacity-40 grayscale'}>🔥</span>
+        <span className={streak >= 3 ? '' : 'opacity-40 grayscale'}><Fx name="fire" /></span>
       </span>
       <span className="leading-none">
         <span className="block font-display text-sm font-extrabold tabular-nums">

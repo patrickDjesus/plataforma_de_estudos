@@ -15,6 +15,7 @@ import { ChallengeRunner } from '../components/ChallengeRunner'
 import { useStudyContext } from '../components/ChallengeModal'
 import { ReviewCard } from './Errors'
 import { StudySession } from './Recovery'
+import { FxText, Fx } from '../components/Fx'
 
 const MAX_MINUTES = 15
 const EST = { erro: 1, cartao: 0.5, revisao: 3 } // minutos por item
@@ -105,7 +106,7 @@ export function ReviewTodayPage() {
           <Capybara pose={q.total ? 'estudando' : 'relaxando'} size={130} />
           <h1 className="mt-2 font-display text-3xl font-extrabold">Revisar hoje</h1>
           {q.total === 0 ? (
-            <p className="mt-2 text-muted">Nada vencendo hoje. Memória em dia! 🎉</p>
+            <p className="mt-2 text-muted">Nada vencendo hoje. Memória em dia! <Fx name="party" /></p>
           ) : (
             <>
               <p className="mt-2 text-muted">
@@ -195,13 +196,13 @@ export function ReviewTodayPage() {
           <h2 className="font-display text-2xl font-extrabold">{t?.name ?? 'Tópico'}</h2>
           <p className="mt-2 text-sm text-muted">Tente lembrar o essencial de cabeça. Depois, teste com 3 questões rápidas ou avalie direto.</p>
           <button onClick={() => setReviewMode('desafio')} className="mt-5 inline-flex items-center gap-2 rounded-2xl px-6 py-3 font-bold text-white" style={{ background: s?.color ?? '#3e63f2' }}>
-            ⚔️ Desafio rápido (3 questões)
+            <Fx name="swords" /> Desafio rápido (3 questões)
           </button>
           <div className="mt-4 text-xs font-bold text-muted uppercase">ou avalie direto</div>
           <div className="mx-auto mt-2 grid max-w-md grid-cols-3 gap-2">
             {(['dificil', 'ok', 'facil'] as ReviewRating[]).map((k) => (
               <button key={k} onClick={() => rateReview(r.topicId, k).then(advance)} className={`rounded-2xl border py-3 ${k === 'ok' ? 'border-brand/30 bg-brand-soft text-brand' : 'border-line bg-white'}`}>
-                <div className="text-2xl">{RATING_LABEL[k].emoji}</div>
+                <div className="text-2xl"><FxText text={RATING_LABEL[k].emoji} /></div>
                 <div className="text-sm font-bold">{RATING_LABEL[k].label}</div>
               </button>
             ))}
@@ -215,7 +216,7 @@ export function ReviewTodayPage() {
     <Shell>
       <div className="rounded-[28px] border border-line bg-white p-8 text-center shadow-[0_24px_50px_-28px_rgba(16,24,40,0.4)]">
         <Capybara pose="comemorando" size={130} />
-        <h1 className="mt-2 font-display text-3xl font-extrabold">Revisão do dia feita! ✅</h1>
+        <h1 className="mt-2 font-display text-3xl font-extrabold">Revisão do dia feita! <Fx name="check" /></h1>
         <p className="mt-2 text-muted">
           {done.erros} erro(s), {done.cartoes} cartão(ões) e {done.revisoes} revisão(ões). A memória agradece.
         </p>

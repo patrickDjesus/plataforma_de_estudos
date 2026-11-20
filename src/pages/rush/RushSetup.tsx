@@ -8,6 +8,7 @@ import { RushCapi } from './RushCapi'
 import { rush } from './store'
 import { sfx, startRush, toast, ensureFill } from './actions'
 import { centerOf, confetti } from '../../lib/sfx'
+import { Fx } from '../../components/Fx'
 
 const GOALS = [50, 100, 200, 300, 500]
 
@@ -248,7 +249,7 @@ export function RushSetup() {
             </Field>
             <Field label="Checagem final" hint="Quando você acerta as revisões de um erro, volta mais uma questão daquela ideia umas 18 questões depois, para ver se fixou.">
               <Pill on={d.longReview} onClick={() => setD({ ...d, longReview: !d.longReview })}>
-                📌 Revisão espaçada {d.longReview ? 'ligada' : 'desligada'}
+                <Fx name="pin" /> Revisão espaçada {d.longReview ? 'ligada' : 'desligada'}
               </Pill>
             </Field>
           </div>

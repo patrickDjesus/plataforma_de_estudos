@@ -14,6 +14,7 @@ import { Spinner } from '../components/Voice'
 import { Card } from '../components/ui'
 import { showMascot } from '../lib/mascotBus'
 import { useCountUp } from './rush/RushFx'
+import { Fx } from '../components/Fx'
 
 const SIZES = [10, 20, 45]
 const PER_Q = [2, 3, 4]
@@ -389,7 +390,7 @@ function Result({ qs, answers, subjects, onAgain, onHome }: { qs: RushQ[]; answe
                     {q.resolucao && <MathText text={q.resolucao} className="whitespace-pre-wrap text-slate-700" />}
                     {q.ideia && (
                       <p>
-                        <b>💡 Ideia-chave:</b> <MathText as="span" text={q.ideia} />
+                        <b><Fx name="bulb" /> Ideia-chave:</b> <MathText as="span" text={q.ideia} />
                       </p>
                     )}
                   </div>

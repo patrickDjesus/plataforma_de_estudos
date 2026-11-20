@@ -9,6 +9,7 @@ import { showMascot } from '../lib/mascotBus'
 import { askConfirm } from './confirm'
 import { Capybara } from './Capybara'
 import { Btn, Card } from './ui'
+import { Fx } from './Fx'
 
 type Lang = CodeChallenge['lang']
 const LANG_NAME: Record<Lang, string> = { python: 'Python', javascript: 'JavaScript' }
@@ -505,7 +506,7 @@ function Challenges({ lang }: { lang: Lang }) {
             </Btn>
           )}
         </div>
-        {showHint && cur.hint && <div className="capi-pop mt-3 rounded-2xl bg-[#fff6dc] px-4 py-3 text-sm font-semibold text-[#7a5a00]">💡 {cur.hint}</div>}
+        {showHint && cur.hint && <div className="capi-pop mt-3 rounded-2xl bg-[#fff6dc] px-4 py-3 text-sm font-semibold text-[#7a5a00]"><Fx name="bulb" /> {cur.hint}</div>}
         {showSolution && cur.solution && (
           <pre className="capi-pop thin-scroll mt-3 overflow-x-auto rounded-xl bg-[#16181d] px-3.5 py-3 font-mono text-[12.5px] leading-[1.55] text-[#e6e9f2]">{cur.solution}</pre>
         )}
@@ -566,7 +567,7 @@ function Challenges({ lang }: { lang: Lang }) {
                 ))}
               </ul>
             )}
-            {review.proximoPasso && <div className="mt-3 rounded-xl bg-[#f6f7f9] px-3.5 py-2.5 text-sm">👉 {review.proximoPasso}</div>}
+            {review.proximoPasso && <div className="mt-3 rounded-xl bg-[#f6f7f9] px-3.5 py-2.5 text-sm"><Fx name="point" /> {review.proximoPasso}</div>}
             {review.correto && (
               <Btn variant="primary" className="mt-4" onClick={() => setCur(null)}>
                 Próximo desafio

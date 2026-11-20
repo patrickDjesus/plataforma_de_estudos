@@ -11,6 +11,7 @@ import { toISODate } from '../lib/dates'
 import { Capybara } from '../components/Capybara'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Card, PageHeader, Tabs } from '../components/ui'
+import { FxText, Fx } from '../components/Fx'
 
 const SOURCE_LABEL = { desafio: 'Desafio', questoes: 'Questões', flashcard: 'Flashcard', escrita: 'Escrita', rush: 'Rush', simulado: 'Simulado' }
 
@@ -45,7 +46,7 @@ export function ErrorsPage() {
           <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
             {(Object.keys(REASON_LABEL) as ErrorReason[]).map((r) => (
               <span key={r} title={REASON_LABEL[r].label}>
-                {REASON_LABEL[r].emoji} {byReason.get(r) ?? 0}
+                <FxText text={REASON_LABEL[r].emoji} /> {byReason.get(r) ?? 0}
               </span>
             ))}
           </div>
@@ -69,7 +70,7 @@ export function ErrorsPage() {
         due.length === 0 ? (
           <Card className="flex flex-col items-center p-10 text-center">
             <Capybara pose={all.length ? 'relaxando' : 'pensando'} size={130} />
-            <p className="mt-2 text-sm font-semibold">{all.length ? 'Nenhum erro para revisar hoje. ✨' : 'Ainda não há erros. Eles chegam dos desafios, questões, flashcards difíceis e treinos de escrita.'}</p>
+            <p className="mt-2 text-sm font-semibold">{all.length ? <>Nenhum erro para revisar hoje. <Fx name="sparkle" /></> : 'Ainda não há erros. Eles chegam dos desafios, questões, flashcards difíceis e treinos de escrita.'}</p>
           </Card>
         ) : (
           <ReviewCard key={due[Math.min(i, due.length - 1)].id} e={due[Math.min(i, due.length - 1)]} subjects={subjects} position={`${Math.min(i, due.length - 1) + 1} de ${due.length}`} onNext={() => setI((x) => x)} />
@@ -82,13 +83,13 @@ export function ErrorsPage() {
               const s = e.subjectId ? subjects.get(e.subjectId) : undefined
               return (
                 <div key={e.id} className="group flex items-center gap-3 px-3 py-2.5">
-                  {s ? <SubjectIcon subject={s} size={32} /> : <span className="grid h-8 w-8 place-items-center rounded-xl bg-sky-50 text-sm">✍️</span>}
+                  {s ? <SubjectIcon subject={s} size={32} /> : <span className="grid h-8 w-8 place-items-center rounded-xl bg-sky-50 text-sm"><Fx name="write" /></span>}
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold">{e.question}</div>
                     <div className="text-[11px] text-muted">
                       {SOURCE_LABEL[e.source]}
                       {e.category ? ` · ${CATEGORY_LABEL[e.category]}` : ''}
-                      {e.reason ? ` · ${REASON_LABEL[e.reason].emoji} ${REASON_LABEL[e.reason].label}` : ''} · {e.resolved ? 'resolvido ✓' : `próxima: ${e.due.split('-').reverse().slice(0, 2).join('/')}`}
+                      {e.reason ? <> · <FxText text={REASON_LABEL[e.reason].emoji} /> {REASON_LABEL[e.reason].label}</> : ''} · {e.resolved ? <>resolvido <Fx name="check" size="1em" /></> : `próxima: ${e.due.split('-').reverse().slice(0, 2).join('/')}`}
                     </div>
                   </div>
                   <button onClick={() => deleteErrorEntry(e.id)} className="rounded-lg p-1.5 text-slate-300 opacity-0 group-hover:opacity-100 hover:text-rose-600" title="Excluir">
@@ -153,14 +154,14 @@ export function ReviewCard({ e, subjects, position, onNext }: { e: ErrorEntry; s
                   <div className="font-semibold">{e.correctAnswer}</div>
                 </div>
               </div>
-              {e.explanation && <p className="text-sm text-slate-600">💬 {e.explanation}</p>}
+              {e.explanation && <p className="text-sm text-slate-600"><Fx name="chat" /> {e.explanation}</p>}
               {!e.reason && (
                 <div>
                   <div className="mb-1.5 text-xs font-semibold text-muted">Por que você errou da primeira vez?</div>
                   <div className="flex flex-wrap gap-1.5">
                     {(Object.keys(REASON_LABEL) as ErrorReason[]).map((r) => (
                       <button key={r} onClick={() => setErrorReason(e.id, r)} className="rounded-full bg-[#f1f2f5] px-3 py-1.5 text-xs font-semibold hover:bg-[#e8e9ee]">
-                        {REASON_LABEL[r].emoji} {REASON_LABEL[r].label}
+                        <FxText text={REASON_LABEL[r].emoji} /> {REASON_LABEL[r].label}
                       </button>
                     ))}
                   </div>

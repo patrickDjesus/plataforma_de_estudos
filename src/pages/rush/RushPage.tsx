@@ -13,6 +13,7 @@ import { RushReport } from './RushReport'
 import { Arena, arenaHeat, Banner, BossIntro, ComboMeter, FxLayer, useCountUp } from './RushFx'
 import { generatingFor, rush, runtime, useRuntime, useRush } from './store'
 import { checkAI, ensureFill, errCopy, fill, goNext, onMega, onToast, restartRush, setLookups, sfx, togglePause, toast, type Toast } from './actions'
+import { FxText, Fx } from '../../components/Fx'
 
 export function RushPage() {
   const S = useRush()
@@ -149,7 +150,7 @@ function TopBar({ S }: { S: RushState }) {
             title={ITEMS[id].desc}
             className={`flex items-center gap-1.5 rounded-xl border-2 px-2.5 py-0.5 text-xs font-extrabold ${S.items[id] ? 'border-line bg-white' : 'border-line bg-white opacity-40'} ${canItems && S.items[id] ? '' : ''}`}
           >
-            {id === 'fifty' ? '🎯' : id === 'shield' ? '🛡️' : '⏭️'} {ITEMS[id].name}
+            <Fx name={id === 'fifty' ? 'target' : id === 'shield' ? 'shield' : 'skip'} /> {ITEMS[id].name}
             <span className="rounded-full bg-[#f1f2f5] px-1.5">×{S.items[id]}</span>
           </span>
         ))}
@@ -352,7 +353,7 @@ function Toasts() {
           key={t.id}
           className={`${t.out ? 'rush-toast-out' : 'rush-toast'} rounded-2xl px-5 py-2.5 text-center font-display text-[15px] font-bold text-white shadow-[0_6px_0_rgba(16,24,40,.2)] ${t.tone === 'gold' ? 'border-l-4 border-amber-400 bg-[#16181d]' : t.tone === 'item' ? 'border-l-4 border-sky-400 bg-[#16181d]' : 'bg-[#16181d]'}`}
         >
-          {t.text}
+          <FxText text={t.text} />
         </div>
       ))}
     </div>
@@ -393,7 +394,7 @@ function EndScreen({ S }: { S: RushState }) {
         <div className="flex justify-center">
           <RushCapi mood="happy" size={120} talk={false} />
         </div>
-        <h2 className="font-display text-4xl font-extrabold">RUSH COMPLETO! 🏆</h2>
+        <h2 className="font-display text-4xl font-extrabold">RUSH COMPLETO! <Fx name="trophy" /></h2>
         <p className="mt-1 text-muted">
           {st.done} questões, {acc}% de acerto. A Capi está orgulhosa.
         </p>

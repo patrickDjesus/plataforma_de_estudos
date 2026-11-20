@@ -10,6 +10,7 @@ import { ITEM_LABEL, finalScore, gradeLocal, needsAIGrading, sanitizeItems } fro
 import { challengePrompt, contextBlock, gradePrompt, type ChallengeOptions, type GradeEntry, type StudyContext } from '../lib/prompts'
 import { tint } from '../lib/colors'
 import { Capybara, type CapiPose } from './Capybara'
+import { FxText } from './Fx'
 
 type Answer = Challenge['answers'][number]
 type Stage = 'gerando' | 'respondendo' | 'corrigindo' | 'resultado' | 'erro'
@@ -482,7 +483,7 @@ export function ResultView({
           <Capybara key={`${k}-${v.pose}`} pose={v.pose} size={78} />
           <div className="relative mb-4 flex-1 rounded-2xl border border-line bg-white px-4 py-3 text-sm shadow-sm">
             <span className="absolute bottom-3 -left-1.5 h-3 w-3 rotate-45 border-b border-l border-line bg-white" />
-            {capiComment(it, r)}
+            <FxText text={capiComment(it, r)} />
             {r?.missing && r.missing.length > 0 && <div className="mt-1.5 text-xs text-muted">Faltou: {r.missing.join('; ')}</div>}
             {'explanation' in it && it.explanation && r && r.score >= 0.75 && <div className="mt-1.5 text-xs text-muted">{it.explanation}</div>}
           </div>

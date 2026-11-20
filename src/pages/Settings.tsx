@@ -11,6 +11,7 @@ import { SceneBanner, settingsFront, settingsScene } from '../components/Scenes'
 import { askConfirm } from '../components/confirm'
 import { CAPI_POSES, Capybara, type CapiPose } from '../components/Capybara'
 import { showMascot } from '../lib/mascotBus'
+import { FxText } from '../components/Fx'
 
 const IS_ARTIFACT = !!import.meta.env.VITE_ARTIFACT
 
@@ -279,7 +280,7 @@ export function SettingsPage() {
               </Btn>
             </div>
           )}
-          {msg && <p className="mt-3 text-sm font-semibold">{msg}</p>}
+          {msg && <p className="mt-3 text-sm font-semibold"><FxText text={msg} /></p>}
         </Section>
 
         {/* Manutenção */}

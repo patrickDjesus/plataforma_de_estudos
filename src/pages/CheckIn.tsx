@@ -25,6 +25,7 @@ import { RETRO_TAGS, completionRate, hasWeekData, retroHints, trimAvailability, 
 import { CATEGORY_LABEL, REASON_LABEL } from '../lib/errors'
 import { masteryColor } from '../lib/mastery'
 import type { RetroTag, WeekRetro } from '../db/types'
+import { FxText, Fx } from '../components/Fx'
 
 const FAC_FLOOR = 66
 
@@ -504,7 +505,7 @@ export function CheckInPage() {
                     Enxugar {mode === 'horas' ? 'as horas' : 'horários'} para {Math.round(hints.trim * 100)}%
                   </button>
                 )}
-                {trimmed && <p className="mt-2 text-xs font-bold text-emerald-700">✓ Enxuguei. Ajuste à vontade abaixo.</p>}
+                {trimmed && <p className="mt-2 text-xs font-bold text-emerald-700"><Fx name="check" size="1.1em" /> Enxuguei. Ajuste à vontade abaixo.</p>}
               </Hints>
               {mode === 'horas' ? (
                 <HoursEditor daily={daily} setDaily={setDaily} today={today} />
@@ -766,12 +767,12 @@ function RetroStep({ stats, onDone, onSkip }: { stats: WeekStats; onDone: (worke
             <div className="flex flex-wrap gap-1.5">
               {reasons.map(([r, n]) => (
                 <span key={r} className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold">
-                  {REASON_LABEL[r as keyof typeof REASON_LABEL].emoji} {REASON_LABEL[r as keyof typeof REASON_LABEL].label} ×{n}
+                  <FxText text={REASON_LABEL[r as keyof typeof REASON_LABEL].emoji} /> {REASON_LABEL[r as keyof typeof REASON_LABEL].label} ×{n}
                 </span>
               ))}
               {cats.map(([c, n]) => (
                 <span key={c} className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold">
-                  ✍️ {CATEGORY_LABEL[c as keyof typeof CATEGORY_LABEL]} ×{n}
+                  <Fx name="write" /> {CATEGORY_LABEL[c as keyof typeof CATEGORY_LABEL]} ×{n}
                 </span>
               ))}
             </div>
@@ -781,11 +782,11 @@ function RetroStep({ stats, onDone, onSkip }: { stats: WeekStats; onDone: (worke
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <label className="block">
-          <span className="mb-1.5 block text-sm font-bold">✅ O que funcionou?</span>
+          <span className="mb-1.5 block text-sm font-bold"><Fx name="check" /> O que funcionou?</span>
           <VoiceTextarea value={worked} onValue={setWorked} rows={3} placeholder="Ex.: estudar de manhã, os desafios rápidos…" className="w-full rounded-2xl border border-line bg-white p-3 text-sm outline-none focus:border-brand" />
         </label>
         <label className="block">
-          <span className="mb-1.5 block text-sm font-bold">🚧 O que travou?</span>
+          <span className="mb-1.5 block text-sm font-bold"><Fx name="barrier" /> O que travou?</span>
           <VoiceTextarea value={blocked} onValue={setBlocked} rows={3} placeholder="Ex.: muitas provas, cansaço à noite…" className="w-full rounded-2xl border border-line bg-white p-3 text-sm outline-none focus:border-brand" />
         </label>
       </div>
@@ -794,7 +795,7 @@ function RetroStep({ stats, onDone, onSkip }: { stats: WeekStats; onDone: (worke
           const on = tags.includes(t.id)
           return (
             <button key={t.id} onClick={() => toggle(t.id)} aria-pressed={on} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${on ? 'border-brand bg-brand text-white' : 'border-line bg-white text-slate-600 hover:border-brand/40'}`}>
-              {t.emoji} {t.label}
+              <FxText text={t.emoji} /> {t.label}
             </button>
           )
         })}
@@ -841,7 +842,7 @@ function ThemePanel({
     <div className={`mb-6 rounded-2xl border-2 p-4 transition ${on ? 'border-brand/40 bg-brand-soft/40' : 'border-line'}`}>
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
-          <div className="font-display text-lg font-bold">🎯 Semana temática</div>
+          <div className="font-display text-lg font-bold"><Fx name="target" /> Semana temática</div>
           <p className="text-xs text-muted">Uma matéria por área: o estudo novo da semana fica todo nela. As revisões de outras matérias continuam, curtinhas, para você não esquecer.</p>
         </div>
         <button
@@ -889,7 +890,7 @@ function ThemePanel({
                       >
                         <SubjectIcon subject={s as never} size={22} />
                         {s.name}
-                        {sug?.id === s.id && <span className={`ml-0.5 text-[10px] ${sel ? 'text-white/80' : 'text-brand'}`}>★</span>}
+                        {sug?.id === s.id && <span className={`ml-0.5 text-[10px] ${sel ? 'text-white/80' : 'text-brand'}`}><Fx name="star" size="1.2em" /></span>}
                       </button>
                     )
                   })}

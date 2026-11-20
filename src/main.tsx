@@ -7,6 +7,7 @@ import { QuestionsPromptHost } from './components/QuestionsPrompt'
 import { LoginGate } from './components/LoginGate'
 import { startCloudSync } from './lib/cloud'
 import './index.css'
+import { FxDefs } from './components/Fx'
 import { Layout } from './components/Layout'
 import { HomePage } from './pages/Home'
 import { CheckInPage } from './pages/CheckIn'
@@ -29,6 +30,7 @@ const Router = import.meta.env.VITE_ARTIFACT ? MemoryRouter : BrowserRouter
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <FxDefs />
     <Router>
       <LoginGate>
       <Routes>

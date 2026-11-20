@@ -20,6 +20,7 @@ import { Capybara } from '../components/Capybara'
 import { NoteEditor } from '../components/NoteEditor'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { LogoMark } from '../components/Logo'
+import { FxText, Fx } from '../components/Fx'
 
 type Step = 'antes' | 'durante' | 'depois'
 const GOALS = ['Entender o conceito', 'Fazer exercícios', 'Revisar minhas anotações', 'Criar flashcards', 'Resumir com minhas palavras']
@@ -292,7 +293,7 @@ export function FocusPage() {
             {phase.kind === 'pausa' && <Capybara pose="relaxando" size={120} />}
             {goal && phase.kind === 'foco' && (
               <div className="mb-3 max-w-xs rounded-2xl px-4 py-2 text-center text-sm" style={{ background: tint(color, 0.08), color: `color-mix(in srgb, ${color} 80%, #000)` }}>
-                🎯 {goal}
+                <Fx name="target" /> {goal}
               </div>
             )}
             <div className="flex flex-wrap justify-center gap-2">
@@ -378,7 +379,7 @@ export function FocusPage() {
               ) : (
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-sans text-sm font-bold">⚡ Desafio rápido (3 itens)</h3>
+                    <h3 className="font-sans text-sm font-bold"><Fx name="bolt" /> Desafio rápido (3 itens)</h3>
                     <p className="text-xs text-muted">{isReview ? 'Teste sua memória: o resultado define a próxima revisão.' : 'Teste agora o que ficou do bloco. Leva uns 2 minutos.'}</p>
                   </div>
                   <button onClick={() => setQuiz('aberto')} disabled={!block.subjectId} className="rounded-xl px-4 py-2 text-sm font-bold text-white disabled:opacity-50" style={{ background: color }}>
@@ -398,7 +399,7 @@ export function FocusPage() {
                     className={`rounded-2xl border py-2.5 text-center transition ${confidence === c.v ? 'border-transparent text-white' : 'border-line hover:bg-slate-50'}`}
                     style={confidence === c.v ? { background: color } : undefined}
                   >
-                    <div className="text-2xl">{c.emoji}</div>
+                    <div className="text-2xl"><FxText text={c.emoji} /></div>
                     <div className="text-[11px] font-bold">{c.label}</div>
                   </button>
                 ))}
@@ -447,7 +448,7 @@ export function FocusPage() {
                       className={`rounded-2xl border py-2.5 text-center ${rating === r ? 'border-transparent text-white' : 'border-line hover:bg-slate-50'}`}
                       style={rating === r ? { background: color } : undefined}
                     >
-                      <div className="text-xl">{RATING_LABEL[r].emoji}</div>
+                      <div className="text-xl"><FxText text={RATING_LABEL[r].emoji} /></div>
                       <div className="text-xs font-bold">{RATING_LABEL[r].label}</div>
                     </button>
                   ))}

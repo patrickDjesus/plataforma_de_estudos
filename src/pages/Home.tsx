@@ -28,6 +28,7 @@ import { ratingFromScore } from '../lib/challenge'
 import { Card, Ring, Tabs } from '../components/ui'
 import { StreakIcon, StudyDaysIcon } from '../components/StatIcons'
 import { LevelCard } from '../components/LevelCard'
+import { FxText, Fx } from '../components/Fx'
 
 type Section = 'geral' | 'resultados' | 'metas' | 'conquistas' | 'rank'
 type Scope = 'hoje' | 'semana'
@@ -113,7 +114,7 @@ export function HomePage() {
             </RankFrame>
           </button>
           <div className="min-w-0">
-            <h1 className="truncate text-xl font-bold">Olá, {name}! 👋</h1>
+            <h1 className="truncate text-xl font-bold">Olá, {name}! <Fx name="wave" /></h1>
             <p className="text-xs text-muted">{shownRank ? <RankLine rank={shownRank} /> : '…'}</p>
             <p className="text-[11px] text-muted first-letter:uppercase">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}</p>
           </div>
@@ -214,7 +215,7 @@ export function HomePage() {
                       </span>
                       <span className="text-xs text-muted">{scope === 'hoje' ? 'Sua XP hoje' : 'Sua XP na semana'}</span>
                     </Ring>
-                    <h3 className="mt-5 text-xl font-bold">{scopeXp === 0 ? 'Hora de começar!' : scopeXp >= scopeGoal && scopeGoal > 0 ? 'Meta batida! 🏆' : 'Continue assim!'}</h3>
+                    <h3 className="mt-5 text-xl font-bold">{scopeXp === 0 ? 'Hora de começar!' : scopeXp >= scopeGoal && scopeGoal > 0 ? <>Meta batida! <Fx name="trophy" /></> : 'Continue assim!'}</h3>
                     <p className="mt-1 text-sm text-muted">
                       {scopeGoal > scopeXp ? (
                         <>
@@ -236,7 +237,7 @@ export function HomePage() {
                     {scoped.length === 0 && (
                       <div className="flex flex-col items-center py-4 text-center">
                         <Capybara pose="relaxando" size={96} />
-                        <p className="mt-1 text-sm text-muted">Nenhum bloco de estudo {scope === 'hoje' ? 'hoje' : 'nesta semana'}. Dia de capivara. 🍊</p>
+                        <p className="mt-1 text-sm text-muted">Nenhum bloco de estudo {scope === 'hoje' ? 'hoje' : 'nesta semana'}. Dia de capivara. <Fx name="orange" /></p>
                       </div>
                     )}
                     {scoped.map((b) => {
@@ -530,7 +531,7 @@ function ReviewsPanel() {
           Quando você concluir um tópico, as revisões aparecem aqui (amanhã, em 7 dias e em 30 dias).
         </div>
       )}
-      {reviews.length > 0 && due.length === 0 && <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">Tudo revisado por hoje! ✨</p>}
+      {reviews.length > 0 && due.length === 0 && <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">Tudo revisado por hoje! <Fx name="sparkle" /></p>}
       <div className="divide-y divide-line">
         {due.map((r) => {
           const s = subjects.get(r.subjectId)
@@ -546,7 +547,7 @@ function ReviewsPanel() {
               </div>
               <div className="flex gap-1.5">
                 <button onClick={() => setChallenge(r)} className="hidden rounded-xl px-2.5 py-1.5 text-xs font-bold text-white sm:block" style={{ background: s?.color ?? '#3e63f2' }} title="Teste sua memória: a nota define a próxima revisão">
-                  ⚔️ Desafio
+                  <Fx name="swords" /> Desafio
                 </button>
                 {(['dificil', 'ok', 'facil'] as ReviewRating[]).map((k) => (
                   <button
@@ -555,7 +556,7 @@ function ReviewsPanel() {
                     className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition ${k === 'ok' ? 'bg-brand-soft text-brand' : 'bg-[#f1f2f5] text-ink'} hover:brightness-95`}
                     title={RATING_LABEL[k].label}
                   >
-                    {RATING_LABEL[k].emoji} {RATING_LABEL[k].label}
+                    <FxText text={RATING_LABEL[k].emoji} /> {RATING_LABEL[k].label}
                   </button>
                 ))}
               </div>
@@ -714,7 +715,7 @@ function WeakPoints() {
                   </div>
                 </div>
                 <button onClick={() => navigate(`/desafio?materia=${t?.subjectId}&topico=${id}`)} className="hidden shrink-0 rounded-xl px-2.5 py-1.5 text-xs font-bold text-white sm:block" style={{ background: s?.color ?? '#3e63f2' }}>
-                  ⚔️ Desafio
+                  <Fx name="swords" /> Desafio
                 </button>
               </div>
             )

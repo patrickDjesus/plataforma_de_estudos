@@ -6,6 +6,7 @@ import { DEFAULT_DAILY_GOAL, goalStreak } from '../lib/dailyGoal'
 import { addDays, fromISODate, toISODate, weekIdOf } from '../lib/dates'
 import { tint } from '../lib/colors'
 import { SubjectIcon } from './SubjectIcon'
+import { Fx } from './Fx'
 
 interface Bucket {
   done: number
@@ -250,14 +251,14 @@ function DailyGoalMini({ s }: { s: QuestionStats }) {
   return (
     <span className="flex items-center gap-2" title={`Meta do dia: ${done}/${goal} questões · ${streak} dia(s) seguidos batendo a meta`}>
       <span className="relative grid h-9 w-9 place-items-center rounded-full" style={{ background: `conic-gradient(${hit ? '#22b573' : '#3e63f2'} ${pct * 360}deg, #e6e8f0 0deg)` }}>
-        <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-[11px] font-extrabold tabular-nums">{hit ? '✓' : done}</span>
+        <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-[11px] font-extrabold tabular-nums">{hit ? <Fx name="check" size={18} /> : done}</span>
       </span>
       <span className="leading-tight">
         <b className="block font-display text-base tabular-nums">
           {done}
           <span className="text-xs text-muted">/{goal}</span>
         </b>
-        <span className="text-[11px] text-muted">hoje{streak > 0 ? ` · 🔥 ${streak} dia${streak > 1 ? 's' : ''}` : ''}</span>
+        <span className="text-[11px] text-muted">hoje{streak > 0 ? <> · <Fx name="fire" /> {streak} dia{streak > 1 ? 's' : ''}</> : ''}</span>
       </span>
     </span>
   )

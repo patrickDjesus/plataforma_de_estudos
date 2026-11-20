@@ -14,6 +14,7 @@ import { levelInfo, xpFrom } from '../lib/xp'
 import { achievements, computeStats } from '../lib/achievements'
 import { Capybara } from './Capybara'
 import { useSyncStatus } from '../lib/cloud'
+import { FxText } from './Fx'
 
 /**
  * Onde o Capi mora: o botão no canto da tela, o balão de fala,
@@ -241,8 +242,8 @@ export function MascotHost() {
           <button onClick={() => setMsg(null)} className="absolute top-2.5 right-2.5 rounded-full p-1 text-muted hover:bg-slate-100" aria-label="Fechar">
             <X size={15} />
           </button>
-          {msg.title && <div className="mb-1 pr-6 font-display text-[15px] font-bold">{msg.title}</div>}
-          <p className="text-sm leading-relaxed text-slate-600">{msg.text}</p>
+          {msg.title && <div className="mb-1 pr-6 font-display text-[15px] font-bold"><FxText text={msg.title} /></div>}
+          <p className="text-sm leading-relaxed text-slate-600"><FxText text={msg.text} /></p>
           {msg.actions && msg.actions.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               {msg.actions.map((a) => (
@@ -251,7 +252,7 @@ export function MascotHost() {
                   onClick={() => runAction(a)}
                   className={`rounded-xl px-3 py-2 text-xs font-bold transition ${a.primary ? 'bg-brand text-white hover:brightness-110' : 'bg-[#f1f2f5] text-ink hover:bg-[#e8e9ee]'}`}
                 >
-                  {a.label}
+                  <FxText text={a.label} />
                 </button>
               ))}
             </div>

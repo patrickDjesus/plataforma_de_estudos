@@ -4,6 +4,7 @@ import { ChevronsDown, ChevronsUp, Crown, Shield } from 'lucide-react'
 import { MASTER_POS, POINTS, TIERS, rankName, sizeOf, tierOf, type RankState } from '../lib/rank'
 import { useRank } from '../db/rank'
 import { showMascot } from '../lib/mascotBus'
+import { Fx } from './Fx'
 
 export { RankEmblem, RankFrame } from './RankArt'
 
@@ -100,7 +101,7 @@ export function RankSection() {
     <div className="space-y-5">
       {preview !== null && (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm">
-          <b className="text-amber-800">👀 Prévia: {rankName(preview)}</b>
+          <b className="text-amber-800"><Fx name="eyes" /> Prévia: {rankName(preview)}</b>
           <span className="text-amber-800/80">Só visual: seu rank de verdade é {rankName(real.pos)}.</span>
           {preview < MASTER_POS && (
             <span className="ml-auto flex gap-1">
@@ -142,7 +143,7 @@ export function RankSection() {
               </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
-              <span className="rounded-full bg-white/15 px-2.5 py-1">🏆 Melhor: {rankName(rank.best.pos)}</span>
+              <span className="rounded-full bg-white/15 px-2.5 py-1"><Fx name="trophy" /> Melhor: {rankName(rank.best.pos)}</span>
               {!isMaster && rank.points === 0 && rank.pos > 0 && (
                 <span className="flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1">
                   <Shield size={12} /> Escudo ativo: a próxima perda rebaixa

@@ -16,6 +16,7 @@ import { Capybara } from '../components/Capybara'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Btn, Card } from '../components/ui'
 import { SceneBanner, recoveryScene } from '../components/Scenes'
+import { FxText, Fx } from '../components/Fx'
 
 /** Recuperação: tudo que pede para você lembrar hoje. Nesta etapa, os flashcards. */
 export function RecoveryPage() {
@@ -62,7 +63,7 @@ export function RecoveryPage() {
           ) : due.length === 0 ? (
             <div className="flex flex-col items-center py-6 text-center">
               <Capybara pose="relaxando" size={120} />
-              <p className="mt-2 text-sm font-semibold text-emerald-700">Nenhum cartão para hoje. Memória em dia! ✨</p>
+              <p className="mt-2 text-sm font-semibold text-emerald-700">Nenhum cartão para hoje. Memória em dia! <Fx name="sparkle" /></p>
             </div>
           ) : (
             <>
@@ -159,7 +160,7 @@ export function StudySession({ cards, onExit }: { cards: Flashcard[]; onExit: ()
         <div className="mt-4 flex gap-3">
           {(['dificil', 'ok', 'facil'] as ReviewRating[]).map((r) => (
             <div key={r} className="rounded-2xl bg-[#f6f7f9] px-4 py-2 text-center">
-              <div className="text-xl">{RATING_LABEL[r].emoji}</div>
+              <div className="text-xl"><FxText text={RATING_LABEL[r].emoji} /></div>
               <div className="font-display text-lg font-bold">{tally[r]}</div>
               <div className="text-[11px] text-muted">{RATING_LABEL[r].label}</div>
             </div>
@@ -218,7 +219,7 @@ export function StudySession({ cards, onExit }: { cards: Flashcard[]; onExit: ()
               onClick={() => rate(r)}
               className={`rounded-2xl border py-3 text-center transition hover:-translate-y-0.5 ${r === 'ok' ? 'border-brand/30 bg-brand-soft text-brand' : 'border-line bg-white'}`}
             >
-              <div className="text-2xl">{RATING_LABEL[r].emoji}</div>
+              <div className="text-2xl"><FxText text={RATING_LABEL[r].emoji} /></div>
               <div className="text-sm font-bold">{RATING_LABEL[r].label}</div>
               <div className="text-[11px] text-muted">{r === 'dificil' ? 'volta amanhã' : r === 'ok' ? 'espaça um pouco' : 'espaça bastante'}</div>
             </button>
@@ -265,7 +266,7 @@ function ReviewsToday({ onChallenge }: { onChallenge: (subjectId: string, topicI
               <div className="flex gap-1">
                 {(['dificil', 'ok', 'facil'] as ReviewRating[]).map((k) => (
                   <button key={k} onClick={() => rateReview(r.topicId, k)} className="rounded-lg bg-[#f1f2f5] px-2 py-1.5 text-xs" title={RATING_LABEL[k].label}>
-                    {RATING_LABEL[k].emoji}
+                    <FxText text={RATING_LABEL[k].emoji} />
                   </button>
                 ))}
               </div>
@@ -343,7 +344,7 @@ function ErrorsCard() {
   return (
     <button onClick={() => navigate('/erros')} className="flex w-full items-center gap-4 rounded-[22px] border border-line bg-white p-5 text-left shadow-[0_8px_24px_-12px_rgba(16,24,40,0.08)] transition hover:-translate-y-0.5">
       <span className="subject-icon h-12 w-12 shrink-0 rounded-[14px] text-xl" style={{ background: 'linear-gradient(145deg,#ef4444,#b91c1c)' }}>
-        <span className="relative z-10">📕</span>
+        <span className="relative z-10"><Fx name="book" size={26} /></span>
       </span>
       <div className="min-w-0 flex-1">
         <div className="font-display text-lg font-bold">Caderno de erros</div>
