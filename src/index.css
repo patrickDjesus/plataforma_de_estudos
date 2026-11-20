@@ -283,9 +283,9 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 .qm-card:hover { transform: translateY(-5px) rotate(-.6deg); box-shadow: 0 24px 38px -18px rgba(16,24,40,.75); }
 .qm-card:active { transform: translateY(-1px) scale(.98); }
 .qm-card:hover .qm-shine { animation: lv-shine 1s ease; }
-.qm-stripes { background: repeating-linear-gradient(-45deg, #fff 0 14px, transparent 14px 28px); background-size: 40px 40px; animation: qm-stripes 2.5s linear infinite; }
-.qm-capi { transition: transform .25s cubic-bezier(.2,.9,.3,1.4); transform-origin: bottom center; }
-.qm-card:hover .qm-capi { transform: scale(1.08) rotate(-3deg) translateY(-4px); }
+.qm-stripes-off { background: repeating-linear-gradient(-45deg, #fff 0 14px, transparent 14px 28px); background-size: 40px 40px; animation: qm-stripes 2.5s linear infinite; }
+.qm-capi { transition: transform .25s cubic-bezier(.2,.9,.3,1.4); transform-box: fill-box; transform-origin: 50% 100%; }
+.qm-card:hover .qm-capi { transform: translateY(-8px) scale(1.05); }
 .qm-run { animation: qm-run .35s ease-in-out infinite alternate; }
 .qm-speed { animation: qm-speed .9s linear infinite; }
 .qm-bolt { animation: qm-bolt 1.6s ease-in-out infinite; transform-origin: 150px 48px; }
@@ -297,6 +297,23 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 .qm-wand { animation: qm-wand 1.8s ease-in-out infinite; }
 .qm-write { stroke-dashoffset: 100; animation: qm-write 3.6s ease-in-out infinite; }
 .qm-pencil { animation: qm-pencil 3.6s ease-in-out infinite; }
+.qm-spin { animation: qm-hand 30s linear infinite; }
+.qm-drift { animation: qm-drift 16s linear infinite; }
+.qm-lane { animation: qm-lane .6s linear infinite; }
+.qm-puff { animation: qm-puff .7s ease-out infinite; }
+.qm-chalk { animation: qm-chalk 4s ease-in-out infinite; }
+.qm-check { stroke-dashoffset: 30; animation: qm-checkd 4s ease-in-out infinite; }
+.qm-blink { animation: qm-blink 2.2s ease-in-out infinite; }
+.qm-dash { animation: qm-dashm 3s linear infinite; }
+.qm-sway { animation: qm-sway 3s ease-in-out infinite; }
+@keyframes qm-drift { from { transform: translateX(-90px) } to { transform: translateX(300px) } }
+@keyframes qm-lane { to { stroke-dashoffset: -26 } }
+@keyframes qm-puff { 0% { transform: scale(.4); opacity: .9 } 100% { transform: scale(1.4) translateX(-10px); opacity: 0 } }
+@keyframes qm-chalk { 0%, 8% { opacity: 0 } 20%, 85% { opacity: 1 } 100% { opacity: 0 } }
+@keyframes qm-checkd { 0%, 35% { stroke-dashoffset: 30 } 50%, 85% { stroke-dashoffset: 0; opacity: 1 } 100% { stroke-dashoffset: 0; opacity: 0 } }
+@keyframes qm-blink { 0%, 100% { opacity: .25 } 50% { opacity: 1 } }
+@keyframes qm-dashm { to { stroke-dashoffset: -34 } }
+@keyframes qm-sway { 0%, 100% { transform: rotate(-4deg) } 50% { transform: rotate(4deg) } }
 @keyframes qm-in { from { opacity: 0; transform: translateY(18px) scale(.94) } to { opacity: 1; transform: none } }
 @keyframes qm-stripes { to { background-position: 40px 0 } }
 @keyframes qm-run { from { transform: translateY(0) rotate(-2deg) } to { transform: translateY(-6px) rotate(2deg) } }
@@ -307,4 +324,4 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 @keyframes qm-paper { 0% { transform: translate(0, 10px) scale(.5) rotate(0); opacity: 0 } 20% { opacity: 1 } 100% { transform: translate(-70px, -80px) scale(1) rotate(-25deg); opacity: 0 } }
 @keyframes qm-wand { 0%, 100% { transform: rotate(0) } 30% { transform: rotate(-18deg) } 50% { transform: rotate(8deg) } }
 @keyframes qm-write { 0% { stroke-dashoffset: 100 } 15%, 80% { stroke-dashoffset: 0 } 100% { stroke-dashoffset: 0; opacity: 0 } }
-@keyframes qm-pencil { 0% { transform: translate(-60px, -60px) } 20% { transform: translate(-20px, -48px) } 40% { transform: translate(-50px, -30px) } 60% { transform: translate(-15px, -18px) } 80% { transform: translate(-40px, 0) } 100% { transform: translate(-60px, -60px) } }
+@keyframes qm-pencil { 0% { transform: translate(-60px, -18px) } 12% { transform: translate(-36px, -16px) } 25% { transform: translate(-60px, -4px) } 37% { transform: translate(-36px, -2px) } 50% { transform: translate(-60px, 10px) } 62% { transform: translate(-36px, 12px) } 75% { transform: translate(-60px, 24px) } 87% { transform: translate(-42px, 26px) } 100% { transform: translate(-60px, -18px) } }

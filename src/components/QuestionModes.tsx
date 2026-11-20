@@ -5,115 +5,305 @@ import { playSfx } from '../lib/sfx'
 
 export type ModeId = 'rush' | 'simulado' | 'gerar' | 'escrita'
 
-type Mode = { id: ModeId; title: string; tag: string; from: string; to: string; pose: CapiPose; scene: ReactNode }
+type Mode = { id: ModeId; title: string; tag: string; from: string; to: string; ink: string; pose: CapiPose; back: ReactNode; front?: ReactNode }
 
-/* Cenas: desenhos animados por cima/atrás da Capi (viewBox 0 0 200 160, a Capi fica embaixo à direita). */
+/*
+ * Cada cartão é uma ilustração inteira num SVG só (viewBox 260x520, ancorado embaixo):
+ * fundo (cenário) → Capi → frente (mesa, varinha…). Assim tudo fica alinhado em qualquer tamanho.
+ */
+const W = 260
+const H = 520
+/** Céu extra em cima: o cartão é mais alto que largo, e assim nada é cortado nos lados. */
+const TOP = -70
 
-const RushScene = (
+const cloud = (x: number, y: number, s = 1, o = 0.85) => (
+  <g transform={`translate(${x} ${y}) scale(${s})`} fill="#fff" opacity={o}>
+    <ellipse cx="0" cy="0" rx="24" ry="9" />
+    <circle cx="-9" cy="-5" r="10" />
+    <circle cx="7" cy="-9" r="12" />
+  </g>
+)
+const sparkle = (x: number, y: number, r: number, d: number, fill = '#ffe27a') => (
+  <path
+    key={`${x}-${y}`}
+    className="rk-twinkle"
+    style={{ animationDelay: `${d}s` }}
+    d={`M${x} ${y - r} Q${x} ${y} ${x + r} ${y} Q${x} ${y} ${x} ${y + r} Q${x} ${y} ${x - r} ${y} Q${x} ${y} ${x} ${y - r} Z`}
+    fill={fill}
+  />
+)
+/** Mesa vista de frente (fica na frente da Capi, escondendo as perninhas). */
+const desk = (top: string, side: string, shade: string) => (
+  <g>
+    <rect x="34" y="398" width="192" height="13" rx="5" fill={top} />
+    <rect x="44" y="411" width="172" height="42" rx="4" fill={side} />
+    <rect x="44" y="411" width="172" height="6" fill={shade} opacity=".5" />
+    <rect x="56" y="453" width="10" height="26" rx="3" fill={side} />
+    <rect x="194" y="453" width="10" height="26" rx="3" fill={side} />
+  </g>
+)
+
+/* ---------- Rush: pista ao pôr do sol ---------- */
+const rushBack = (
   <>
+    <defs>
+      <linearGradient id="qm-r-sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#ff9f5a" />
+        <stop offset=".6" stopColor="#ffc27a" />
+        <stop offset="1" stopColor="#ffd9a0" />
+      </linearGradient>
+    </defs>
+    <rect y={TOP} width={W} height={H - TOP} fill="url(#qm-r-sky)" />
+    {/* sol com raios girando */}
+    <g className="qm-spin" style={{ transformOrigin: '186px 200px' }}>
+      {Array.from({ length: 12 }, (_, i) => (
+        <rect key={i} x="183" y="140" width="6" height="20" rx="3" fill="#fff6d6" opacity=".7" transform={`rotate(${i * 30} 186 200)`} />
+      ))}
+    </g>
+    <circle cx="186" cy="200" r="34" fill="#ffe7a3" />
+    <circle cx="186" cy="200" r="26" fill="#fff3cc" />
+    <g className="qm-drift" style={{ animationDuration: '16s' }}>{cloud(40, 150, 1)}</g>
+    <g className="qm-drift" style={{ animationDuration: '26s', animationDelay: '-14s' }}>{cloud(60, 40, 1.2, 0.6)}</g>
+    <g className="qm-drift" style={{ animationDuration: '22s', animationDelay: '-8s' }}>{cloud(120, 250, 0.7, 0.7)}</g>
+    {/* morros */}
+    <path d="M0 330 Q70 290 140 322 T260 306 V380 H0 Z" fill="#ffb07a" />
+    <path d="M0 352 Q90 326 170 348 T260 340 V380 H0 Z" fill="#f99566" />
+    {/* chão e pista */}
+    <rect y="372" width={W} height="148" fill="#f07a4f" />
+    <path d="M108 372 L152 372 L250 520 L10 520 Z" fill="#ffb98a" />
+    <path d="M108 372 L10 520 M152 372 L250 520" stroke="#fff" strokeWidth="3" opacity=".75" />
+    <path className="qm-lane" d="M130 374 L130 520" stroke="#fff" strokeWidth="4" strokeDasharray="12 14" />
     {/* riscos de velocidade */}
     {[
-      [30, 0],
-      [60, 0.25],
-      [95, 0.5],
-      [125, 0.15],
+      [292, 0],
+      [318, 0.3],
+      [344, 0.6],
+      [370, 0.15],
     ].map(([y, d]) => (
-      <rect key={y} className="qm-speed" style={{ animationDelay: `${d}s` }} x="20" y={y} width="60" height="4" rx="2" fill="#fff" opacity=".7" />
+      <rect key={y} className="qm-speed" style={{ animationDelay: `${d}s` }} x="14" y={y} width="44" height="4" rx="2" fill="#fff" />
     ))}
-    {/* raio piscando */}
-    <path className="qm-bolt" d="M150 8 L128 52 L146 52 L134 88 L170 38 L152 38 L164 8 Z" fill="#ffe14d" stroke="#fff" strokeWidth="3" strokeLinejoin="round" />
-    {/* chamas no chão */}
-    {[40, 62, 84].map((x, i) => (
-      <path key={x} className="rk-flame" style={{ animationDuration: `${0.6 + i * 0.12}s` }} d={`M${x} 158 C${x - 9} 157 ${x - 10} 146 ${x - 4} 138 C${x - 3} 144 ${x} 145 ${x + 1} 148 C${x + 1} 140 ${x + 5} 134 ${x + 3} 126 C${x + 12} 136 ${x + 13} 150 ${x + 7} 156 Z`} fill="#ffd34d" opacity=".9" />
+  </>
+)
+const rushFront = (
+  <>
+    <path className="qm-bolt" d="M206 238 L190 270 L203 270 L194 298 L222 258 L208 258 L218 238 Z" fill="#ffe14d" stroke="#fff" strokeWidth="2.5" strokeLinejoin="round" />
+    {[
+      [86, 440, 0],
+      [176, 442, 0.35],
+    ].map(([x, y, d]) => (
+      <g key={x} className="qm-puff" style={{ animationDelay: `${d}s`, transformOrigin: `${x}px ${y}px` }}>
+        <circle cx={x} cy={y} r="9" fill="#fff" opacity=".8" />
+        <circle cx={x - 9} cy={y + 3} r="6" fill="#fff" opacity=".7" />
+      </g>
     ))}
   </>
 )
 
-const SimuladoScene = (
+/* ---------- Simulado: sala de aula ---------- */
+const simBack = (
   <>
-    {/* cronômetro */}
-    <g className="qm-tick-shake" style={{ transformOrigin: '52px 62px' }}>
-      <rect x="45" y="14" width="14" height="10" rx="3" fill="#fff" />
-      <rect x="72" y="26" width="10" height="8" rx="3" fill="#fff" transform="rotate(40 77 30)" />
-      <circle cx="52" cy="62" r="38" fill="#fff" />
-      <circle cx="52" cy="62" r="31" fill="#eef2ff" />
-      {Array.from({ length: 12 }, (_, i) => (
-        <rect key={i} x="51" y="34" width="2" height={i % 3 ? 4 : 7} rx="1" fill="#3e63f2" transform={`rotate(${i * 30} 52 62)`} />
-      ))}
-      <path className="qm-sweep" d="M52 62 L52 34 A28 28 0 0 1 76.2 48 Z" fill="#3e63f2" opacity=".18" style={{ transformOrigin: '52px 62px' }} />
-      <rect className="qm-hand" x="50.5" y="36" width="3" height="28" rx="1.5" fill="#ff5a5f" style={{ transformOrigin: '52px 62px' }} />
-      <circle cx="52" cy="62" r="4" fill="#121826" />
+    <defs>
+      <linearGradient id="qm-s-wall" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#6f8dff" />
+        <stop offset="1" stopColor="#9bb2ff" />
+      </linearGradient>
+    </defs>
+    <rect y={TOP} width={W} height={H - TOP} fill="url(#qm-s-wall)" />
+    {/* lousa */}
+    <rect x="22" y="116" width="216" height="128" rx="10" fill="#c99260" />
+    <rect x="30" y="124" width="200" height="112" rx="6" fill="#24345a" />
+    <g fill="#fff" fontFamily="Sora, sans-serif" fontWeight="700">
+      <text className="qm-chalk" x="46" y="160" fontSize="17">
+        2x + 3 = 11
+      </text>
+      <text className="qm-chalk" style={{ animationDelay: '.8s' }} x="46" y="192" fontSize="17">
+        x = 4
+      </text>
     </g>
+    <path className="qm-check" d="M112 186 L119 194 L134 176" fill="none" stroke="#7ef0b5" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" pathLength="30" strokeDasharray="30" />
+    <circle cx="196" cy="166" r="16" fill="none" stroke="#ffd34d" strokeWidth="3" opacity=".9" />
+    <text x="196" y="172" textAnchor="middle" fill="#ffd34d" fontFamily="Sora, sans-serif" fontWeight="800" fontSize="15">
+      A
+    </text>
+    <rect x="44" y="242" width="172" height="6" rx="3" fill="#a87648" />
+    <rect x="70" y="238" width="14" height="5" rx="2" fill="#fff" />
+    {/* relógio de parede */}
+    <g transform="translate(36 300)">
+      <circle r="21" fill="#fff" />
+      <circle r="17" fill="#eef2ff" />
+      {Array.from({ length: 12 }, (_, i) => (
+        <rect key={i} x="-1" y="-15" width="2" height={i % 3 ? 3 : 5} rx="1" fill="#3e63f2" transform={`rotate(${i * 30})`} />
+      ))}
+      <rect className="qm-hand" x="-1.2" y="-14" width="2.4" height="14" rx="1.2" fill="#ff5a5f" />
+      <rect x="-1.5" y="-10" width="3" height="10" rx="1.5" fill="#121826" transform="rotate(120)" />
+      <circle r="2.5" fill="#121826" />
+    </g>
+    {/* chão */}
+    <rect y="372" width={W} height="148" fill="#4a64e0" />
+    <path d="M0 400 H260 M0 440 H260 M0 484 H260" stroke="#3d55c9" strokeWidth="2" />
+  </>
+)
+const simFront = (
+  <>
+    {desk('#ffd7a3', '#e6a964', '#b97a3c')}
+    {/* prova em cima da mesa */}
+    <path d="M86 399 L136 399 L130 387 L92 387 Z" fill="#fff" />
+    <path d="M97 391 H125 M95 395 H118" stroke="#3e63f2" strokeWidth="1.6" strokeLinecap="round" />
+    <rect x="146" y="392" width="34" height="4" rx="2" fill="#ffc83d" transform="rotate(-8 163 394)" />
   </>
 )
 
-const GerarScene = (
+/* ---------- Gerar lista: noite mágica ---------- */
+const STARS: [number, number, number][] = [
+  [30, 120, 0],
+  [84, 170, 0.6],
+  [150, 112, 1.1],
+  [232, 250, 0.3],
+  [24, 260, 1.4],
+  [120, 230, 0.9],
+  [210, 120, 1.7],
+  [60, 320, 0.4],
+  [196, 10, 0.2],
+  [40, 40, 1.2],
+  [228, 60, 0.7],
+  [110, 70, 1.6],
+]
+const magicBack = (
   <>
-    {/* folhas saindo voando */}
+    <defs>
+      <linearGradient id="qm-g-sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#5a35c9" />
+        <stop offset=".6" stopColor="#8a64f2" />
+        <stop offset="1" stopColor="#b796ff" />
+      </linearGradient>
+      <radialGradient id="qm-g-glow">
+        <stop offset="0" stopColor="#ffe14d" stopOpacity=".55" />
+        <stop offset="1" stopColor="#ffe14d" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <rect y={TOP} width={W} height={H - TOP} fill="url(#qm-g-sky)" />
+    {STARS.map(([x, y, d]) => (
+      <circle key={`${x}${y}`} className="qm-blink" style={{ animationDelay: `${d}s` }} cx={x} cy={y} r="2" fill="#fff" />
+    ))}
+    {/* lua */}
+    <circle cx="206" cy="180" r="26" fill="#fff3c4" />
+    <circle cx="218" cy="170" r="22" fill="#7c58e8" />
+    {/* morros */}
+    <path d="M0 360 Q80 318 150 346 T260 334 V400 H0 Z" fill="#7a54de" />
+    <rect y="384" width={W} height="136" fill="#6542cf" />
+    <path d="M0 384 Q130 368 260 384" fill="#6542cf" />
+    {/* círculo mágico no chão */}
+    <ellipse cx="130" cy="440" rx="96" ry="26" fill="url(#qm-g-glow)" />
+    <ellipse className="qm-dash" cx="130" cy="440" rx="80" ry="17" fill="none" stroke="#ffe14d" strokeWidth="2.5" strokeDasharray="8 9" />
+    <ellipse cx="130" cy="440" rx="60" ry="11" fill="none" stroke="#fff" strokeOpacity=".5" strokeWidth="1.5" />
+  </>
+)
+const magicFront = (
+  <>
+    {/* folhas de questão saindo da varinha */}
     {[0, 0.6, 1.2].map((d, i) => (
       <g key={d} className="qm-paper" style={{ animationDelay: `${d}s` }}>
-        <rect x="60" y="80" width="30" height="38" rx="4" fill="#fff" transform={`rotate(${-12 + i * 10} 75 99)`} />
-        <path d="M66 90 h18 M66 98 h14 M66 106 h18" stroke="#8b5cf6" strokeWidth="2.4" strokeLinecap="round" transform={`rotate(${-12 + i * 10} 75 99)`} />
+        <g transform={`translate(${190 + i * 4} 280) rotate(${-14 + i * 12})`}>
+          <rect x="-13" y="-17" width="26" height="34" rx="4" fill="#fff" />
+          <path d="M-7 -8 h14 M-7 -1 h10 M-7 6 h14" stroke="#7c58e8" strokeWidth="2.2" strokeLinecap="round" />
+        </g>
       </g>
     ))}
-    {/* varinha */}
-    <g transform="translate(52 22)">
-    <g className="qm-wand" style={{ transformOrigin: '118px 120px' }}>
-      <rect x="114" y="62" width="7" height="60" rx="3.5" fill="#121826" transform="rotate(-30 118 92)" />
-      <rect x="114" y="62" width="7" height="12" rx="3" fill="#fff" transform="rotate(-30 118 92)" />
+    <g className="qm-wand" style={{ transformOrigin: '186px 360px' }}>
+      <rect x="183" y="300" width="7" height="64" rx="3.5" fill="#2a1d55" transform="rotate(18 186 332)" />
+      <rect x="183" y="300" width="7" height="12" rx="3" fill="#fff" transform="rotate(18 186 332)" />
     </g>
-    </g>
-    {/* brilhos */}
-    {[
-      [92, 30, 0, 9],
-      [40, 44, 0.5, 7],
-      [130, 20, 1, 6],
-      [20, 90, 1.4, 5],
-    ].map(([x, y, d, r]) => (
-      <path key={`${x}${y}`} className="rk-twinkle" style={{ animationDelay: `${d}s` }} d={`M${x} ${y - r} L${x + r * 0.28} ${y - r * 0.28} L${x + r} ${y} L${x + r * 0.28} ${y + r * 0.28} L${x} ${y + r} L${x - r * 0.28} ${y + r * 0.28} L${x - r} ${y} L${x - r * 0.28} ${y - r * 0.28} Z`} fill="#ffe14d" />
-    ))}
+    {sparkle(178, 290, 9, 0)}
+    {sparkle(222, 312, 6, 0.6)}
+    {sparkle(40, 380, 7, 1.1, '#fff')}
+    {sparkle(224, 410, 5, 1.5)}
   </>
 )
 
-const EscritaScene = (
+/* ---------- Escrita: cantinho de estudo ---------- */
+const BOOKS: [number, number, string][] = [
+  [26, 36, '#ff6b7a'],
+  [38, 30, '#ffc83d'],
+  [50, 40, '#3e63f2'],
+  [62, 34, '#8b5cf6'],
+]
+const writeBack = (
   <>
-    {/* folha com linhas se escrevendo */}
-    <g transform="rotate(-6 60 90)">
-      <rect x="14" y="34" width="96" height="116" rx="8" fill="#fff" />
-      <rect x="14" y="34" width="96" height="14" rx="7" fill="#d9f7ec" />
-      {[62, 78, 94, 110, 126].map((y, i) => (
-        <path key={y} className="qm-write" style={{ animationDelay: `${i * 0.55}s` }} d={`M26 ${y} q8 -6 16 0 t16 0 t16 0 t${i === 4 ? 8 : 16} 0`} fill="none" stroke="#0f8a63" strokeWidth="3" strokeLinecap="round" pathLength="100" strokeDasharray="100" />
+    <defs>
+      <linearGradient id="qm-e-wall" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#3fcf9e" />
+        <stop offset="1" stopColor="#86e8c4" />
+      </linearGradient>
+      <clipPath id="qm-e-win">
+        <rect x="160" y="128" width="72" height="88" rx="6" />
+      </clipPath>
+    </defs>
+    <rect y={TOP} width={W} height={H - TOP} fill="url(#qm-e-wall)" />
+    {/* janela */}
+    <rect x="154" y="122" width="84" height="100" rx="10" fill="#fff" />
+    <g clipPath="url(#qm-e-win)">
+      <rect x="160" y="128" width="72" height="88" fill="#bfe6ff" />
+      <circle cx="214" cy="150" r="10" fill="#ffe27a" />
+      <g className="qm-drift" style={{ animationDuration: '12s' }}>{cloud(150, 186, 0.6, 1)}</g>
+    </g>
+    <path d="M196 128 V216 M160 172 H232" stroke="#fff" strokeWidth="5" />
+    {/* prateleira com livros */}
+    <rect x="18" y="200" width="96" height="7" rx="3" fill="#c99260" />
+    {BOOKS.map(([x, h, c]) => (
+      <rect key={x} x={x} y={200 - h} width="10" height={h} rx="2" fill={c} />
+    ))}
+    <rect x="74" y="168" width="10" height="32" rx="2" fill="#fff" transform="rotate(14 79 200)" />
+    <path d="M96 200 h14 l-3 -14 h-8 Z" fill="#ff8f6b" />
+    <path className="qm-sway" style={{ transformOrigin: '103px 186px' }} d="M103 186 C96 176 96 168 100 162 C104 168 106 176 103 186 C108 178 114 174 118 174 C114 182 108 186 103 186 Z" fill="#169a6c" />
+    {/* bloquinho na parede, se escrevendo */}
+    <g transform="rotate(-5 46 300)">
+      <rect x="16" y="252" width="62" height="86" rx="6" fill="#fff" />
+      <rect x="16" y="252" width="62" height="12" rx="6" fill="#d9f7ec" />
+      <circle cx="47" cy="250" r="4" fill="#ff6b7a" />
+      {[278, 292, 306, 320].map((y, i) => (
+        <path key={y} className="qm-write" style={{ animationDelay: `${i * 0.55}s` }} d={`M24 ${y} q5 -4 10 0 t10 0 t10 0 t${i === 3 ? 6 : 12} 0`} fill="none" stroke="#0f8a63" strokeWidth="2.4" strokeLinecap="round" pathLength="100" strokeDasharray="100" />
       ))}
     </g>
-    {/* lápis */}
-    <g className="qm-pencil">
-      <g transform="rotate(35 100 100)">
-        <rect x="94" y="56" width="12" height="46" rx="2" fill="#ffc83d" />
-        <rect x="94" y="56" width="12" height="8" rx="2" fill="#ff8fa3" />
-        <rect x="94" y="62" width="12" height="4" fill="#c9ccd6" />
-        <path d="M94 102 L100 116 L106 102 Z" fill="#f3d2a2" />
-        <path d="M98 111 L100 116 L102 111 Z" fill="#23263a" />
-      </g>
+    {/* chão */}
+    <rect y="372" width={W} height="148" fill="#22b07f" />
+    <rect y="372" width={W} height="8" fill="#1a9a6e" />
+    {/* vaso de planta */}
+    <g className="qm-sway" style={{ transformOrigin: '226px 420px', animationDelay: '.6s' }}>
+      <path d="M226 420 C210 404 208 388 214 374 C222 388 226 402 226 420 Z" fill="#0f8a63" />
+      <path d="M226 420 C240 402 244 388 240 372 C230 386 226 402 226 420 Z" fill="#169a6c" />
+      <path d="M226 420 C224 396 228 380 226 362 C232 380 232 400 226 420 Z" fill="#2fcf9b" />
     </g>
+    <path d="M210 418 h32 l-4 30 h-24 Z" fill="#ff8f6b" />
   </>
+)
+const writeFront = (
+  <g className="qm-pencil">
+    <g transform="rotate(32 92 290)">
+      <rect x="86" y="246" width="10" height="40" rx="2" fill="#ffc83d" />
+      <rect x="86" y="246" width="10" height="7" rx="2" fill="#ff8fa3" />
+      <rect x="86" y="252" width="10" height="3" fill="#c9ccd6" />
+      <path d="M86 286 L91 298 L96 286 Z" fill="#f3d2a2" />
+      <path d="M89.5 294 L91 298 L92.5 294 Z" fill="#23263a" />
+    </g>
+  </g>
 )
 
 const MODES: Mode[] = [
-  { id: 'rush', title: 'Rush', tag: 'Questões sem parar. Até errar.', from: '#ff9a3d', to: '#e2401b', pose: 'focado', scene: RushScene },
-  { id: 'simulado', title: 'Simulado', tag: 'Prova com tempo, nota no final.', from: '#5b7cff', to: '#2a3fb8', pose: 'pensando', scene: SimuladoScene },
-  { id: 'gerar', title: 'Gerar lista', tag: 'Questões sob medida, do seu jeito.', from: '#a77bff', to: '#6233d6', pose: 'acenando', scene: GerarScene },
-  { id: 'escrita', title: 'Escrita', tag: 'Escreva, a Capi corrige.', from: '#2fcf9b', to: '#0f8a63', pose: 'estudando', scene: EscritaScene },
+  { id: 'rush', title: 'Rush', tag: 'Questões sem parar. Até errar.', from: '#ff9a3d', to: '#e2401b', ink: '#e2401b', pose: 'focado', back: rushBack, front: rushFront },
+  { id: 'simulado', title: 'Simulado', tag: 'Prova com tempo, nota no final.', from: '#5b7cff', to: '#2a3fb8', ink: '#2a3fb8', pose: 'pensando', back: simBack, front: simFront },
+  { id: 'gerar', title: 'Gerar lista', tag: 'Questões sob medida.', from: '#a77bff', to: '#6233d6', ink: '#6233d6', pose: 'acenando', back: magicBack, front: magicFront },
+  { id: 'escrita', title: 'Escrita', tag: 'Escreva, a Capi corrige.', from: '#2fcf9b', to: '#0f8a63', ink: '#0f8a63', pose: 'estudando', back: writeBack, front: writeFront },
 ]
 
 export function modeInfo(id: string) {
   return MODES.find((m) => m.id === id)
 }
 
-/** Tela de escolha de modo das Questões, estilo menu de jogo. */
+/** Tela de escolha de modo das Questões, estilo menu de jogo: cada cartão é uma ilustração. */
 export function QuestionModes({ onPick, onExtra }: { onPick: (id: ModeId) => void; onExtra: (id: 'registrar' | 'historico') => void }) {
   return (
     <div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {MODES.map((m, i) => (
           <button
             key={m.id}
@@ -122,27 +312,25 @@ export function QuestionModes({ onPick, onExtra }: { onPick: (id: ModeId) => voi
               onPick(m.id)
             }}
             onMouseEnter={() => playSfx('blip')}
-                        className="qm-card group relative flex h-[340px] flex-col justify-start overflow-hidden rounded-[22px] p-4 text-left text-white shadow-[0_16px_30px_-18px_rgba(16,24,40,0.7)] outline-none focus-visible:ring-4 focus-visible:ring-brand/40"
-            style={{ background: `linear-gradient(135deg, ${m.from}, ${m.to})`, animationDelay: `${i * 0.08}s` }}
+            className="qm-card group relative flex h-[clamp(440px,calc(100vh-230px),640px)] flex-col justify-start overflow-hidden rounded-[26px] p-5 text-left text-white shadow-[0_18px_34px_-20px_rgba(16,24,40,0.65)] ring-1 ring-black/5 outline-none focus-visible:ring-4 focus-visible:ring-brand/40"
+            style={{ animationDelay: `${i * 0.08}s` }}
           >
-            {/* listras andando no fundo */}
-            <span className="qm-stripes pointer-events-none absolute inset-0 opacity-[.12]" />
-            {/* brilho que passa no hover */}
-            <span className="qm-shine pointer-events-none absolute inset-y-0 -left-1/2 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-
-            {/* cena */}
-            <svg viewBox="0 0 200 160" className="essential-motion pointer-events-none absolute top-[84px] left-1/2 h-[104px] w-[130px] -translate-x-1/2 overflow-visible opacity-95" aria-hidden>
-              {m.scene}
+            <svg viewBox={`0 ${TOP} ${W} ${H - TOP}`} preserveAspectRatio="xMidYMax slice" className="essential-motion pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+              {m.back}
+              <g transform="translate(52 268)">
+                <g className={`qm-capi ${m.id === 'rush' ? 'qm-run' : ''}`}>
+                  <Capybara pose={m.pose} size={156} />
+                </g>
+              </g>
+              {m.front}
             </svg>
-            <div className={`qm-capi pointer-events-none absolute bottom-[50px] left-1/2 -ml-[66px] ${m.id === 'rush' ? 'qm-run' : ''}`}>
-              <Capybara pose={m.pose} size={132} />
-            </div>
+            {/* brilho que passa no hover */}
+            <span className="qm-shine pointer-events-none absolute inset-y-0 -left-1/2 w-1/3 bg-gradient-to-r from-transparent via-white/35 to-transparent" />
 
-            <div className="relative z-10 font-display text-[24px] leading-none font-extrabold drop-shadow-[0_2px_3px_rgba(0,0,0,.18)]">{m.title}</div>
-            <div className="relative z-10 mt-1.5 text-[12px] leading-snug font-semibold text-white/85">{m.tag}</div>
-            {/* chão onde a Capi pisa */}
-            <span className="pointer-events-none absolute inset-x-6 bottom-[46px] h-4 rounded-[50%] bg-black/15 blur-[2px]" />
-            <span className="absolute inset-x-3 bottom-3 z-10 rounded-xl bg-white/95 py-2 text-center text-[12px] font-extrabold tracking-wide uppercase shadow transition group-hover:scale-105" style={{ color: m.to }}>
+            <div className="relative z-10 font-display text-[28px] leading-none font-extrabold drop-shadow-[0_2px_4px_rgba(0,0,0,.18)]">{m.title}</div>
+            <div className="relative z-10 mt-2 text-[13px] leading-snug font-semibold text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,.15)]">{m.tag}</div>
+
+            <span className="absolute inset-x-4 bottom-4 z-10 rounded-2xl bg-white py-2.5 text-center text-[13px] font-extrabold tracking-wide uppercase shadow-[0_8px_16px_-8px_rgba(0,0,0,.4)] transition group-hover:-translate-y-0.5" style={{ color: m.ink }}>
               Jogar ▸
             </span>
           </button>
