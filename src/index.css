@@ -277,3 +277,34 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 .lv-gain { animation: lv-gain 2.2s ease-out forwards; }
 .lv-pop { animation: lv-bg 9s ease-in-out infinite, lv-pop .9s cubic-bezier(.3, 1.5, .5, 1); }
 .lv-up { animation: lv-up .5s cubic-bezier(.3, 1.6, .5, 1) both; }
+
+/* ===== Menu de modos das Questões ===== */
+.qm-card { animation: qm-in .45s cubic-bezier(.2,.9,.3,1.3) both; transition: transform .2s ease, box-shadow .2s ease; }
+.qm-card:hover { transform: translateY(-5px) rotate(-.6deg); box-shadow: 0 24px 38px -18px rgba(16,24,40,.75); }
+.qm-card:active { transform: translateY(-1px) scale(.98); }
+.qm-card:hover .qm-shine { animation: lv-shine 1s ease; }
+.qm-stripes { background: repeating-linear-gradient(-45deg, #fff 0 14px, transparent 14px 28px); background-size: 40px 40px; animation: qm-stripes 2.5s linear infinite; }
+.qm-capi { transition: transform .25s cubic-bezier(.2,.9,.3,1.4); transform-origin: bottom center; }
+.qm-card:hover .qm-capi { transform: scale(1.08) rotate(-3deg); }
+.qm-run { animation: qm-run .35s ease-in-out infinite alternate; }
+.qm-speed { animation: qm-speed .9s linear infinite; }
+.qm-bolt { animation: qm-bolt 1.6s ease-in-out infinite; transform-origin: 150px 48px; }
+.qm-hand { animation: qm-hand 6s steps(60) infinite; }
+.qm-sweep { animation: qm-hand 6s linear infinite; }
+.qm-tick-shake { animation: qm-shake 1s ease-in-out infinite; }
+.qm-float { animation: rk-bob 2.4s ease-in-out infinite; }
+.qm-paper { animation: qm-paper 1.8s ease-out infinite; opacity: 0; }
+.qm-wand { animation: qm-wand 1.8s ease-in-out infinite; }
+.qm-write { stroke-dashoffset: 100; animation: qm-write 3.6s ease-in-out infinite; }
+.qm-pencil { animation: qm-pencil 3.6s ease-in-out infinite; }
+@keyframes qm-in { from { opacity: 0; transform: translateY(18px) scale(.94) } to { opacity: 1; transform: none } }
+@keyframes qm-stripes { to { background-position: 40px 0 } }
+@keyframes qm-run { from { transform: translateY(0) rotate(-2deg) } to { transform: translateY(-6px) rotate(2deg) } }
+@keyframes qm-speed { 0% { transform: translateX(60px) scaleX(.3); opacity: 0 } 30% { opacity: .8 } 100% { transform: translateX(-40px) scaleX(1); opacity: 0 } }
+@keyframes qm-bolt { 0%, 100% { transform: scale(1) rotate(0); filter: drop-shadow(0 0 0 #ffe14d) } 45% { transform: scale(1.15) rotate(-6deg); filter: drop-shadow(0 0 10px #ffe14d) } 50% { opacity: .6 } 55% { opacity: 1 } }
+@keyframes qm-hand { to { transform: rotate(360deg) } }
+@keyframes qm-shake { 0%, 100% { transform: rotate(0) } 10% { transform: rotate(-4deg) } 20% { transform: rotate(4deg) } 30% { transform: rotate(0) } }
+@keyframes qm-paper { 0% { transform: translate(0, 10px) scale(.5) rotate(0); opacity: 0 } 20% { opacity: 1 } 100% { transform: translate(-70px, -80px) scale(1) rotate(-25deg); opacity: 0 } }
+@keyframes qm-wand { 0%, 100% { transform: rotate(0) } 30% { transform: rotate(-18deg) } 50% { transform: rotate(8deg) } }
+@keyframes qm-write { 0% { stroke-dashoffset: 100 } 15%, 80% { stroke-dashoffset: 0 } 100% { stroke-dashoffset: 0; opacity: 0 } }
+@keyframes qm-pencil { 0% { transform: translate(-60px, -60px) } 20% { transform: translate(-20px, -48px) } 40% { transform: translate(-50px, -30px) } 60% { transform: translate(-15px, -18px) } 80% { transform: translate(-40px, 0) } 100% { transform: translate(-60px, -60px) } }

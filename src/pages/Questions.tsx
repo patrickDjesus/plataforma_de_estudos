@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { ClipboardPlus, FileQuestion, History, PenLine, Sparkles, Timer, Zap } from 'lucide-react'
+import { ArrowLeft, FileQuestion } from 'lucide-react'
 import { db } from '../db/db'
 import { useSubjectMap, useTopics } from '../db/hooks'
 import type { Challenge } from '../db/types'
@@ -10,7 +10,8 @@ import { ResultView } from '../components/ChallengeRunner'
 import { WritingTraining } from '../components/WritingTraining'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
-import { Card, PageHeader, Tabs } from '../components/ui'
+import { Card, PageHeader } from '../components/ui'
+import { QuestionModes, modeInfo } from '../components/QuestionModes'
 import { RushPage } from './rush/RushPage'
 import { ExtraQuestions } from './ExtraQuestions'
 import { Simulado } from './Simulado'
@@ -20,33 +21,42 @@ const TABS: Tab[] = ['rush', 'simulado', 'gerar', 'escrita', 'registrar', 'histo
 
 export function QuestionsPage() {
   const [params] = useSearchParams()
+  const location = useLocation()
   const asked = params.get('aba') as Tab | null
-  const [tab, setTab] = useState<Tab>(asked && TABS.includes(asked) ? asked : 'rush')
+  const initial = asked && TABS.includes(asked) ? asked : null
+  const [tab, setTab] = useState<Tab | null>(initial)
+  // Clicar em "Questões" no menu de cima (mesmo já estando aqui) volta para a escolha de modo
+  useEffect(() => setTab(initial), [location.key]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const mode = tab ? modeInfo(tab) : undefined
+  const label = mode?.title ?? (tab === 'registrar' ? 'Registrar extras' : 'Histórico')
   return (
     <>
-      <PageHeader icon={<FileQuestion size={24} />} title="Questões" subtitle="Rush de questões sem parar, listas sob medida, treino de escrita e registro das questões que você faz por fora." />
-      <div className="mb-5">
-        <Tabs<Tab>
-          value={tab}
-          onChange={setTab}
-          items={[
-            { id: 'rush', label: 'Rush', icon: <Zap size={15} /> },
-            { id: 'simulado', label: 'Simulado', icon: <Timer size={15} /> },
-            { id: 'gerar', label: 'Gerar lista', icon: <Sparkles size={15} /> },
-            { id: 'escrita', label: 'Treino de escrita', icon: <PenLine size={15} /> },
-            { id: 'registrar', label: 'Registrar extras', icon: <ClipboardPlus size={15} /> },
-            { id: 'historico', label: 'Histórico', icon: <History size={15} /> },
-          ]}
-        />
-      </div>
-      <div key={tab} className="page-in">
-        {tab === 'rush' && <RushPage />}
-        {tab === 'simulado' && <Simulado />}
-        {tab === 'gerar' && <ChallengeBuilderPage mode="questoes" />}
-        {tab === 'registrar' && <ExtraQuestions />}
-        {tab === 'escrita' && <WritingTraining />}
-        {tab === 'historico' && <QuestionHistory />}
-      </div>
+      <PageHeader icon={<FileQuestion size={24} />} title="Questões" subtitle={tab ? undefined : 'Escolha um modo.'} />
+      {!tab ? (
+        <div key="menu" className="page-in">
+          <QuestionModes onPick={setTab} onExtra={setTab} />
+        </div>
+      ) : (
+        <>
+          <div className="mb-5 flex items-center gap-3">
+            <button onClick={() => setTab(null)} className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+              <ArrowLeft size={16} /> Modos
+            </button>
+            <span className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-white" style={{ background: mode ? `linear-gradient(135deg, ${mode.from}, ${mode.to})` : '#121826' }}>
+              {label}
+            </span>
+          </div>
+          <div key={tab} className="page-in">
+            {tab === 'rush' && <RushPage />}
+            {tab === 'simulado' && <Simulado />}
+            {tab === 'gerar' && <ChallengeBuilderPage mode="questoes" />}
+            {tab === 'registrar' && <ExtraQuestions />}
+            {tab === 'escrita' && <WritingTraining />}
+            {tab === 'historico' && <QuestionHistory />}
+          </div>
+        </>
+      )}
     </>
   )
 }
