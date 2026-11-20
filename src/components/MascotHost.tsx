@@ -108,7 +108,8 @@ export function MascotHost() {
     const nm = minutesNow(now)
     const label = (topicId?: string, subjectId?: string) => data.topics.find((t) => t.id === topicId)?.name ?? data.subjects.find((s) => s.id === subjectId)?.name ?? 'estudo'
     const study = data.todayBlocks.filter((b) => (b.kind === 'study' || b.kind === 'revisao') && !b.done).sort((a, b) => a.start - b.start)
-    const toCapi = (b: (typeof study)[number]) => ({ id: b.id, label: label(b.topicId, b.subjectId), start: b.start, end: b.end })
+    const flexLeft = study.filter((b) => b.flex).reduce((a, b) => a + (b.end - b.start), 0)
+    const toCapi = (b: (typeof study)[number]) => ({ id: b.id, label: label(b.topicId, b.subjectId), start: b.start, end: b.end, ...(b.flex ? { flexLeft } : {}) })
     const days = new Set(
       [...data.sessions.map((s) => toISODate(new Date(s.startedAt))), ...data.doneBlocks.map((b) => b.date), ...data.reviews.flatMap((r) => r.history.map((h) => h.date))].filter((x) => x <= data.todayIso),
     )
@@ -123,8 +124,9 @@ export function MascotHost() {
       now,
       hasSubjects: data.subjectsCount > 0,
       hasWeek: !!data.week,
-      nextToday: study.filter((b) => b.end > nm).map(toCapi)[0],
-      missedToday: study.filter((b) => b.end <= nm && b.studiedSeconds === 0).map(toCapi),
+      // Sem hora marcada, o bloco vale o dia todo: nunca "passou do horário" antes de o dia acabar
+      nextToday: study.filter((b) => b.flex || b.end > nm).map(toCapi)[0],
+      missedToday: study.filter((b) => !b.flex && b.end <= nm && b.studiedSeconds === 0).map(toCapi),
       notesCount: data.notesCount,
       reviewsDue: data.reviews.filter((r) => r.due <= data.todayIso).map((r) => data.topics.find((t) => t.id === r.topicId)?.name).filter((x): x is string => !!x),
       streak,

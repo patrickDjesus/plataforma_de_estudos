@@ -137,3 +137,29 @@ describe('planWeek', () => {
     expect(planWeek(base({ subjects: [] }))).toEqual([])
   })
 })
+
+describe('modo flexível (horas por dia)', () => {
+  const flex = (over: Partial<PlanInput> = {}) => base({ dailyMinutes: [120, 90, 0, 60, 0, 180, 0], settings: { blockMinutes: 50, minBlockMinutes: 25, breakMinutes: 0, maxSameSubjectInRow: 2 }, ...over })
+  it('divide as horas de cada dia em blocos que somam exatamente a meta', () => {
+    const slots = buildSlots(flex())
+    const sum = (d: string) => slots.filter((s) => s.date === d).reduce((a, s) => a + s.end - s.start, 0)
+    expect(sum('2026-11-09')).toBe(120)
+    expect(sum('2026-11-10')).toBe(90)
+    expect(sum('2026-11-11')).toBe(0)
+    expect(sum('2026-11-14')).toBe(180)
+    // 120 = 50 + 70: o resto de 20 min (menor que o mínimo) junta no último bloco
+    expect(slots.filter((s) => s.date === '2026-11-09').map((s) => s.end - s.start)).toEqual([50, 70])
+  })
+  it('hoje vale inteiro, mesmo à noite', () => {
+    const slots = buildSlots(flex({ now: new Date(2026, 10, 9, 22, 30) }))
+    expect(slots.filter((s) => s.date === '2026-11-09').reduce((a, s) => a + s.end - s.start, 0)).toBe(120)
+  })
+  it('o que já foi feito no dia desconta da meta', () => {
+    const slots = buildSlots(flex({ busy: [{ date: '2026-11-09', start: 360, end: 410, kind: 'study', done: true }] }))
+    expect(slots.filter((s) => s.date === '2026-11-09').reduce((a, s) => a + s.end - s.start, 0)).toBe(70)
+  })
+  it('planWeek preenche as horas com matérias', () => {
+    const plan = planWeek(flex())
+    expect(plan.reduce((a, b) => a + b.end - b.start, 0)).toBe(450)
+  })
+})

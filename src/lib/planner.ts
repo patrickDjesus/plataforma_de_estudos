@@ -23,7 +23,7 @@ export interface PlanInput {
   subjects: Subject[] // já sem as pausadas
   topics: Topic[]
   /** Blocos que permanecem (manuais, concluídos, eventos): ocupam horário. */
-  busy: Pick<Block, 'date' | 'start' | 'end'>[]
+  busy: (Pick<Block, 'date' | 'start' | 'end'> & Partial<Pick<Block, 'kind' | 'done' | 'missed'>>)[]
   settings: PlannerSettings
   /** Planeja só a partir deste momento (para check-in no meio da semana). */
   now: Date
@@ -35,7 +35,15 @@ export interface PlanInput {
   mastery?: Record<string, number>
   /** Domínio médio por matéria. */
   subjectMastery?: Record<string, number>
+  /**
+   * Modo flexível: em vez de janelas de horário, minutos de estudo por dia (seg..dom).
+   * Os blocos saem em sequência, sem hora marcada; o horário guardado é só uma ordem.
+   */
+  dailyMinutes?: number[]
 }
+
+/** Início fictício dos blocos do modo flexível (só serve para ordenar). */
+export const FLEX_DAY_START = 6 * 60
 
 /** Matérias com domínio baixo ganham até +60% de tempo. */
 export function masteryBoost(avg: number | undefined) {
@@ -82,6 +90,7 @@ export function subtract(win: TimeWindow, busy: TimeWindow[]): TimeWindow[] {
 
 /** Corta as janelas livres da semana em horários de estudo. */
 export function buildSlots(input: PlanInput): Slot[] {
+  if (input.dailyMinutes) return buildFlexSlots(input, input.dailyMinutes)
   const { availability, busy, settings, now, weekId } = input
   const dates = weekDates(weekId)
   const todayIso = dates.find((d) => daysUntil(d, now) === 0)
@@ -102,6 +111,32 @@ export function buildSlots(input: PlanInput): Slot[] {
           s += len + settings.breakMinutes
         }
       }
+    }
+  })
+  return slots
+}
+
+/**
+ * Modo flexível: cada dia tem um orçamento de minutos. O que já ficou no dia (feito, iniciado,
+ * manual) desconta do orçamento; o resto vira blocos em sequência, sem pausa entre eles.
+ * Hoje conta inteiro (você estuda na hora que quiser).
+ */
+function buildFlexSlots(input: PlanInput, daily: number[]): Slot[] {
+  const { busy, settings, now, weekId } = input
+  const slots: Slot[] = []
+  weekDates(weekId).forEach((date, i) => {
+    if (daysUntil(date, now) < 0) return
+    const kept = busy.filter((b) => b.date === date && (b.kind === undefined || b.kind === 'study' || b.kind === 'revisao') && !(b.missed && !b.done))
+    let left = Math.max(0, (daily[i] ?? 0) - kept.reduce((a, b) => a + (b.end - b.start), 0))
+    let s = Math.max(FLEX_DAY_START, ...kept.map((b) => b.end))
+    while (left >= settings.minBlockMinutes && s + settings.minBlockMinutes <= 24 * 60) {
+      // não deixa sobrar um pedacinho menor que o bloco mínimo: junta no último
+      let len = Math.min(settings.blockMinutes, left)
+      if (left - len > 0 && left - len < settings.minBlockMinutes) len = left
+      len = Math.min(len, 24 * 60 - s)
+      slots.push({ date, start: s, end: s + len })
+      s += len
+      left -= len
     }
   })
   return slots

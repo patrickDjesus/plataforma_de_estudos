@@ -88,6 +88,9 @@ export function CheckInPage() {
   const [roulette, setRoulette] = useState<'fechada' | 'aberta' | 'feita'>('fechada')
   const [rouletteWon, setRouletteWon] = useState(false)
   const [lastEnsino, setLastEnsino] = useState<string | undefined>()
+  // Horas por dia (padrão) ou horários fixos
+  const [mode, setMode] = useState<'horas' | 'horarios'>('horas')
+  const [daily, setDaily] = useState<number[]>([0, 0, 0, 0, 0, 0, 0])
 
   useEffect(() => {
     if (percents) return
@@ -96,7 +99,11 @@ export function CheckInPage() {
         setPercents(w?.percents ?? s.lastPercents)
         // Descarta horários corrompidos (ex.: salvos vazios por versões antigas)
         const av = w?.availability ?? s.defaultAvailability
-        setAvailability(Array.from({ length: 7 }, (_, d) => (av[d] ?? []).filter((x) => Number.isFinite(x.start) && Number.isFinite(x.end))))
+        const cleanAv = Array.from({ length: 7 }, (_, d) => (av[d] ?? []).filter((x) => Number.isFinite(x.start) && Number.isFinite(x.end)))
+        setAvailability(cleanAv)
+        setMode(w ? (w.dailyMinutes ? 'horas' : 'horarios') : (s.scheduleMode ?? 'horas'))
+        // Sem metas salvas: começa com o tempo livre de cada dia, arredondado a 15 min
+        setDaily(w?.dailyMinutes ?? s.defaultDailyMinutes ?? cleanAv.map((d) => Math.round(d.reduce((a, x) => a + Math.max(0, x.end - x.start), 0) / 15) * 15))
         setPaused(w?.pausedSubjectIds ?? [])
         Promise.all([db.weeks.toArray(), db.subjects.toArray(), loadMastery()]).then(([weeks, subs, mm]) => {
           const active = subs.filter((x) => !(w?.pausedSubjectIds ?? []).includes(x.id))
@@ -123,7 +130,7 @@ export function CheckInPage() {
     if (step === 'materias' && themeOn && roulette === 'fechada' && ensinoActive.length > 1) setRoulette('aberta')
   }, [step, themeOn, roulette, ensinoActive.length])
 
-  const minutes = useMemo(() => (availability ? totalMinutes(availability, today) : 0), [availability, today])
+  const minutes = useMemo(() => (mode === 'horas' ? daily.slice(today).reduce((a, m) => a + m, 0) : availability ? totalMinutes(availability, today) : 0), [mode, daily, availability, today])
   if (!percents || !availability) return null
 
   const lowFac = percents.faculdade < FAC_FLOOR
@@ -138,7 +145,7 @@ export function CheckInPage() {
   }
   const submit = async (p = percents, av = availability, ps = paused) => {
     setSaving(true)
-    await saveCheckin(weekId, p, av, ps, cleanThemes(ps))
+    await saveCheckin(weekId, p, av, ps, cleanThemes(ps), mode === 'horas' ? daily : null)
     navigate('/calendario', { replace: true })
   }
 
@@ -261,7 +268,7 @@ export function CheckInPage() {
     setStep(i < 0 ? 'inicio' : STEPS[Math.min(i, STEPS.length - 1)].id)
   }
   const badWindows = availability.flat().filter((w) => w.end <= w.start).length
-  const canContinue = step === 'foco' ? canSave : step === 'horarios' ? badWindows === 0 : true
+  const canContinue = step === 'foco' ? canSave : step === 'horarios' ? (mode === 'horas' ? minutes > 0 : badWindows === 0) : true
   const hours = (m: number) => `${(m / 60).toFixed(1).replace('.0', '')}h`
   const active = subjects.filter((s) => !paused.includes(s.id))
 
@@ -269,7 +276,7 @@ export function CheckInPage() {
     retro: { pose: 'pensando', text: `Antes de planejar, ${name}, bora olhar a semana passada? O que funcionou e o que travou?` },
     inicio: { pose: 'acenando', text: existing ? `Oi, ${name}! Mudou alguma coisa? Bora reajustar a semana.` : planningNext ? `Oi, ${name}! Fim de semana é hora de deixar a próxima pronta. Bora?` : `Oi, ${name}! Semana nova chegando. Bora planejar juntos?` },
     foco: { pose: 'pensando', text: 'Onde você quer colocar sua energia esta semana?' },
-    horarios: { pose: 'focado', text: 'Quando você vai ter tempo livre para estudar?' },
+    horarios: { pose: 'focado', text: mode === 'horas' ? 'Quantas horas você quer estudar em cada dia?' : 'Quando você vai ter tempo livre para estudar?' },
     materias: { pose: 'relaxando', text: subjects.length ? 'Alguma matéria vai ficar de fora esta semana?' : 'Primeiro me conta: o que você está estudando?' },
     resumo: { pose: 'comemorando', text: 'Tudo pronto! Confere aí antes de eu montar sua rota.' },
   }
@@ -460,34 +467,57 @@ export function CheckInPage() {
 
           {step === 'horarios' && (
             <StepCard
-              title="Horários disponíveis"
-              subtitle={`Pré-preenchido com a semana anterior · ${hours(minutes)} livres`}
+              title={mode === 'horas' ? 'Horas de estudo por dia' : 'Horários disponíveis'}
+              subtitle={mode === 'horas' ? `Sem hora marcada: estude quando quiser no dia · ${hours(minutes)} na semana` : `Pré-preenchido com a semana anterior · ${hours(minutes)} livres`}
               action={
-                <button onClick={copyWeekdays} className="rounded-xl bg-[#f1f2f5] px-3 py-2 text-xs font-bold text-ink hover:bg-[#e8e9ee]" title="Usa os horários de segunda em todos os dias úteis">
+                <button
+                  onClick={mode === 'horas' ? () => setDaily(daily.map((m, i) => (i >= 1 && i <= 4 ? daily[0] : m))) : copyWeekdays}
+                  className="rounded-xl bg-[#f1f2f5] px-3 py-2 text-xs font-bold text-ink hover:bg-[#e8e9ee]"
+                  title="Usa o valor de segunda em todos os dias úteis"
+                >
                   Copiar segunda para seg–sex
                 </button>
               }
             >
+              <div className="mb-4 inline-flex rounded-xl bg-[#f1f2f5] p-1 text-sm font-bold" role="radiogroup" aria-label="Como planejar">
+                {(
+                  [
+                    ['horas', 'Horas por dia'],
+                    ['horarios', 'Horários fixos'],
+                  ] as const
+                ).map(([id, label]) => (
+                  <button key={id} role="radio" aria-checked={mode === id} onClick={() => setMode(id)} className={`rounded-lg px-3.5 py-1.5 transition ${mode === id ? 'bg-white text-brand shadow-sm' : 'text-muted hover:text-ink'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
               <Hints items={hints.horarios}>
                 {hints.trim && !trimmed && (
                   <button
                     onClick={() => {
-                      setAvailability(trimAvailability(availability, hints.trim!))
+                      if (mode === 'horas') setDaily(daily.map((m) => Math.round((m * hints.trim!) / 15) * 15))
+                      else setAvailability(trimAvailability(availability, hints.trim!))
                       setTrimmed(true)
                     }}
                     className="mt-2 rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-600"
                   >
-                    Enxugar horários para {Math.round(hints.trim * 100)}%
+                    Enxugar {mode === 'horas' ? 'as horas' : 'horários'} para {Math.round(hints.trim * 100)}%
                   </button>
                 )}
-                {trimmed && <p className="mt-2 text-xs font-bold text-emerald-700">✓ Horários enxugados. Ajuste à vontade abaixo.</p>}
+                {trimmed && <p className="mt-2 text-xs font-bold text-emerald-700">✓ Enxuguei. Ajuste à vontade abaixo.</p>}
               </Hints>
-              {badWindows > 0 && (
-                <p className="mb-3 rounded-xl bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
-                  {badWindows === 1 ? 'Um horário termina' : `${badWindows} horários terminam`} antes de começar. Corrija (em vermelho) para continuar.
-                </p>
+              {mode === 'horas' ? (
+                <HoursEditor daily={daily} setDaily={setDaily} today={today} />
+              ) : (
+                <>
+                  {badWindows > 0 && (
+                    <p className="mb-3 rounded-xl bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
+                      {badWindows === 1 ? 'Um horário termina' : `${badWindows} horários terminam`} antes de começar. Corrija (em vermelho) para continuar.
+                    </p>
+                  )}
+                  {availabilityEditor}
+                </>
               )}
-              {availabilityEditor}
             </StepCard>
           )}
 
@@ -943,6 +973,45 @@ function BackupCard() {
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+const fmtMin = (m: number) => (m === 0 ? 'folga' : `${Math.floor(m / 60) ? `${Math.floor(m / 60)}h` : ''}${m % 60 ? `${String(m % 60).padStart(Math.floor(m / 60) ? 2 : 1, '0')}${Math.floor(m / 60) ? '' : 'min'}` : ''}`)
+
+/** Metas de estudo por dia: menos/mais de 15 em 15 min, com atalhos. */
+function HoursEditor({ daily, setDaily, today }: { daily: number[]; setDaily: (d: number[]) => void; today: number }) {
+  const set = (i: number, m: number) => setDaily(daily.map((x, k) => (k === i ? Math.max(0, Math.min(12 * 60, m)) : x)))
+  const max = Math.max(240, ...daily)
+  return (
+    <div className="space-y-1.5">
+      {DAY_NAMES.map((name, i) => {
+        const past = i < today
+        const m = daily[i] ?? 0
+        return (
+          <div key={name} className={`flex flex-wrap items-center gap-3 rounded-2xl px-3 py-2 ${past ? 'opacity-40' : 'bg-[#f8f9fb]'}`}>
+            <span className="w-24 text-sm font-bold">{name}</span>
+            <button onClick={() => set(i, m - 15)} disabled={past || m === 0} aria-label={`Menos 15 minutos na ${name}`} className="grid h-8 w-8 place-items-center rounded-lg bg-white text-lg font-bold shadow-sm disabled:opacity-40">
+              −
+            </button>
+            <span className={`w-16 text-center font-display text-lg font-extrabold tabular-nums ${m ? '' : 'text-muted'}`}>{fmtMin(m)}</span>
+            <button onClick={() => set(i, m + 15)} disabled={past} aria-label={`Mais 15 minutos na ${name}`} className="grid h-8 w-8 place-items-center rounded-lg bg-white text-lg font-bold shadow-sm disabled:opacity-40">
+              +
+            </button>
+            <div className="hidden h-2 min-w-16 flex-1 overflow-hidden rounded-full bg-[#e6e8ee] sm:block">
+              <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${(m / max) * 100}%` }} />
+            </div>
+            <div className="flex gap-1">
+              {[0, 60, 120, 180].map((q) => (
+                <button key={q} onClick={() => set(i, q)} disabled={past} className={`rounded-lg px-2 py-1 text-xs font-bold ${m === q ? 'bg-brand text-white' : 'bg-white text-slate-600 shadow-sm hover:bg-slate-50'} disabled:opacity-40`}>
+                  {q === 0 ? 'folga' : `${q / 60}h`}
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+      {today > 0 && <p className="pt-1 text-xs text-muted">Os dias que já passaram ficam de fora do plano.</p>}
     </div>
   )
 }

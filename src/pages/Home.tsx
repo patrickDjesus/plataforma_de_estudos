@@ -5,6 +5,7 @@ import { Crown, Layers, Settings, ArrowRight, BarChart3, BookOpen, RotateCcw, Ca
 import { db } from '../db/db'
 import { noteText } from '../lib/ai'
 import { AREAS, useSessions, useSettings, useSubjectMap, useTimer, useTopics, useWeekBlocks } from '../db/hooks'
+import { blockWhen } from '../lib/blockTime'
 import { GRACE_MS, blockEndMs, currentWeekId, isPending, markBlockMissed, rateReview, setBlockDone } from '../db/repo'
 import { RATING_LABEL } from '../lib/review'
 import type { ReviewRating } from '../db/types'
@@ -252,7 +253,7 @@ export function HomePage() {
                             </div>
                             <div className={`truncate text-sm font-bold ${b.done ? 'text-muted line-through' : ''}`}>{t?.name ?? s?.name}</div>
                             <div className="text-xs text-muted">
-                              {fmtTime(b.start)} · {fmtDuration((b.end - b.start) * 60)}
+                              {b.flex ? fmtDuration((b.end - b.start) * 60) : `${fmtTime(b.start)} · ${fmtDuration((b.end - b.start) * 60)}`}
                             </div>
                           </div>
                           {b.done ? (
@@ -765,7 +766,7 @@ function PendingBlocks({ blocks }: { blocks: Block[] }) {
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-bold">{t?.name ?? s?.name ?? 'Bloco'}</div>
                 <div className="text-xs text-muted">
-                  {day}, {fmtTime(b.start)}–{fmtTime(b.end)} · {b.kind === 'revisao' ? 'revisão · ' : ''}falta{h || m !== 1 ? 'm' : ''} {h ? `${h}h` : ''}
+                  {day}, {blockWhen(b)} · {b.kind === 'revisao' ? 'revisão · ' : ''}falta{h || m !== 1 ? 'm' : ''} {h ? `${h}h` : ''}
                   {h && m ? ' ' : ''}
                   {m || !h ? `${m}min` : ''}
                 </div>

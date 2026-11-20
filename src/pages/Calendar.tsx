@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { CalendarRange, Check, Clock3, Flag, LayoutGrid, Plus, RefreshCw, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { tint } from '../lib/colors'
 import { useSubjectMap, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
+import { blockWhen } from '../lib/blockTime'
 import { currentWeekId, deleteBlock, isPending, regeneratePlan, setBlockDone, updateBlock } from '../db/repo'
 import type { Block } from '../db/types'
 import { DAY_SHORT, addDays, fmtDayMonth, fmtDuration, fmtTime, fmtWeekRange, minutesNow, toISODate, weekDates } from '../lib/dates'
@@ -156,10 +157,14 @@ export function CalendarPage() {
             <Tabs
               value={view}
               onChange={setView}
-              items={[
-                { id: 'cartoes', label: 'Cartões', icon: <LayoutGrid size={15} /> },
-                { id: 'horario', label: 'Horário', icon: <Clock3 size={15} /> },
-              ]}
+              items={
+                week?.dailyMinutes
+                  ? [{ id: 'cartoes', label: 'Por dia', icon: <LayoutGrid size={15} /> }]
+                  : [
+                      { id: 'cartoes', label: 'Cartões', icon: <LayoutGrid size={15} /> },
+                      { id: 'horario', label: 'Horário', icon: <Clock3 size={15} /> },
+                    ]
+              }
             />
             <span className="mx-1 hidden h-6 w-px bg-line sm:block" />
             <Btn onClick={() => navigate('/checkin')} title="Mudar o foco e os horários da semana">
@@ -174,14 +179,15 @@ export function CalendarPage() {
           </div>
         </div>
 
-        {view === 'cartoes' && (
+        {(view === 'cartoes' || week?.dailyMinutes) && (
           <div className="sm:hidden">
             <PhoneView dates={dates} todayIso={todayIso} blocks={blocks} subjects={subjects} topicMap={topicMap} onOpen={setSelected} />
           </div>
         )}
-        {view === 'cartoes' ? (
+        {view === 'cartoes' || week?.dailyMinutes ? (
           <div className="hidden sm:block">
           <CardsView
+            dailyMinutes={week?.dailyMinutes}
             dates={dates}
             todayIso={todayIso}
             blocks={blocks}
@@ -337,6 +343,7 @@ export function CalendarPage() {
 
 /** Visão em colunas de cartões, um por bloco, em ordem de horário. */
 function CardsView({
+  dailyMinutes,
   dates,
   todayIso,
   blocks,
@@ -345,6 +352,7 @@ function CardsView({
   onOpen,
   onCreate,
 }: {
+  dailyMinutes?: number[]
   dates: string[]
   todayIso: string
   blocks: Block[]
@@ -387,6 +395,7 @@ function CardsView({
               <div className="pt-1 pb-1.5 text-center">
                 <div className={`text-[11px] font-bold tracking-wider ${isToday ? 'text-brand' : 'text-muted'}`}>{['SEGUNDA', 'TERÇA', 'QUARTA', 'QUINTA', 'SEXTA', 'SÁBADO', 'DOMINGO'][i]}</div>
                 <div className={`mx-auto mt-1 w-fit rounded-full px-2.5 py-0.5 text-sm font-bold tabular-nums ${isToday ? 'bg-brand text-white' : ''}`}>{fmtDayMonth(date)}</div>
+                {dailyMinutes && <DayGoal goal={dailyMinutes[i] ?? 0} done={list.filter((b) => b.done && (b.kind === 'study' || b.kind === 'revisao')).reduce((a, b) => a + (b.end - b.start), 0)} />}
               </div>
               {list.map((b) => {
                 const subject = b.subjectId ? subjects.get(b.subjectId) : undefined
@@ -425,7 +434,7 @@ function CardsView({
                     {b.kind !== 'study' && !isReview && <div className="-mt-1 truncate text-[11px] font-semibold text-white/80">{b.kind === 'prova' ? `Prova${subject ? ` · ${subject.name}` : ''}` : 'Compromisso'}</div>}
                     <div className={`mt-2 flex items-end justify-between gap-1 text-[11px] font-medium ${isReview ? 'opacity-80' : 'text-white/85'}`}>
                       <span className="min-w-0 truncate tabular-nums">
-                        {fmtTime(b.start)}–{fmtTime(b.end)}
+                        {b.flex ? '' : blockWhen(b)}
                       </span>
                       <span className="flex shrink-0 gap-0.5">
                         {(b.kind === 'study' || (isReview && b.done)) && (
@@ -493,7 +502,7 @@ function PhoneView({ dates, todayIso, blocks, subjects, topicMap, onOpen }: { da
             {title}
           </div>
           <div className="text-xs text-muted">
-            {fmtTime(b.start)}–{fmtTime(b.end)} · {b.kind === 'revisao' ? 'Revisão · ' : ''}
+            {blockWhen(b)} · {b.kind === 'revisao' ? 'Revisão · ' : ''}
             {subject?.name ?? (b.kind === 'compromisso' ? 'Compromisso' : '')}
             {b.missed && !b.done ? ' · perdido' : isPending(b) ? ' · pendente: fez?' : ''}
           </div>
@@ -536,6 +545,24 @@ function PhoneView({ dates, todayIso, blocks, subjects, topicMap, onOpen }: { da
           </div>
         )
       })}
+    </div>
+  )
+}
+
+/** Meta de horas do dia (modo de horas): "1h10 de 2h" com barrinha. */
+function DayGoal({ goal, done }: { goal: number; done: number }) {
+  if (!goal) return <div className="mt-1.5 text-[11px] font-semibold text-muted">folga</div>
+  const pct = Math.min(1, done / goal)
+  const fmt = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, '0') : ''}` : `${m}min`)
+  return (
+    <div className="mx-auto mt-1.5 w-[86%]">
+      <div className={`text-[11px] font-bold tabular-nums ${pct >= 1 ? 'text-emerald-600' : 'text-muted'}`}>
+        {pct >= 1 ? '✓ ' : ''}
+        {fmt(done)} de {fmt(goal)}
+      </div>
+      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#eceef3]">
+        <div className="h-full rounded-full transition-all" style={{ width: `${pct * 100}%`, background: pct >= 1 ? '#10b981' : '#3e63f2' }} />
+      </div>
     </div>
   )
 }

@@ -59,6 +59,8 @@ export interface Week {
   retro?: WeekRetro
   /** Semana temática: a matéria da semana de cada área (sem isso, a semana é variada). */
   themes?: Partial<Record<AreaId, string>>
+  /** Modo flexível: minutos de estudo por dia (seg..dom), sem horário marcado. Sem isso, vale a disponibilidade por horário. */
+  dailyMinutes?: number[]
 }
 
 export type RetroTag = 'pouco-tempo' | 'cansaco' | 'distracoes' | 'materia-dificil' | 'plano-irreal'
@@ -88,6 +90,8 @@ export interface Block {
   auto: boolean
   /** Passou do horário sem ser feito; o conteúdo foi remarcado. */
   missed?: boolean
+  /** Bloco sem hora marcada (modo flexível): vale o dia inteiro; start/end só ordenam. */
+  flex?: boolean
   /** Questões feitas por fora (livro, lista) neste bloco; 0 = respondeu "não fiz". */
   questions?: number
   /** Quantas dessas questões acertou (opcional). */
@@ -130,6 +134,10 @@ export interface Settings {
   breakMinutes: number
   maxSameSubjectInRow: number
   defaultAvailability: Availability
+  /** Como planejar: horas por dia (padrão) ou horários fixos. */
+  scheduleMode?: 'horas' | 'horarios'
+  /** Últimos minutos por dia usados no modo de horas (seg..dom). */
+  defaultDailyMinutes?: number[]
   lastPercents: AreaPercents
   userName?: string
   /** Duração de um bloco de revisão (min). */

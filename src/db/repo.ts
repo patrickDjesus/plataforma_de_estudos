@@ -137,7 +137,7 @@ export async function dueReviews(until = toISODate(new Date())) {
 /** Prazo para marcar um bloco como feito depois que o horário dele acaba. */
 export const GRACE_MS = 24 * 60 * 60 * 1000
 /** Quando o bloco termina (data + hora de fim), em milissegundos. */
-export const blockEndMs = (b: Pick<Block, 'date' | 'end'>) => fromISODate(b.date).getTime() + b.end * 60000
+export const blockEndMs = (b: Pick<Block, 'date' | 'end' | 'flex'>) => fromISODate(b.date).getTime() + (b.flex ? 24 * 60 : b.end) * 60000
 /** Bloco de estudo/revisão que já acabou, ainda não foi marcado e está dentro das 24h de prazo. */
 export const isPending = (b: Block, now = Date.now()) =>
   (b.kind === 'study' || b.kind === 'revisao') && !b.done && !b.missed && blockEndMs(b) <= now && now - blockEndMs(b) < GRACE_MS
@@ -209,11 +209,25 @@ export async function findNoteByTitle(title: string): Promise<Note | undefined> 
 
 // ---------- Semana e planejamento ----------
 
-export async function saveCheckin(weekId: string, percents: AreaPercents, availability: Availability, pausedSubjectIds: string[], themes?: Themes | null) {
+export async function saveCheckin(weekId: string, percents: AreaPercents, availability: Availability, pausedSubjectIds: string[], themes?: Themes | null, dailyMinutes?: number[] | null) {
   const existing = await db.weeks.get(weekId)
-  const week: Week = { id: weekId, percents, availability, pausedSubjectIds, createdAt: existing?.createdAt ?? Date.now(), ...(existing?.retro ? { retro: existing.retro } : {}), ...(themes ? { themes } : {}) }
+  const week: Week = {
+    id: weekId,
+    percents,
+    availability,
+    pausedSubjectIds,
+    createdAt: existing?.createdAt ?? Date.now(),
+    ...(existing?.retro ? { retro: existing.retro } : {}),
+    ...(themes ? { themes } : {}),
+    ...(dailyMinutes ? { dailyMinutes } : {}),
+  }
   await db.weeks.put(week)
-  await updateSettings({ defaultAvailability: availability, lastPercents: percents, ...(themes !== undefined ? { themeWeeks: !!themes } : {}) })
+  await updateSettings({
+    defaultAvailability: availability,
+    lastPercents: percents,
+    ...(themes !== undefined ? { themeWeeks: !!themes } : {}),
+    ...(dailyMinutes !== undefined ? { scheduleMode: dailyMinutes ? 'horas' : 'horarios', ...(dailyMinutes ? { defaultDailyMinutes: dailyMinutes } : {}) } : {}),
+  })
   await regeneratePlan(weekId)
 }
 
@@ -221,6 +235,8 @@ export async function saveCheckin(weekId: string, percents: AreaPercents, availa
 function isRegenerable(b: Block, now: Date, timerBlockId?: string) {
   if (!b.auto || b.done || b.studiedSeconds > 0 || b.id === timerBlockId) return false
   const today = toISODate(now)
+  // Sem hora marcada: o dia de hoje ainda está todo em aberto
+  if (b.flex) return b.date >= today && !b.missed
   return b.date > today || (b.date === today && b.start >= minutesNow(now))
 }
 
@@ -280,12 +296,13 @@ async function regeneratePlanNow(weekId: string, now: Date) {
     subjects: themedSubjects(allSubjects.filter((s) => !week.pausedSubjectIds.includes(s.id)), week.themes),
     topics,
     busy: keep,
-    settings,
+    // Modo flexível: horas por dia, sem pausa entre blocos
+    ...(week.dailyMinutes ? { dailyMinutes: week.dailyMinutes, settings: { ...settings, breakMinutes: 0 } } : { settings }),
     now,
   })
   await db.transaction('rw', db.blocks, async () => {
     await db.blocks.bulkDelete(toRemove.map((b) => b.id))
-    await db.blocks.bulkAdd(planned.map((p) => ({ ...p, id: uid() })))
+    await db.blocks.bulkAdd(planned.map((p) => ({ ...p, id: uid(), ...(week.dailyMinutes ? { flex: true } : {}) })))
   })
 }
 

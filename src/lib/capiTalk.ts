@@ -6,6 +6,8 @@ export interface CapiBlock {
   label: string
   start: number
   end: number
+  /** Sem hora marcada (modo de horas por dia): minutos de estudo que ainda faltam hoje. */
+  flexLeft?: number
 }
 
 export interface CapiContext {
@@ -72,6 +74,13 @@ export function capiWelcome(ctx: CapiContext): MascotMessage {
     ? ` E tem ${ctx.reviewsDue.length === 1 ? `1 revisão pendente (${ctx.reviewsDue[0]})` : `${ctx.reviewsDue.length} revisões pendentes`} te esperando.`
     : ''
   const next = ctx.nextToday
+  if (next?.flexLeft)
+    return {
+      pose: 'focado',
+      title,
+      text: `Hoje ainda ${next.flexLeft === 1 ? 'falta 1 minuto' : `faltam ${fmtLeft(next.flexLeft)}`} da sua meta. Próximo: ${next.label}.${reviewLine}`,
+      actions: [{ label: 'Começar agora', primary: true, run: () => ctx.startBlock(next.id) }, close],
+    }
   if (next && next.start <= nowMin(ctx.now))
     return { pose: 'focado', title, text: `Agora é hora de ${next.label}. Vamos nessa?${reviewLine}`, actions: [{ label: 'Começar agora', primary: true, run: () => ctx.startBlock(next.id) }, close] }
   if (next) {
@@ -115,7 +124,7 @@ export function capiQuestion(ctx: CapiContext, n: number): MascotMessage {
     contextual.push({
       pose: 'estudando',
       title: 'Bora estudar?',
-      text: next.start <= nowMin(ctx.now) ? `Já está na hora de ${next.label}. Quer começar?` : `Seu próximo bloco é ${next.label}, às ${hhmm(next.start)}. Quer adiantar?`,
+      text: next.flexLeft ? `Faltam ${fmtLeft(next.flexLeft)} da meta de hoje. Que tal ${next.label} agora?` : next.start <= nowMin(ctx.now) ? `Já está na hora de ${next.label}. Quer começar?` : `Seu próximo bloco é ${next.label}, às ${hhmm(next.start)}. Quer adiantar?`,
       actions: [{ label: 'Começar', primary: true, run: () => ctx.startBlock(next.id) }, close],
     })
 
@@ -160,3 +169,5 @@ export function capiQuestion(ctx: CapiContext, n: number): MascotMessage {
   const all = [...contextual, ...general]
   return all[n % all.length]
 }
+
+const fmtLeft = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h${m % 60 ? String(m % 60).padStart(2, '0') : ''}` : `${m}min`)
