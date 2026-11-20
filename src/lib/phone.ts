@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
-const QUERY = '(max-width: 640px)'
+// Só aparelho de toque com tela pequena: janela estreita no PC (ex.: painel lateral do claude.ai) continua no site completo
+const QUERY = '(max-width: 640px) and (pointer: coarse)'
 const mq = () => (typeof window !== 'undefined' ? window.matchMedia?.(QUERY) : undefined)
 
 /** Celular = modo consulta: só Início (estatísticas) e Semana (calendário). */
