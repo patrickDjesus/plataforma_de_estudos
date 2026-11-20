@@ -44,11 +44,6 @@ const SimuladoScene = (
       <rect className="qm-hand" x="50.5" y="36" width="3" height="28" rx="1.5" fill="#ff5a5f" style={{ transformOrigin: '52px 62px' }} />
       <circle cx="52" cy="62" r="4" fill="#121826" />
     </g>
-    {/* folhinhas de prova com marcações */}
-    <g className="qm-float" style={{ animationDelay: '.4s' }}>
-      <rect x="12" y="112" width="34" height="42" rx="4" fill="#fff" opacity=".9" transform="rotate(-8 29 133)" />
-      <path d="M20 124 h16 M20 132 h12 M20 140 h18" stroke="#3e63f2" strokeWidth="2.5" strokeLinecap="round" transform="rotate(-8 29 133)" />
-    </g>
   </>
 )
 
@@ -118,7 +113,7 @@ export function modeInfo(id: string) {
 export function QuestionModes({ onPick, onExtra }: { onPick: (id: ModeId) => void; onExtra: (id: 'registrar' | 'historico') => void }) {
   return (
     <div>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {MODES.map((m, i) => (
           <button
             key={m.id}
@@ -127,7 +122,8 @@ export function QuestionModes({ onPick, onExtra }: { onPick: (id: ModeId) => voi
               onPick(m.id)
             }}
             onMouseEnter={() => playSfx('blip')}
-            className="qm-card group relative h-44 overflow-hidden rounded-[22px] p-5 text-left text-white shadow-[0_16px_30px_-18px_rgba(16,24,40,0.7)] outline-none focus-visible:ring-4 focus-visible:ring-brand/40 sm:h-48"
+            title={m.tag}
+            className="qm-card group relative h-[128px] overflow-hidden rounded-[18px] p-4 text-left text-white shadow-[0_16px_30px_-18px_rgba(16,24,40,0.7)] outline-none focus-visible:ring-4 focus-visible:ring-brand/40"
             style={{ background: `linear-gradient(135deg, ${m.from}, ${m.to})`, animationDelay: `${i * 0.08}s` }}
           >
             {/* listras andando no fundo */}
@@ -136,18 +132,15 @@ export function QuestionModes({ onPick, onExtra }: { onPick: (id: ModeId) => voi
             <span className="qm-shine pointer-events-none absolute inset-y-0 -left-1/2 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
             {/* cena */}
-            <svg viewBox="0 0 200 160" className="essential-motion pointer-events-none absolute right-[96px] bottom-1 hidden h-[136px] w-[170px] overflow-visible sm:block" aria-hidden>
+            <svg viewBox="0 0 200 160" className="essential-motion pointer-events-none absolute right-[38px] top-[2px] h-[80px] w-[100px] overflow-visible opacity-95" aria-hidden>
               {m.scene}
             </svg>
-            <div className={`qm-capi pointer-events-none absolute -right-3 -bottom-4 ${m.id === 'rush' ? 'qm-run' : ''}`}>
-              <Capybara pose={m.pose} size={138} />
+            <div className={`qm-capi pointer-events-none absolute -right-2 -bottom-3 ${m.id === 'rush' ? 'qm-run' : ''}`}>
+              <Capybara pose={m.pose} size={92} />
             </div>
 
-            <div className="relative z-10 max-w-[46%]">
-              <div className="font-display text-[26px] leading-none font-extrabold drop-shadow-sm sm:text-3xl">{m.title}</div>
-              <div className="mt-2 text-[13px] leading-snug font-semibold text-white/85">{m.tag}</div>
-            </div>
-            <span className="absolute bottom-4 left-5 z-10 rounded-full bg-white/95 px-3.5 py-1.5 text-xs font-extrabold tracking-wide uppercase shadow transition group-hover:scale-105" style={{ color: m.to }}>
+            <div className="relative z-10 font-display text-[22px] leading-none font-extrabold drop-shadow-[0_2px_3px_rgba(0,0,0,.18)]">{m.title}</div>
+            <span className="absolute bottom-3.5 left-4 z-10 rounded-full bg-white/95 px-3 py-1 text-[11px] font-extrabold tracking-wide uppercase shadow transition group-hover:scale-105" style={{ color: m.to }}>
               Jogar ▸
             </span>
           </button>
