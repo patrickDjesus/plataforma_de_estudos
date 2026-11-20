@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarRange, Check, Clock3, Flag, LayoutGrid, Plus, RefreshCw, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { Check, Clock3, Flag, LayoutGrid, Plus, RefreshCw, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { tint } from '../lib/colors'
 import { useSubjectMap, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
 import { blockWhen } from '../lib/blockTime'
@@ -10,7 +10,9 @@ import { DAY_SHORT, addDays, fmtDayMonth, fmtDuration, fmtTime, fmtWeekRange, mi
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { BlockDialog, type Draft } from '../components/BlockDialog'
-import { Btn, Card, Chip, PageHeader, Tabs } from '../components/ui'
+import { Card, Chip, Tabs } from '../components/ui'
+import { SceneBanner, weekScene } from '../components/Scenes'
+import { SubjectIcon } from '../components/SubjectIcon'
 import type { Subject, Topic } from '../db/types'
 
 const PPM = 0.85 // pixels por minuto
@@ -37,6 +39,10 @@ export function CalendarPage() {
   const todayIso = toISODate(new Date())
 
   const [view, setView] = useState<'cartoes' | 'horario'>('cartoes')
+  const [regen, setRegen] = useState(false)
+  const themeSubjects = Object.values(week?.themes ?? {})
+    .map((id) => (id ? subjects.get(id) : undefined))
+    .filter((s): s is Subject => !!s)
   const [selected, setSelected] = useState<Block | undefined>()
   const [draft, setDraft] = useState<Draft | undefined>()
   const [preview, setPreview] = useState<Pick<Block, 'id' | 'date' | 'start' | 'end'> | null>(null)
@@ -124,58 +130,67 @@ export function CalendarPage() {
 
   return (
     <>
-      <PageHeader icon={<CalendarRange size={24} />} title="Mapa da semana" subtitle="Veja seu progresso e organize sua rotina de estudos." />
+      <SceneBanner title="Sua semana" subtitle={fmtWeekRange(weekId)} from="#ff7a59" to="#ffb26b" pose="acenando" scene={weekScene}>
+        {themeSubjects.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {themeSubjects.map((s, i) => (
+              <span key={s.id} className="wk-badge flex items-center gap-2 rounded-2xl py-1.5 pr-3.5 pl-1.5 ring-2 ring-white/70 shadow-[0_8px_16px_-10px_rgba(0,0,0,.5)]" style={{ background: s.color, animationDelay: `${i * 0.4}s` }}>
+                <SubjectIcon subject={s} size={28} />
+                <span className="leading-none">
+                  <span className="block text-[9px] font-extrabold tracking-wider text-white/80 uppercase">Semana de</span>
+                  <span className="block text-sm font-extrabold text-white">{s.name}</span>
+                </span>
+              </span>
+            ))}
+          </div>
+        )}
+      </SceneBanner>
 
       <Card className="overflow-hidden p-0">
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 pb-4">
-          <div>
-            <h2 className="text-xl font-bold">{fmtWeekRange(weekId)}</h2>
+          <div className="flex flex-wrap items-center gap-2">
             {nextPlanned && (
-              <div className="mt-1.5 inline-flex gap-1 rounded-full bg-[#f1f2f5] p-1 text-xs font-bold">
-                <button onClick={() => setPickNext(false)} className={`rounded-full px-3 py-1 ${!showNext ? 'bg-white text-brand shadow-sm' : 'text-muted'}`}>
+              <div className="inline-flex gap-1 rounded-2xl bg-[#f1f2f5] p-1 text-sm font-bold">
+                <button onClick={() => setPickNext(false)} className={`rounded-xl px-3.5 py-1.5 transition ${!showNext ? 'bg-white text-brand shadow-sm' : 'text-muted hover:text-ink'}`}>
                   Esta semana
                 </button>
-                <button onClick={() => setPickNext(true)} className={`rounded-full px-3 py-1 ${showNext ? 'bg-white text-brand shadow-sm' : 'text-muted'}`}>
+                <button onClick={() => setPickNext(true)} className={`rounded-xl px-3.5 py-1.5 transition ${showNext ? 'bg-white text-brand shadow-sm' : 'text-muted hover:text-ink'}`}>
                   Próxima semana
                 </button>
               </div>
             )}
-            {week?.themes && (
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {Object.values(week.themes)
-                  .map((id) => (id ? subjects.get(id) : undefined))
-                  .filter((s): s is Subject => !!s)
-                  .map((s) => (
-                    <span key={s.id} className="rounded-full px-2.5 py-0.5 text-xs font-bold text-white" style={{ background: s.color }}>
-                      🎯 Semana de {s.name}
-                    </span>
-                  ))}
-              </div>
+            {!week?.dailyMinutes && (
+              <Tabs
+                value={view}
+                onChange={setView}
+                items={[
+                  { id: 'cartoes', label: 'Cartões', icon: <LayoutGrid size={15} /> },
+                  { id: 'horario', label: 'Horário', icon: <Clock3 size={15} /> },
+                ]}
+              />
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Tabs
-              value={view}
-              onChange={setView}
-              items={
-                week?.dailyMinutes
-                  ? [{ id: 'cartoes', label: 'Por dia', icon: <LayoutGrid size={15} /> }]
-                  : [
-                      { id: 'cartoes', label: 'Cartões', icon: <LayoutGrid size={15} /> },
-                      { id: 'horario', label: 'Horário', icon: <Clock3 size={15} /> },
-                    ]
-              }
-            />
-            <span className="mx-1 hidden h-6 w-px bg-line sm:block" />
-            <Btn onClick={() => navigate('/checkin')} title="Mudar o foco e os horários da semana">
-              <SlidersHorizontal size={16} /> Reajustar foco
-            </Btn>
-            <Btn onClick={() => regeneratePlan(weekId)} title="Refaz só os blocos automáticos ainda não iniciados">
-              <RefreshCw size={16} /> Regerar
-            </Btn>
-            <Btn variant="primary" onClick={() => setDraft({ date: todayIso >= dates[0] && todayIso <= dates[6] ? todayIso : dates[0], start: 19 * 60 })}>
-              <Plus size={16} /> Novo bloco
-            </Btn>
+            <ActionBtn from="#a77bff" to="#6233d6" onClick={() => navigate('/checkin')} title="Mudar o foco e os horários da semana" icon={<SlidersHorizontal size={16} className="act-ic act-wiggle" />}>
+              Reajustar foco
+            </ActionBtn>
+            <ActionBtn
+              from="#2fcf9b"
+              to="#0f8a63"
+              busy={regen}
+              onClick={async () => {
+                setRegen(true)
+                await Promise.all([regeneratePlan(weekId), new Promise((r) => setTimeout(r, 700))])
+                setRegen(false)
+              }}
+              title="Refaz só os blocos automáticos ainda não iniciados"
+              icon={<RefreshCw size={16} className="act-ic act-spin" />}
+            >
+              Regerar
+            </ActionBtn>
+            <ActionBtn from="#ff9a3d" to="#e2551b" onClick={() => setDraft({ date: todayIso >= dates[0] && todayIso <= dates[6] ? todayIso : dates[0], start: 19 * 60 })} icon={<Plus size={17} strokeWidth={2.6} className="act-ic act-plus" />}>
+              Novo bloco
+            </ActionBtn>
           </div>
         </div>
 
@@ -564,5 +579,21 @@ function DayGoal({ goal, done }: { goal: number; done: number }) {
         <div className="h-full rounded-full transition-all" style={{ width: `${pct * 100}%`, background: pct >= 1 ? '#10b981' : '#3e63f2' }} />
       </div>
     </div>
+  )
+}
+
+/** Botão de ação colorido, com ícone que se mexe no hover. */
+function ActionBtn({ from, to, icon, children, onClick, title, busy = false }: { from: string; to: string; icon: React.ReactNode; children: React.ReactNode; onClick: () => void; title?: string; busy?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      disabled={busy}
+      className={`act-btn inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold text-white ${busy ? 'busy' : ''}`}
+      style={{ background: `linear-gradient(145deg, ${from}, ${to})`, boxShadow: `0 10px 18px -10px ${to}` }}
+    >
+      <span className="grid h-6 w-6 place-items-center rounded-lg bg-white/25">{icon}</span>
+      {children}
+    </button>
   )
 }

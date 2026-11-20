@@ -352,3 +352,20 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 @keyframes sc-pop { 0% { transform: scale(.6); opacity: 0 } 15%, 85% { transform: scale(1); opacity: 1 } 100% { transform: scale(.9); opacity: 0 } }
 @keyframes sc-book { 0%, 60%, 100% { transform: translateY(0) rotate(0) } 75% { transform: translateY(-8px) rotate(-6deg) } }
 @keyframes sc-page { 0%, 25% { transform: scaleX(1) } 60% { transform: scaleX(-1) } 61%, 100% { transform: scaleX(-1); opacity: 0 } }
+
+.sc-tear { animation: sc-tear 4.5s ease-in infinite; }
+@keyframes sc-tear { 0%, 55% { transform: none; opacity: 1 } 75% { transform: translateY(-14px) rotate(-8deg); opacity: .8 } 90%, 100% { transform: translateY(-40px) rotate(-20deg); opacity: 0 } }
+
+/* Badges da semana temática e botões de ação coloridos */
+.wk-badge { position: relative; overflow: hidden; transition: transform .2s cubic-bezier(.2,.9,.3,1.4); }
+.wk-badge:hover { transform: translateY(-2px) rotate(-1deg); }
+.wk-badge::after { content: ""; position: absolute; inset: 0 auto 0 -60%; width: 40%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent); transform: skewX(-20deg); animation: wk-shine 3.6s ease-in-out infinite; }
+@keyframes wk-shine { 0%, 60% { left: -60% } 100% { left: 130% } }
+.act-btn { position: relative; overflow: hidden; transition: transform .18s cubic-bezier(.2,.9,.3,1.4), box-shadow .18s, filter .18s; }
+.act-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
+.act-btn:active { transform: translateY(0) scale(.97); }
+.act-btn .act-ic { transition: transform .45s cubic-bezier(.2,.9,.3,1.4); }
+.act-btn:hover .act-spin { transform: rotate(180deg); }
+.act-btn:hover .act-plus { transform: rotate(90deg) scale(1.15); }
+.act-btn:hover .act-wiggle { animation: qm-wand .7s ease-in-out; }
+.act-btn.busy .act-spin { animation: qm-hand .8s linear infinite; }

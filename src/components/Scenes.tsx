@@ -34,7 +34,7 @@ const BW = 1200
 const BH = 190
 
 /** Faixa de topo da página: título à esquerda, cenário com a Capi à direita. */
-export function SceneBanner({ title, subtitle, from, to, pose, scene, front }: { title: string; subtitle?: string; from: string; to: string; pose: CapiPose; scene: ReactNode; front?: ReactNode }) {
+export function SceneBanner({ title, subtitle, from, to, pose, scene, front, children }: { title: string; subtitle?: string; from: string; to: string; pose: CapiPose; scene: ReactNode; front?: ReactNode; children?: ReactNode }) {
   return (
     <div className="page-in relative mb-6 h-[190px] overflow-hidden rounded-[26px] text-white shadow-[0_18px_34px_-22px_rgba(16,24,40,0.6)]" style={{ background: `linear-gradient(100deg, ${from}, ${to})` }}>
       <svg viewBox={`0 0 ${BW} ${BH}`} preserveAspectRatio="xMaxYMax slice" className="essential-motion pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
@@ -50,9 +50,10 @@ export function SceneBanner({ title, subtitle, from, to, pose, scene, front }: {
         </g>
         {front}
       </svg>
-      <div className="relative z-10 flex h-full max-w-[52%] flex-col justify-center px-7">
+      <div className="relative z-10 flex h-full max-w-[56%] flex-col justify-center px-7">
         <h1 className="font-display text-[30px] leading-none font-extrabold drop-shadow-[0_2px_4px_rgba(0,0,0,.15)]">{title}</h1>
         {subtitle && <p className="mt-2.5 text-sm leading-snug font-semibold text-white/90">{subtitle}</p>}
+        {children}
       </div>
     </div>
   )
@@ -224,3 +225,49 @@ export function NotebookScene() {
     </svg>
   )
 }
+
+/* ---------- Semana: calendário de parede com dias sendo marcados ---------- */
+export const weekScene = (
+  <>
+    <path d="M560 190 Q760 138 960 160 T1200 144 V190 Z" fill="#fff" opacity=".12" />
+    {/* sol */}
+    <g className="sc-spin" style={{ transformOrigin: '900px 48px', animationDuration: '24s' }}>
+      {Array.from({ length: 10 }, (_, i) => (
+        <rect key={i} x="898" y="16" width="4" height="10" rx="2" fill="#fff6d6" opacity=".8" transform={`rotate(${i * 36} 900 48)`} />
+      ))}
+    </g>
+    <circle cx="900" cy="48" r="16" fill="#ffe27a" />
+    {/* calendário */}
+    <g transform="translate(668 30)">
+      <rect x="4" y="6" width="176" height="144" rx="16" fill="#000" opacity=".1" />
+      <rect width="176" height="144" rx="16" fill="#fff" />
+      <rect width="176" height="34" rx="16" fill="#ff6b7a" />
+      <rect y="18" width="176" height="16" fill="#ff6b7a" />
+      {/* folha que vira */}
+      <g className="sc-tear" style={{ transformOrigin: '88px 0px' }}>
+        <rect width="176" height="34" rx="16" fill="#ff8a96" />
+        <rect y="18" width="176" height="16" fill="#ff8a96" />
+      </g>
+      <rect x="36" y="-8" width="8" height="18" rx="4" fill="#5a3820" />
+      <rect x="132" y="-8" width="8" height="18" rx="4" fill="#5a3820" />
+      {Array.from({ length: 21 }, (_, i) => {
+        const c = i % 7
+        const r = Math.floor(i / 7)
+        const x = 14 + c * 22
+        const y = 46 + r * 30
+        const done = [0, 1, 2, 4, 7, 8, 9, 11, 14, 15].indexOf(i)
+        return (
+          <g key={i}>
+            <rect x={x} y={y} width="16" height="22" rx="5" fill={c === 6 ? '#fff1f3' : '#f1f4ff'} />
+            {done >= 0 && (
+              <path className="sc-pop" style={{ animationDelay: `${done * 0.35}s`, transformOrigin: `${x + 8}px ${y + 11}px`, animationDuration: '6s' }} d={`M${x + 3.5} ${y + 11} l3.5 4 l6 -7`} fill="none" stroke="#21b07a" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+            )}
+          </g>
+        )
+      })}
+    </g>
+    {sparkle(870, 120, 8, 0.4)}
+    {sparkle(640, 30, 6, 1.1, '#fff')}
+    {sparkle(1170, 60, 7, 0.8)}
+  </>
+)
