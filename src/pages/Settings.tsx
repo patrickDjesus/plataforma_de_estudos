@@ -1,12 +1,13 @@
 import { useRef, useState } from 'react'
-import { Download, RotateCcw, Settings2, Upload } from 'lucide-react'
+import { Download, RotateCcw, Upload } from 'lucide-react'
 import { useSettings } from '../db/hooks'
 import { CLOUD_DOC_LIMIT, useCloudDocCount } from '../lib/cloud'
 import { applySeed, ensureSeed, exportBackup, importBackup, resetAllData, updateSettings } from '../db/repo'
 import { useNavigate } from 'react-router-dom'
 import type { Settings } from '../db/types'
 import { toISODate } from '../lib/dates'
-import { Btn, Card, Field, PageHeader, inputCls } from '../components/ui'
+import { Btn, Card, Field, inputCls } from '../components/ui'
+import { SceneBanner, settingsFront, settingsScene } from '../components/Scenes'
 import { askConfirm } from '../components/confirm'
 import { CAPI_POSES, Capybara, type CapiPose } from '../components/Capybara'
 import { showMascot } from '../lib/mascotBus'
@@ -86,7 +87,7 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader icon={<Settings2 size={22} />} title="Ajustes" subtitle="Regras do planejador e backup dos seus dados." />
+      <SceneBanner title="Ajustes" subtitle="Regras do planejador e backup dos seus dados." from="#5468c9" to="#8fa0f5" pose="focado" scene={settingsScene} front={settingsFront} />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="lg:col-span-2">
           <h2 className="mb-4 text-lg font-bold">Perfil</h2>

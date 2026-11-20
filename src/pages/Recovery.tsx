@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Brain, History as HistoryIcon, Layers3, RotateCcw, Sparkles, Swords } from 'lucide-react'
+import { History as HistoryIcon, Layers3, RotateCcw, Sparkles, Swords } from 'lucide-react'
 import { db } from '../db/db'
 import { useSubjectMap, useTopics } from '../db/hooks'
 import { rateCard, rateReview } from '../db/repo'
@@ -14,7 +14,8 @@ import { tint } from '../lib/colors'
 import { daysUntil, toISODate } from '../lib/dates'
 import { Capybara } from '../components/Capybara'
 import { SubjectIcon } from '../components/SubjectIcon'
-import { Btn, Card, PageHeader } from '../components/ui'
+import { Btn, Card } from '../components/ui'
+import { SceneBanner, recoveryScene } from '../components/Scenes'
 
 /** Recuperação: tudo que pede para você lembrar hoje. Nesta etapa, os flashcards. */
 export function RecoveryPage() {
@@ -38,7 +39,7 @@ export function RecoveryPage() {
 
   return (
     <>
-      <PageHeader icon={<Brain size={24} />} title="Recuperação" subtitle="Lembrar sem olhar é o que fixa. Aqui fica tudo que pede revisão hoje." />
+      <SceneBanner title="Recuperação" subtitle="Lembrar sem olhar é o que fixa. Aqui fica tudo que pede revisão hoje." from="#3e63f2" to="#7d97ff" pose="pensando" scene={recoveryScene} />
       <div className="grid items-start gap-5 lg:grid-cols-[1.3fr_1fr]">
         <div className="space-y-5">
         <ReviewTodayButton />

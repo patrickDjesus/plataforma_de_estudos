@@ -11,7 +11,7 @@ import { NoteEditor } from '../components/NoteEditor'
 import { CardsPanel } from '../components/CardsPanel'
 import { ChallengeModal, ExplainModal } from '../components/ChallengeModal'
 import { SubjectIcon } from '../components/SubjectIcon'
-import { Capybara } from '../components/Capybara'
+import { NotebookScene } from '../components/Scenes'
 import { askConfirm } from '../components/confirm'
 import { Btn, Card, inputCls } from '../components/ui'
 
@@ -248,9 +248,9 @@ export function NotebookPage() {
           )}
         </div>
       ) : (
-        <Card className="flex flex-col items-center justify-center py-20 text-center">
-          <Capybara pose="estudando" size={130} />
-          <h2 className="text-xl font-bold">Seu caderno</h2>
+        <Card className="flex flex-col items-center justify-center px-6 py-10 text-center">
+          <NotebookScene />
+          <h2 className="mt-5 text-xl font-bold">Seu caderno</h2>
           <p className="mt-1 max-w-sm text-sm text-muted">Escolha uma nota à esquerda ou crie uma nova. Use [[Nome]] para conectar notas entre matérias.</p>
           {subjects[0] && (
             <Btn variant="primary" className="mt-5" onClick={() => newNote(subjects[0].id)}>
