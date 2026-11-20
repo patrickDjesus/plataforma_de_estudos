@@ -285,7 +285,7 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 .qm-card:hover .qm-shine { animation: lv-shine 1s ease; }
 .qm-stripes { background: repeating-linear-gradient(-45deg, #fff 0 14px, transparent 14px 28px); background-size: 40px 40px; animation: qm-stripes 2.5s linear infinite; }
 .qm-capi { transition: transform .25s cubic-bezier(.2,.9,.3,1.4); transform-origin: bottom center; }
-.qm-card:hover .qm-capi { transform: scale(1.08) rotate(-3deg); }
+.qm-card:hover .qm-capi { transform: scale(1.08) rotate(-3deg) translateY(-4px); }
 .qm-run { animation: qm-run .35s ease-in-out infinite alternate; }
 .qm-speed { animation: qm-speed .9s linear infinite; }
 .qm-bolt { animation: qm-bolt 1.6s ease-in-out infinite; transform-origin: 150px 48px; }

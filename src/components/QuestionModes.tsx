@@ -122,8 +122,7 @@ export function QuestionModes({ onPick, onExtra }: { onPick: (id: ModeId) => voi
               onPick(m.id)
             }}
             onMouseEnter={() => playSfx('blip')}
-            title={m.tag}
-            className="qm-card group relative h-[128px] overflow-hidden rounded-[18px] p-4 text-left text-white shadow-[0_16px_30px_-18px_rgba(16,24,40,0.7)] outline-none focus-visible:ring-4 focus-visible:ring-brand/40"
+                        className="qm-card group relative flex h-[340px] flex-col justify-start overflow-hidden rounded-[22px] p-4 text-left text-white shadow-[0_16px_30px_-18px_rgba(16,24,40,0.7)] outline-none focus-visible:ring-4 focus-visible:ring-brand/40"
             style={{ background: `linear-gradient(135deg, ${m.from}, ${m.to})`, animationDelay: `${i * 0.08}s` }}
           >
             {/* listras andando no fundo */}
@@ -132,15 +131,18 @@ export function QuestionModes({ onPick, onExtra }: { onPick: (id: ModeId) => voi
             <span className="qm-shine pointer-events-none absolute inset-y-0 -left-1/2 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
             {/* cena */}
-            <svg viewBox="0 0 200 160" className="essential-motion pointer-events-none absolute right-[38px] top-[2px] h-[80px] w-[100px] overflow-visible opacity-95" aria-hidden>
+            <svg viewBox="0 0 200 160" className="essential-motion pointer-events-none absolute top-[84px] left-1/2 h-[104px] w-[130px] -translate-x-1/2 overflow-visible opacity-95" aria-hidden>
               {m.scene}
             </svg>
-            <div className={`qm-capi pointer-events-none absolute -right-2 -bottom-3 ${m.id === 'rush' ? 'qm-run' : ''}`}>
-              <Capybara pose={m.pose} size={92} />
+            <div className={`qm-capi pointer-events-none absolute bottom-[50px] left-1/2 -ml-[66px] ${m.id === 'rush' ? 'qm-run' : ''}`}>
+              <Capybara pose={m.pose} size={132} />
             </div>
 
-            <div className="relative z-10 font-display text-[22px] leading-none font-extrabold drop-shadow-[0_2px_3px_rgba(0,0,0,.18)]">{m.title}</div>
-            <span className="absolute bottom-3.5 left-4 z-10 rounded-full bg-white/95 px-3 py-1 text-[11px] font-extrabold tracking-wide uppercase shadow transition group-hover:scale-105" style={{ color: m.to }}>
+            <div className="relative z-10 font-display text-[24px] leading-none font-extrabold drop-shadow-[0_2px_3px_rgba(0,0,0,.18)]">{m.title}</div>
+            <div className="relative z-10 mt-1.5 text-[12px] leading-snug font-semibold text-white/85">{m.tag}</div>
+            {/* chão onde a Capi pisa */}
+            <span className="pointer-events-none absolute inset-x-6 bottom-[46px] h-4 rounded-[50%] bg-black/15 blur-[2px]" />
+            <span className="absolute inset-x-3 bottom-3 z-10 rounded-xl bg-white/95 py-2 text-center text-[12px] font-extrabold tracking-wide uppercase shadow transition group-hover:scale-105" style={{ color: m.to }}>
               Jogar ▸
             </span>
           </button>
