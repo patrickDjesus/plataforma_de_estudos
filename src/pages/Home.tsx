@@ -5,7 +5,7 @@ import { Crown, Layers, Settings, ArrowRight, BarChart3, BookOpen, RotateCcw, Ca
 import { db } from '../db/db'
 import { noteText } from '../lib/ai'
 import { AREAS, useSessions, useSettings, useSubjectMap, useTimer, useTopics, useWeekBlocks } from '../db/hooks'
-import { currentWeekId, rateReview } from '../db/repo'
+import { GRACE_MS, blockEndMs, currentWeekId, isPending, markBlockMissed, rateReview, setBlockDone } from '../db/repo'
 import { RATING_LABEL } from '../lib/review'
 import type { ReviewRating } from '../db/types'
 import type { Block } from '../db/types'
@@ -194,6 +194,7 @@ export function HomePage() {
                   ]}
                 />
               </div>
+              <PendingBlocks blocks={blocks} />
               {!phone && (
                 <div className="mb-5">
                   <ReviewTodayButton />
@@ -728,6 +729,57 @@ function WeakPoints() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+/** Blocos que já acabaram e ainda não foram marcados: 24h para dizer se fez. */
+function PendingBlocks({ blocks }: { blocks: Block[] }) {
+  const subjects = useSubjectMap()
+  const topics = useTopics()
+  const [, tick] = useState(0)
+  useEffect(() => {
+    const i = window.setInterval(() => tick((n) => n + 1), 60000)
+    return () => window.clearInterval(i)
+  }, [])
+  const now = Date.now()
+  const pending = blocks.filter((b) => isPending(b, now)).sort((a, b) => blockEndMs(a) - blockEndMs(b))
+  if (!pending.length) return null
+  return (
+    <div className="mb-5 rounded-[18px] border border-amber-200 bg-amber-50/70 p-4">
+      <div className="mb-2 flex items-center gap-2 text-sm font-bold text-amber-900">
+        <Clock3 size={16} /> Ficou pendente: você fez?
+        <span className="font-normal text-amber-800/80">Você tem 24h depois do fim de cada bloco para marcar.</span>
+      </div>
+      <div className="space-y-1.5">
+        {pending.map((b) => {
+          const s = b.subjectId ? subjects.get(b.subjectId) : undefined
+          const t = b.topicId ? topics.find((x) => x.id === b.topicId) : undefined
+          const left = Math.max(0, GRACE_MS - (now - blockEndMs(b)))
+          const h = Math.floor(left / 3600000)
+          const m = Math.floor((left % 3600000) / 60000)
+          const day = b.date === toISODate(new Date(now)) ? 'hoje' : new Date(blockEndMs(b)).toLocaleDateString('pt-BR', { weekday: 'long' })
+          return (
+            <div key={b.id} className="flex flex-wrap items-center gap-3 rounded-xl bg-white px-3 py-2">
+              <SubjectIcon subject={s} size={34} />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-bold">{t?.name ?? s?.name ?? 'Bloco'}</div>
+                <div className="text-xs text-muted">
+                  {day}, {fmtTime(b.start)}–{fmtTime(b.end)} · {b.kind === 'revisao' ? 'revisão · ' : ''}falta{h || m !== 1 ? 'm' : ''} {h ? `${h}h` : ''}
+                  {h && m ? ' ' : ''}
+                  {m || !h ? `${m}min` : ''}
+                </div>
+              </div>
+              <button onClick={() => setBlockDone(b.id, true)} className="flex items-center gap-1 rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-600">
+                <Check size={14} /> Fiz
+              </button>
+              <button onClick={() => markBlockMissed(b.id)} className="rounded-xl border border-line bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50">
+                Não fiz
+              </button>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

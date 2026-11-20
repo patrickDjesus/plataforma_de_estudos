@@ -1,7 +1,7 @@
 import { db, uid } from './db'
 import type { AreaId, AreaPercents, Availability, Block, Challenge, ErrorReason, Flashcard, Writing, Note, ReviewRating, Session, Settings, Subject, TimerState, Topic, Week } from './types'
 import { autoColor, mutedVersion } from '../lib/colors'
-import { addDays, minutesNow, toISODate, weekIdOf } from '../lib/dates'
+import { addDays, fromISODate, minutesNow, toISODate, weekIdOf } from '../lib/dates'
 import { applyRating, newReview, nextInterval, RATING_LABEL } from '../lib/review'
 import { errorsFromChallenge, reviewError } from '../lib/errors'
 import { planWeek } from '../lib/planner'
@@ -131,13 +131,27 @@ export async function dueReviews(until = toISODate(new Date())) {
 // ---------- Blocos perdidos ----------
 
 /**
- * Marca como perdidos os blocos que passaram do horário sem estudo
+ * Marca como perdidos os blocos que passaram 24h do fim sem estudo nem "feito"
  * e replaneja o resto da semana para encaixar o conteúdo de novo.
  */
+/** Prazo para marcar um bloco como feito depois que o horário dele acaba. */
+export const GRACE_MS = 24 * 60 * 60 * 1000
+/** Quando o bloco termina (data + hora de fim), em milissegundos. */
+export const blockEndMs = (b: Pick<Block, 'date' | 'end'>) => fromISODate(b.date).getTime() + b.end * 60000
+/** Bloco de estudo/revisão que já acabou, ainda não foi marcado e está dentro das 24h de prazo. */
+export const isPending = (b: Block, now = Date.now()) =>
+  (b.kind === 'study' || b.kind === 'revisao') && !b.done && !b.missed && blockEndMs(b) <= now && now - blockEndMs(b) < GRACE_MS
+
+/** "Não fiz": marca o bloco como perdido agora (sem esperar o prazo) e remarca o conteúdo. */
+export async function markBlockMissed(id: string) {
+  const b = await db.blocks.get(id)
+  if (!b || b.done) return
+  await db.blocks.update(id, { missed: true })
+  await regeneratePlan(b.weekId)
+}
+
 export async function replanMissed(now = new Date()): Promise<number> {
   const weekId = weekIdOf(now)
-  const today = toISODate(now)
-  const nm = minutesNow(now)
   const timer = await db.timer.get('timer')
   const missed = await db.blocks
     .where('weekId')
@@ -149,7 +163,8 @@ export async function replanMissed(now = new Date()): Promise<number> {
         !b.missed &&
         b.studiedSeconds === 0 &&
         b.id !== timer?.blockId &&
-        (b.date < today || (b.date === today && b.end <= nm)),
+        // 24h de prazo depois do fim do bloco para marcar como feito
+        now.getTime() - blockEndMs(b) >= GRACE_MS,
     )
     .toArray()
   if (!missed.length) return 0

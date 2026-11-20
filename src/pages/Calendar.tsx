@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { CalendarRange, Check, Clock3, Flag, LayoutGrid, Plus, RefreshCw, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { tint } from '../lib/colors'
 import { useSubjectMap, useTopics, useWeek, useWeekBlocks } from '../db/hooks'
-import { currentWeekId, deleteBlock, regeneratePlan, setBlockDone, updateBlock } from '../db/repo'
+import { currentWeekId, deleteBlock, isPending, regeneratePlan, setBlockDone, updateBlock } from '../db/repo'
 import type { Block } from '../db/types'
 import { DAY_SHORT, addDays, fmtDayMonth, fmtDuration, fmtTime, fmtWeekRange, minutesNow, toISODate, weekDates } from '../lib/dates'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -419,8 +419,9 @@ function CardsView({
                       <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${isReview ? 'bg-white/70' : 'bg-white/25'}`}>{fmtDuration((b.end - b.start) * 60)}</span>
                     </div>
                     {b.missed && !b.done && <div className="-mt-1 truncate text-[11px] font-bold">Perdido · remarcado</div>}
-                    {!b.missed && isReview && <div className="-mt-1 truncate text-[11px] font-semibold opacity-80">Revisão · {subject?.name}</div>}
-                    {!b.missed && b.kind === 'study' && topic && <div className="-mt-1 truncate text-[11px] font-semibold text-white/80">{subject?.name}</div>}
+                    {isPending(b) && <div className="-mt-1 w-fit truncate rounded-md bg-white/90 px-1.5 text-[11px] font-bold text-amber-700">Pendente · fez?</div>}
+                    {!b.missed && !isPending(b) && isReview && <div className="-mt-1 truncate text-[11px] font-semibold opacity-80">Revisão · {subject?.name}</div>}
+                    {!b.missed && !isPending(b) && b.kind === 'study' && topic && <div className="-mt-1 truncate text-[11px] font-semibold text-white/80">{subject?.name}</div>}
                     {b.kind !== 'study' && !isReview && <div className="-mt-1 truncate text-[11px] font-semibold text-white/80">{b.kind === 'prova' ? `Prova${subject ? ` · ${subject.name}` : ''}` : 'Compromisso'}</div>}
                     <div className={`mt-2 flex items-end justify-between gap-1 text-[11px] font-medium ${isReview ? 'opacity-80' : 'text-white/85'}`}>
                       <span className="min-w-0 truncate tabular-nums">
@@ -494,7 +495,7 @@ function PhoneView({ dates, todayIso, blocks, subjects, topicMap, onOpen }: { da
           <div className="text-xs text-muted">
             {fmtTime(b.start)}–{fmtTime(b.end)} · {b.kind === 'revisao' ? 'Revisão · ' : ''}
             {subject?.name ?? (b.kind === 'compromisso' ? 'Compromisso' : '')}
-            {b.missed && !b.done ? ' · perdido' : ''}
+            {b.missed && !b.done ? ' · perdido' : isPending(b) ? ' · pendente: fez?' : ''}
           </div>
         </div>
         {canDone && (
