@@ -175,8 +175,8 @@ function useAlive(ref: React.RefObject<SVGSVGElement | null>, enabled: boolean) 
           }
           target = wander
         }
-        cur = [cur[0] + (target[0] - cur[0]) * 0.12, cur[1] + (target[1] - cur[1]) * 0.12]
-        setLook((old) => (Math.abs(old[0] - cur[0]) + Math.abs(old[1] - cur[1]) > 0.01 ? [cur[0], cur[1]] : old))
+        cur = [cur[0] + (target[0] - cur[0]) * 0.075, cur[1] + (target[1] - cur[1]) * 0.075]
+        setLook((old) => (Math.abs(old[0] - cur[0]) + Math.abs(old[1] - cur[1]) > 0.004 ? [cur[0], cur[1]] : old))
         // bocejo: parado há mais de 40 s (uma vez a cada 40 s)
         const idle = now - lastMove > 40000 && lastMove > 0
         if (idle && !yawning && Math.random() < 0.004) {
@@ -259,6 +259,7 @@ export function Capybara({ pose = 'acenando', size = 120, className = '', alive 
       )}
 
       <g className="capi-bob">
+        <g className="owl-sway">
         {/* pernas compridas (marca da buraqueira) */}
         <g stroke={C.leg} strokeWidth="6" strokeLinecap="round" fill="none">
           <path d="M84 184 V198 M78 201 L84 197 L90 201 M84 197 V202" />
@@ -291,7 +292,9 @@ export function Capybara({ pose = 'acenando', size = 120, className = '', alive 
         {holdsBook ? (
           <Wing d="M56 118 Q36 140 52 170 Q62 178 70 170 Q60 158 64 150 Q58 140 62 124 Z" dots={[[50, 140], [54, 156]]} />
         ) : (
-          <Wing d={WING_L} dots={DOTS_L} />
+          <g className="owl-wing-l">
+            <Wing d={WING_L} dots={DOTS_L} />
+          </g>
         )}
 
         {/* livro */}
@@ -319,11 +322,14 @@ export function Capybara({ pose = 'acenando', size = 120, className = '', alive 
         ) : chin ? (
           <Wing d="M142 114 Q160 134 140 142 Q126 140 114 118 Q112 108 120 110 Q130 124 142 114 Z" dots={[[138, 132], [126, 124]]} />
         ) : (
-          <Wing d={WING_R} dots={DOTS_R} />
+          <g className="owl-wing-r">
+            <Wing d={WING_R} dots={DOTS_R} />
+          </g>
         )}
 
         {/* cabeça (inclina de leve na direção do olhar) */}
-        <g className="capi-head" style={{ transform: `rotate(${(look[0] * 4).toFixed(2)}deg)`, transformOrigin: '100px 126px' }}>
+        <g className="capi-head" style={{ transform: `rotate(${(look[0] * 5).toFixed(2)}deg) translateX(${(look[0] * 1.5).toFixed(2)}px)`, transformOrigin: '100px 126px' }}>
+          <g className="owl-tilt">
           {/* topetinho */}
           <g className="capi-ear capi-ear-l" style={{ transformOrigin: '100px 30px' }}>
             <path d="M88 34 Q86 16 96 24 Q98 10 106 22 Q114 14 112 34 Z" fill={C.bodyDark} />
@@ -356,6 +362,7 @@ export function Capybara({ pose = 'acenando', size = 120, className = '', alive 
           <Eye x={EX[0]} kind={eyes} side="l" look={look} />
           <Eye x={EX[1]} kind={eyes} side="r" look={look} />
           <Beak kind={mouth} />
+          </g>
         </g>
 
         {pose === 'chorando' && (
@@ -412,6 +419,7 @@ export function Capybara({ pose = 'acenando', size = 120, className = '', alive 
             <circle cx="140" cy="55" r="4.5" fill="#ffd34d" />
           </g>
         )}
+        </g>
       </g>
     </svg>
   )
