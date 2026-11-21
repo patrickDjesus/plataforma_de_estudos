@@ -49,7 +49,7 @@ function QuestionCard({ S, q }: { S: RushState; q: RushQ }) {
   const said = useRef({ t60: false, t150: false, typing: false, picks: 0, idle: false })
   const lastAct = useRef(Date.now())
 
-  // relógio da questão + Capi que comenta o tempo e cochila
+  // relógio da questão + Mendi que comenta o tempo e cochila
   useEffect(() => {
     if (ph !== 'answer' || S.paused) return
     const i = window.setInterval(() => {

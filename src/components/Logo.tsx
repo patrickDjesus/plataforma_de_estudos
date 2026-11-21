@@ -1,33 +1,33 @@
 /**
- * Logo do Mendonça: o rosto do Capi, a capivara mascote.
+ * Logo do Mendonça: o rosto da Mendi, a coruja-buraqueira mascote.
  * Formas simples e cores chapadas para ser reconhecível até em tamanho de ícone.
  */
 export function LogoMark({ size = 40 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
-      <defs><linearGradient id="lmh" gradientUnits="userSpaceOnUse" x1="0" y1="10" x2="0" y2="60"><stop offset="0" stopColor="#d9a26c" /><stop offset="1" stopColor="#c08552" /></linearGradient></defs>
-      <ellipse cx="13" cy="12.5" rx="4.6" ry="5.2" fill="#7a4e2d" />
-      <ellipse cx="51" cy="12.5" rx="4.6" ry="5.2" fill="#7a4e2d" />
-      <rect x="5" y="10" width="54" height="50" rx="17" fill="url(#lmh)" />
-      <path d="M9 18 Q12 11.5 22 11" fill="none" stroke="#fff" strokeOpacity=".3" strokeWidth="2.4" strokeLinecap="round" />
-      <circle cx="32" cy="8.6" r="6" fill="#ff9f2e" />
-      <circle cx="30" cy="6.6" r="1.7" fill="#fff" opacity=".5" />
-      <ellipse cx="35.6" cy="2.9" rx="3.4" ry="1.7" fill="#3fbf6a" transform="rotate(-25 35.6 2.9)" />
-      <circle cx="20.5" cy="26" r="8" fill="#fff" />
-      <circle cx="43.5" cy="26" r="8" fill="#fff" />
-      <circle cx="21.5" cy="28.3" r="4.4" fill="#24160c" />
-      <circle cx="42.5" cy="28.3" r="4.4" fill="#24160c" />
-      <circle cx="23" cy="27.6" r="1.4" fill="#fff" />
-      <circle cx="44" cy="27.6" r="1.4" fill="#fff" />
-      <path d="M12.3 25.6 A8.2 8.2 0 0 1 28.7 25.6 Z" fill="url(#lmh)" />
-      <path d="M35.3 25.6 A8.2 8.2 0 0 1 51.7 25.6 Z" fill="url(#lmh)" />
-      <path d="M12.4 25.7 L28.6 25.7 M35.4 25.7 L51.6 25.7" stroke="#5e3a22" strokeWidth="2.2" strokeLinecap="round" />
-      <ellipse cx="9.5" cy="39" rx="3.4" ry="2.3" fill="#ff8f7e" opacity=".65" />
-      <ellipse cx="54.5" cy="39" rx="3.4" ry="2.3" fill="#ff8f7e" opacity=".65" />
-      <rect x="12" y="34" width="40" height="26" rx="13" fill="#9c653a" />
-      <path d="M20.5 38.8 Q32 34 43.5 38.8 Q44.5 45.5 38 46 L26 46 Q19.5 45.5 20.5 38.8 Z" fill="#4e2f1a" />
-      <path d="M25 40.6 Q27 42.8 29.4 41.3 M39 40.6 Q37 42.8 34.6 41.3" fill="none" stroke="#1d110a" strokeWidth="1.7" strokeLinecap="round" />
-      <path d="M26 51 Q32 55.5 38 51" fill="none" stroke="#2b1a0f" strokeWidth="2.3" strokeLinecap="round" />
+      <defs>
+        <linearGradient id="lmh" gradientUnits="userSpaceOnUse" x1="0" y1="6" x2="0" y2="60">
+          <stop offset="0" stopColor="#b98250" />
+          <stop offset="1" stopColor="#95602f" />
+        </linearGradient>
+      </defs>
+      <path d="M27 9 Q26 2 30 5 Q32 0 35 5 Q39 2 37 9 Z" fill="#7d4f28" />
+      <ellipse cx="32" cy="34" rx="29" ry="26" fill="url(#lmh)" />
+      <circle cx="21" cy="16" r="1.3" fill="#fff" opacity=".7" />
+      <circle cx="32" cy="12.6" r="1.3" fill="#fff" opacity=".7" />
+      <circle cx="43" cy="16" r="1.3" fill="#fff" opacity=".7" />
+      <circle cx="21" cy="33" r="12.6" fill="#f2d9ae" />
+      <circle cx="43" cy="33" r="12.6" fill="#f2d9ae" />
+      <path d="M7 25 Q19 17 30 28 M57 25 Q45 17 34 28" fill="none" stroke="#fff" strokeWidth="3.4" strokeLinecap="round" />
+      <circle cx="21" cy="33" r="8.6" fill="#ffc83d" stroke="#e09a12" strokeWidth="1.2" />
+      <circle cx="43" cy="33" r="8.6" fill="#ffc83d" stroke="#e09a12" strokeWidth="1.2" />
+      <circle cx="21.6" cy="33.4" r="4.8" fill="#24160c" />
+      <circle cx="42.4" cy="33.4" r="4.8" fill="#24160c" />
+      <circle cx="23.4" cy="31.4" r="1.7" fill="#fff" />
+      <circle cx="44.2" cy="31.4" r="1.7" fill="#fff" />
+      <path d="M27.4 42 Q32 38.6 36.6 42 Q34.4 46.6 32 50 Q29.6 46.6 27.4 42 Z" fill="#f6b43c" />
+      <ellipse cx="10.4" cy="45" rx="3.4" ry="2" fill="#ff8f7e" opacity=".6" />
+      <ellipse cx="53.6" cy="45" rx="3.4" ry="2" fill="#ff8f7e" opacity=".6" />
     </svg>
   )
 }

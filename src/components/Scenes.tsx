@@ -3,7 +3,7 @@ import { Capybara, type CapiPose } from './Capybara'
 
 /*
  * Cenários ilustrados (mesmo estilo dos cartões de modo das Questões):
- * formas simples, cores claras, a Capi dentro da cena e animações leves.
+ * formas simples, cores claras, a Mendi dentro da cena e animações leves.
  */
 
 const sparkle = (x: number, y: number, r: number, d: number, fill = '#ffe27a') => (
@@ -33,7 +33,7 @@ function Gear({ x, y, r, teeth, fill, hole, reverse = false, dur = 10 }: { x: nu
 const BW = 1200
 const BH = 190
 
-/** Faixa de topo da página: título à esquerda, cenário com a Capi à direita. */
+/** Faixa de topo da página: título à esquerda, cenário com a Mendi à direita. */
 export function SceneBanner({ title, subtitle, from, to, pose, scene, front, children }: { title: string; subtitle?: string; from: string; to: string; pose: CapiPose; scene: ReactNode; front?: ReactNode; children?: ReactNode }) {
   return (
     <div className="page-in relative mb-6 h-[190px] overflow-hidden rounded-[26px] text-white shadow-[0_18px_34px_-22px_rgba(16,24,40,0.6)]" style={{ background: `linear-gradient(100deg, ${from}, ${to})` }}>
@@ -150,7 +150,7 @@ const SHELF: [number, number, number, string][] = [
 ]
 export function NotebookScene() {
   return (
-    <svg viewBox="0 0 560 250" className="essential-motion w-full max-w-[560px]" role="img" aria-label="A Capi lendo no cantinho do caderno">
+    <svg viewBox="0 0 560 250" className="essential-motion w-full max-w-[560px]" role="img" aria-label="A Mendi lendo no cantinho do caderno">
       <defs>
         <linearGradient id="sc-nb-wall" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#ffc98a" />
@@ -203,7 +203,7 @@ export function NotebookScene() {
         {/* chão */}
         <rect y="222" width="560" height="28" fill="#e8a868" />
 
-        {/* Capi atrás da mesa */}
+        {/* Mendi atrás da mesa */}
         <g transform="translate(212 66)">
           <Capybara pose="estudando" size={138} />
         </g>

@@ -13,7 +13,7 @@ interface Pending {
   subject?: Subject
 }
 
-/** Ao concluir um bloco, a Capi pergunta se você fez questões e quantas. */
+/** Ao concluir um bloco, a Mendi pergunta se você fez questões e quantas. */
 export function QuestionsPromptHost() {
   const [queue, setQueue] = useState<Pending[]>([])
   const cur = queue[0]

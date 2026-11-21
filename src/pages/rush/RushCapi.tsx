@@ -13,7 +13,7 @@ const POSE: Record<CapiMood, CapiPose> = {
   boss: 'focado',
 }
 
-/** A Capi do Rush: muda de pose com o momento e fala num balão (digitando). */
+/** A Mendi do Rush: muda de pose com o momento e fala num balão (digitando). */
 export function RushCapi({ mood, size = 86, talk = true, side = 'left', heat = 0 }: { mood: CapiMood; size?: number; talk?: boolean; side?: 'left' | 'right'; heat?: number }) {
   const [line, setLine] = useState('')
   const [shown, setShown] = useState('')
@@ -43,7 +43,7 @@ export function RushCapi({ mood, size = 86, talk = true, side = 'left', heat = 0
     <div className="relative shrink-0">
       <button
         type="button"
-        aria-label="Cutucar a Capi"
+        aria-label="Cutucar a Mendi"
         onClick={() => {
           setSquish((n) => n + 1)
           sfx('pop')

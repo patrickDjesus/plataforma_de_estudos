@@ -396,7 +396,7 @@ function EndScreen({ S }: { S: RushState }) {
         </div>
         <h2 className="font-display text-4xl font-extrabold">RUSH COMPLETO! <Fx name="trophy" /></h2>
         <p className="mt-1 text-muted">
-          {st.done} questões, {acc}% de acerto. A Capi está orgulhosa.
+          {st.done} questões, {acc}% de acerto. A Mendi está orgulhosa.
         </p>
         <div className="mt-4 grid grid-cols-3 gap-2">
           {(

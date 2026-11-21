@@ -167,7 +167,7 @@ export function FxLayer() {
   )
 }
 
-/** Anel que se expande (atrás da Capi quando acerta). */
+/** Anel que se expande (atrás da Mendi quando acerta). */
 export function Ring({ color = 'rgba(34,181,115,.5)', size = 120 }: { color?: string; size?: number }) {
   return <span aria-hidden className="rk-ring pointer-events-none absolute top-1/2 left-1/2 -z-10 rounded-full border-4" style={{ width: size, height: size, marginLeft: -size / 2, marginTop: -size / 2, borderColor: color }} />
 }

@@ -20,7 +20,7 @@ React 19, TypeScript, Vite 8, Tailwind v4, react-router 7 (MemoryRouter no Artif
 
 ## Gosto do usuário (importante)
 - Visual atual (tema claro, cartões, ícones com degradê, painel com barra lateral escura no Início) é o que ele gosta. Tentativas de "redesign editorial"/tema creme foram rejeitadas e revertidas: não refazer o visual sem ele pedir.
-- Ele gosta de coisas animadas e "gamificadas" (rank, Rush, Capi a capivara mascote).
+- Ele gosta de coisas animadas e "gamificadas" (rank, Rush, Mendi a coruja-buraqueira mascote; antes era a Capi, capivara). Mascote desenhada em `src/components/Capybara.tsx` (nome do componente mantido). Emojis viram ícones desenhados em `src/components/Fx.tsx`.
 - Textos curtos; sem explicação longa em botões.
 
 ## Regras do app que já foram decididas

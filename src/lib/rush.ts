@@ -253,7 +253,7 @@ export function difInfo(d: number) {
   const v = Math.max(0, Math.min(10, Math.round(d)))
   return { d: v, label: DIF_LABELS[v], emoji: DIF_EMOJI[v], tier: v <= 1 ? 1 : v <= 3 ? 2 : v <= 5 ? 3 : v <= 7 ? 4 : 5 }
 }
-/** "Calor" da questão (0–1): muda as cores e o humor da Capi. */
+/** "Calor" da questão (0–1): muda as cores e o humor da Mendi. */
 export const qHeat = (q: RushQ | null) => (q ? (q.boss ? 1 : Math.max(0, Math.min(10, q.dificuldade ?? 3)) / 10) : 0)
 
 // ---------- Foco e planejamento das levas ----------

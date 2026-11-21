@@ -20,7 +20,7 @@ export interface MascotMessage {
 type Listener = (m: MascotMessage) => void
 const listeners = new Set<Listener>()
 
-/** Faz o Capi aparecer com uma mensagem, de qualquer lugar do app. */
+/** Faz a Mendi aparecer com uma mensagem, de qualquer lugar do app. */
 // Pergunta "fez questões?" ao concluir um bloco
 type QListener = (blockId: string) => void
 const qListeners = new Set<QListener>()
@@ -34,7 +34,7 @@ export function onAskBlockQuestions(l: QListener) {
   }
 }
 
-// Humor passageiro: muda só a pose da Capi flutuante por alguns segundos (sem balão)
+// Humor passageiro: muda só a pose da Mendi flutuante por alguns segundos (sem balão)
 type MoodListener = (pose: CapiPose, ms: number) => void
 const moodL = new Set<MoodListener>()
 export function capiMood(pose: CapiPose, ms = 4000) {

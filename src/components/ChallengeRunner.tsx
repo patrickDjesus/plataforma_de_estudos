@@ -328,7 +328,7 @@ function showAnswer(it: ChallengeItem, a: Answer): string {
   return String(a)
 }
 
-// ---------- Resultado: reação do Capi + correção questão por questão ----------
+// ---------- Resultado: reação da Mendi + correção questão por questão ----------
 
 function reaction(score: number): { pose: CapiPose; title: string; text: string } {
   if (score >= 0.85) return { pose: 'comemorando', title: 'Uhuul, mandou muito bem!', text: 'Você domina esse assunto. Bora manter assim!' }
@@ -478,7 +478,7 @@ export function ResultView({
           </div>
         </div>
 
-        {/* Comentário do Capi */}
+        {/* Comentário da Mendi */}
         <div className="mt-4 flex items-end gap-2">
           <Capybara key={`${k}-${v.pose}`} pose={v.pose} size={78} />
           <div className="relative mb-4 flex-1 rounded-2xl border border-line bg-white px-4 py-3 text-sm shadow-sm">

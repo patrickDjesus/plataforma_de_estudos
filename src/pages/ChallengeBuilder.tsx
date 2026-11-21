@@ -263,7 +263,7 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
           )}
         </div>
 
-        {/* Resumo com o Capi */}
+        {/* Resumo com a Mendi */}
         <div className="lg:sticky lg:top-24">
           <Card className="overflow-hidden p-0">
             <div className="relative flex flex-col items-center px-6 pt-6 pb-4 text-center" style={{ background: `radial-gradient(120% 90% at 50% 0%, ${tint(color, 0.18)}, transparent 70%)` }}>

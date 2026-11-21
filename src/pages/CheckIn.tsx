@@ -343,7 +343,7 @@ export function CheckInPage() {
       </header>
 
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 pb-6 lg:flex-row lg:items-start lg:gap-10">
-        {/* Capi perguntando */}
+        {/* Mendi perguntando */}
         <aside className="flex shrink-0 items-end gap-2 lg:sticky lg:top-8 lg:w-[300px] lg:flex-col lg:items-start">
           <div key={step} className="capi-pop relative order-2 rounded-[22px] border border-line bg-white px-5 py-4 shadow-[0_18px_40px_-20px_rgba(16,24,40,0.35)] lg:order-1">
             <p className="font-display text-lg leading-snug font-bold text-ink">{capi.text}</p>
@@ -905,7 +905,7 @@ function ThemePanel({
   )
 }
 
-/** Backup semanal: a Capi lembra no check-in; some depois de baixar/copiar nesta semana. */
+/** Backup semanal: a Mendi lembra no check-in; some depois de baixar/copiar nesta semana. */
 function BackupCard() {
   const key = 'mendonca-backup-week'
   const wk = currentWeekId()

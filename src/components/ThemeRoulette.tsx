@@ -28,7 +28,7 @@ const polar = (deg: number, r: number) => {
   return [R + Math.cos(a) * r, R + Math.sin(a) * r]
 }
 
-/** Tela cheia: a Capi com a roleta das matérias. Chama onDone com a matéria sorteada. */
+/** Tela cheia: a Mendi com a roleta das matérias. Chama onDone com a matéria sorteada. */
 export function ThemeRoulette({ subjects, lastWeekId, onDone, onSkip }: { subjects: Slice[]; lastWeekId?: string; onDone: (id: string) => void; onSkip: () => void }) {
   const n = subjects.length
   const seg = 360 / n

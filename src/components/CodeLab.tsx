@@ -48,7 +48,7 @@ Responda SOMENTE com JSON:
 {"titulo":"curto","enunciado":"2 a 4 frases explicando o que a função recebe e o que deve retornar","funcao":"nome_da_funcao","exemplos":[{"entrada":"chamada da função","saida":"resultado"}],"dica":"uma pista que não entrega a resposta","codigoInicial":"só a assinatura da função com um comentário dentro, pronta para completar","solucao":"código completo e simples da resposta","testes":[{"args":[valores],"esperado":valor}]}
 Dê 2 exemplos e de 4 a 6 testes (inclua casos de borda). Os testes usam só valores JSON (números, textos, listas, true/false).`
 
-const reviewPrompt = (c: CodeChallenge, code: string, ran: string) => `Você é a Capi, uma tutora de programação paciente e animada, ajudando um iniciante.
+const reviewPrompt = (c: CodeChallenge, code: string, ran: string) => `Você é a Mendi, uma tutora de programação paciente e animada, ajudando um iniciante.
 Desafio (${LANG_NAME[c.lang]}): ${c.title}
 ${c.statement}
 Exemplos: ${c.examples.map((e) => `${e.input} → ${e.output}`).join(' | ')}
@@ -61,17 +61,17 @@ ${ran ? `Resultado real dos testes ao rodar o código:\n${ran}\n` : ''}
 Avalie se o código resolve o desafio para todos os casos (inclusive os de borda). Se estiver errado, mostre ONDE está o problema e dê uma pista, mas NÃO entregue o código da resposta. Elogie o que estiver bom. Português simples, frases curtas.
 Responda SOMENTE com JSON: {"correto":true,"resumo":"1 frase","pontos":["até 3 observações curtas"],"proximoPasso":"uma dica ou melhoria curta"}`
 
-const chatPrompt = (lang: Lang, history: Msg[], q: string) => `Você é a Capi, uma capivara tutora de programação. O aluno está começando a programar agora (prefere ${LANG_NAME[lang]}).
+const chatPrompt = (lang: Lang, history: Msg[], q: string) => `Você é a Mendi, uma coruja tutora de programação. O aluno está começando a programar agora (prefere ${LANG_NAME[lang]}).
 Explique como para um iniciante: português simples, frases curtas, um exemplo pequeno de código em bloco \`\`\` quando ajudar. Sem enrolação. Se ele pedir para você fazer o exercício dele, guie com pistas em vez de entregar tudo.
 
 ${history
   .slice(-10)
-  .map((m) => `${m.role === 'user' ? 'Aluno' : 'Capi'}: ${m.text}`)
+  .map((m) => `${m.role === 'user' ? 'Aluno' : 'Mendi'}: ${m.text}`)
   .join('\n\n')}
 
 Aluno: ${q}
 
-Capi:`
+Mendi:`
 
 /* ---------------- Rodar JavaScript ---------------- */
 
@@ -105,7 +105,7 @@ function runJS(code: string, fn?: string, tests?: CodeChallenge['tests']): Promi
     try {
       w = new Worker(URL.createObjectURL(new Blob([WORKER], { type: 'text/javascript' })))
     } catch {
-      resolve({ logs: [], results: [], error: 'Não consegui rodar o código aqui. Envie para a Capi corrigir.' })
+      resolve({ logs: [], results: [], error: 'Não consegui rodar o código aqui. Envie para a Mendi corrigir.' })
       return
     }
     const timer = window.setTimeout(() => {
@@ -136,7 +136,7 @@ function CodeEditor({ value, onChange, lang, highlight, tall = false }: { value:
   const [scroll, setScroll] = useState(0)
   const lines = value.split('\n').length
 
-  // Linha apontada pela Capi: rola até ela
+  // Linha apontada pela Mendi: rola até ela
   useEffect(() => {
     const el = ref.current
     if (!el || !highlight) return
@@ -403,7 +403,7 @@ function Challenges({ lang }: { lang: Lang }) {
             <Capybara pose="focado" size={92} />
             <div className="min-w-0 flex-1">
               <h2 className="text-xl font-bold">Desafio de lógica</h2>
-              <p className="mt-1 text-sm text-muted">A Capi inventa, você resolve em {LANG_NAME[lang]}.</p>
+              <p className="mt-1 text-sm text-muted">A Mendi inventa, você resolve em {LANG_NAME[lang]}.</p>
             </div>
           </div>
           <div className="mt-5 space-y-4">
@@ -540,7 +540,7 @@ function Challenges({ lang }: { lang: Lang }) {
             </button>
           )}
           <button onClick={send} disabled={!!loading || !code.trim()} className="act-btn inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60" style={{ background: 'linear-gradient(145deg, #2fcf9b, #0f8a63)', boxShadow: '0 10px 18px -10px #0f8a63' }}>
-            {loading === 'enviar' ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} {loading === 'enviar' ? 'A Capi está lendo…' : 'Enviar pra Capi'}
+            {loading === 'enviar' ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} {loading === 'enviar' ? 'A Mendi está lendo…' : 'Enviar pra Mendi'}
           </button>
         </div>
         {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
@@ -708,7 +708,7 @@ function Doubts({ lang }: { lang: Lang }) {
   )
 }
 
-/* ---------------- Meu código: a Capi como mentora ---------------- */
+/* ---------------- Meu código: a Mendi como mentora ---------------- */
 
 type Step = { line: number; kind: 'pergunta' | 'sugestao' | 'erro' | 'elogio'; text: string; hint: string; piece: string; marker: number }
 type Mentoring = { summary: string; capiCode: string; steps: Step[] }
@@ -720,7 +720,7 @@ const numbered = (code: string) =>
     .map((l, i) => `${String(i + 1).padStart(2, ' ')}| ${l}`)
     .join('\n')
 
-const mentorPrompt = (lang: Lang, code: string, goal: string, doubt: string) => `Você é a Capi, mentora de programação de alguém que está começando. Seu jeito: um professor sentado do lado, que faz o aluno PENSAR. Nunca entregue a resposta pronta de mão beijada.
+const mentorPrompt = (lang: Lang, code: string, goal: string, doubt: string) => `Você é a Mendi, mentora de programação de alguém que está começando. Seu jeito: um professor sentado do lado, que faz o aluno PENSAR. Nunca entregue a resposta pronta de mão beijada.
 Linguagem: ${LANG_NAME[lang]}.
 O que o código deve fazer: ${goal.trim() || '(o aluno não disse; deduza pelo código)'}
 ${doubt.trim() ? `Dúvida do aluno: ${doubt.trim()}` : ''}
@@ -735,7 +735,7 @@ Cada passo pode estar ligado a um marcador do codigoCapi (o trecho que vai nele)
 Responda SOMENTE com JSON:
 {"resumo":"1 ou 2 frases: o que o código faz e como está","codigoCapi":"...","passos":[{"linha":3,"tipo":"pergunta|sugestao|erro|elogio","texto":"a pergunta/sugestão curta","pista":"uma dica a mais, se ele travar (sem dar o código)","marcador":1,"trecho":"o código exato que vai no marcador 1 (vazio se não tiver marcador)"}]}`
 
-const followPrompt = (lang: Lang, code: string, goal: string, m: Mentoring | null, history: Msg[], q: string) => `Você é a Capi, mentora de programação de um iniciante (${LANG_NAME[lang]}). Guie com perguntas e dicas curtas; não entregue o código completo. Se ele acertar, comemore e aponte o próximo passo.
+const followPrompt = (lang: Lang, code: string, goal: string, m: Mentoring | null, history: Msg[], q: string) => `Você é a Mendi, mentora de programação de um iniciante (${LANG_NAME[lang]}). Guie com perguntas e dicas curtas; não entregue o código completo. Se ele acertar, comemore e aponte o próximo passo.
 Objetivo: ${goal.trim() || '(não informado)'}
 Código atual do aluno:
 ${numbered(code)}
@@ -743,12 +743,12 @@ ${m ? `Sua análise anterior: ${m.summary}\nOrientações: ${m.steps.map((s) => 
 
 ${history
   .slice(-8)
-  .map((x) => `${x.role === 'user' ? 'Aluno' : 'Capi'}: ${x.text}`)
+  .map((x) => `${x.role === 'user' ? 'Aluno' : 'Mendi'}: ${x.text}`)
   .join('\n\n')}
 
 Aluno: ${q}
 
-Capi:`
+Mendi:`
 
 const KIND: Record<Step['kind'], { label: string; cls: string }> = {
   pergunta: { label: 'Pensa aqui', cls: 'bg-[#eef2ff] text-[#3e63f2]' },
@@ -757,7 +757,7 @@ const KIND: Record<Step['kind'], { label: string; cls: string }> = {
   elogio: { label: 'Mandou bem', cls: 'bg-amber-50 text-amber-700' },
 }
 
-/** Código da Capi com os trechos escondidos ([[n]]) virando cadeados até você revelar. */
+/** Código da Mendi com os trechos escondidos ([[n]]) virando cadeados até você revelar. */
 function CapiCode({ code, steps, open }: { code: string; steps: Step[]; open: Set<number> }) {
   const parts = code.split(/\[\[(\d+)\]\]/g)
   return (
@@ -881,7 +881,7 @@ function Mentor({ lang }: { lang: Lang }) {
         />
         <div className="flex flex-wrap gap-2">
           <button onClick={analyze} disabled={busy || !code.trim()} className="act-btn inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60" style={{ background: 'linear-gradient(145deg, #2fcf9b, #0f8a63)', boxShadow: '0 10px 18px -10px #0f8a63' }}>
-            {busy ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />} {busy ? 'A Capi está lendo…' : result ? 'Analisar de novo' : 'Pedir ajuda pra Capi'}
+            {busy ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />} {busy ? 'A Mendi está lendo…' : result ? 'Analisar de novo' : 'Pedir ajuda pra Mendi'}
           </button>
           {lang === 'javascript' && (
             <button
@@ -902,10 +902,10 @@ function Mentor({ lang }: { lang: Lang }) {
         )}
       </div>
 
-      {/* Direita: a Capi guiando */}
+      {/* Direita: a Mendi guiando */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-[#0f8a63] px-3 py-1 text-xs font-bold text-white">Capi</span>
+          <span className="rounded-full bg-[#0f8a63] px-3 py-1 text-xs font-bold text-white">Mendi</span>
           <span className="text-xs text-muted">guia passo a passo, sem entregar tudo</span>
         </div>
         {!result ? (
@@ -1006,7 +1006,7 @@ function Mentor({ lang }: { lang: Lang }) {
                     }
                   }}
                   rows={Math.min(5, Math.max(1, q.split('\n').length))}
-                  placeholder="Responda a Capi ou pergunte algo sobre o código…"
+                  placeholder="Responda a Mendi ou pergunte algo sobre o código…"
                   className="thin-scroll max-h-32 flex-1 resize-none rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#0f8a63]"
                 />
                 <button onClick={() => ask(q)} disabled={chatBusy || !q.trim()} className="act-btn grid h-11 w-11 place-items-center rounded-xl text-white disabled:opacity-50" style={{ background: 'linear-gradient(145deg, #2fcf9b, #0f8a63)' }} aria-label="Enviar">

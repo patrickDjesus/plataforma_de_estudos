@@ -149,7 +149,7 @@ export interface Settings {
   focusPauseMinutes?: number
   /** Versão dos conteúdos padrão já aplicada. */
   seedVersion?: number
-  /** Capi dá boas-vindas ao abrir o site (padrão: sim). */
+  /** Mendi dá boas-vindas ao abrir o site (padrão: sim). */
   mascotWelcome?: boolean
   /** Preferência: semanas temáticas (uma matéria por área). Padrão: sim. */
   themeWeeks?: boolean

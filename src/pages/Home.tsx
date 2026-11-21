@@ -237,7 +237,7 @@ export function HomePage() {
                     {scoped.length === 0 && (
                       <div className="flex flex-col items-center py-4 text-center">
                         <Capybara pose="relaxando" size={96} />
-                        <p className="mt-1 text-sm text-muted">Nenhum bloco de estudo {scope === 'hoje' ? 'hoje' : 'nesta semana'}. Dia de capivara. <Fx name="orange" /></p>
+                        <p className="mt-1 text-sm text-muted">Nenhum bloco de estudo {scope === 'hoje' ? 'hoje' : 'nesta semana'}. Dia de descanso. <Fx name="moon" /></p>
                       </div>
                     )}
                     {scoped.map((b) => {

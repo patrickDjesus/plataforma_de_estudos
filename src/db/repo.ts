@@ -369,7 +369,7 @@ async function celebrateBlock(b: Pick<Block, 'id' | 'kind' | 'topicId' | 'subjec
     if (full && full.questions === undefined) askBlockQuestions(b.id)
   }
 
-  // Revisão: o Capi pergunta como foi
+  // Revisão: a Mendi pergunta como foi
   if (b.kind === 'revisao' && topic && (await db.reviews.get(topic.id))) {
     showMascot({
       pose: 'pensando',
@@ -435,7 +435,7 @@ export async function resumeTimer() {
 }
 
 /** Para o cronômetro e grava a sessão. `markDone` também conclui o bloco. */
-/** Para o cronômetro e grava a sessão. Devolve o id da sessão gravada (se houver). `quiet` não chama o Capi. */
+/** Para o cronômetro e grava a sessão. Devolve o id da sessão gravada (se houver). `quiet` não chama a Mendi. */
 export async function stopTimer(markDone = false, quiet = false, maxSeconds?: number): Promise<string | undefined> {
   const t = await getTimer()
   if (!t) return

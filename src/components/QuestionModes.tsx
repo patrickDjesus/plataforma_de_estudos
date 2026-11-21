@@ -9,7 +9,7 @@ type Mode = { id: ModeId; title: string; tag: string; from: string; to: string; 
 
 /*
  * Cada cartão é uma ilustração inteira num SVG só (viewBox 260x520, ancorado embaixo):
- * fundo (cenário) → Capi → frente (mesa, varinha…). Assim tudo fica alinhado em qualquer tamanho.
+ * fundo (cenário) → Mendi → frente (mesa, varinha…). Assim tudo fica alinhado em qualquer tamanho.
  */
 const W = 260
 const H = 520
@@ -32,7 +32,7 @@ const sparkle = (x: number, y: number, r: number, d: number, fill = '#ffe27a') =
     fill={fill}
   />
 )
-/** Mesa vista de frente (fica na frente da Capi, escondendo as perninhas). */
+/** Mesa vista de frente (fica na frente da Mendi, escondendo as perninhas). */
 const desk = (top: string, side: string, shade: string) => (
   <g>
     <rect x="34" y="398" width="192" height="13" rx="5" fill={top} />

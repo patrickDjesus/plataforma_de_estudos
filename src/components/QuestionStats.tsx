@@ -153,7 +153,7 @@ export function QuestionsSummary() {
         <ListChecks size={18} /> Questões
       </h3>
       {s.total.done === 0 ? (
-        <p className="text-sm text-muted">Ainda sem questões. Ao concluir um bloco, a Capi pergunta quantas você fez; os desafios do Mendonça também contam.</p>
+        <p className="text-sm text-muted">Ainda sem questões. Ao concluir um bloco, a Mendi pergunta quantas você fez; os desafios do Mendonça também contam.</p>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr_1.2fr]">
           {/* Números */}

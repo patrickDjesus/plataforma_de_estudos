@@ -30,7 +30,7 @@ export function withPreview(rank: RankState, preview: number | null): RankState 
   return { ...rank, pos: preview, points: preview >= MASTER_POS ? 1410 : Math.round(sizeOf(preview) * 0.45) }
 }
 
-/** Avisa (com a Capi) quando o rank sobe ou cai desde a última visita. */
+/** Avisa (com a Mendi) quando o rank sobe ou cai desde a última visita. */
 export function useRankWatcher(rank: RankState, ready: boolean) {
   const latest = useRef(rank.pos)
   const baseline = useRef<number | null>(null) // rank antes da mudança ainda não anunciada
@@ -50,7 +50,7 @@ export function useRankWatcher(rank: RankState, ready: boolean) {
     if (seen === null || Number.isNaN(seen) || seen === rank.pos) return
     if (baseline.current === null) baseline.current = seen
     window.clearTimeout(timer.current)
-    // Espera o "bom dia" da Capi e anuncia o rank mais recente (se mudou várias vezes, uma mensagem só)
+    // Espera o "bom dia" da Mendi e anuncia o rank mais recente (se mudou várias vezes, uma mensagem só)
     timer.current = window.setTimeout(() => {
       const from = baseline.current!
       baseline.current = null

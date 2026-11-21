@@ -35,7 +35,7 @@ export function setLookups(l: typeof names) {
 }
 export const subjectName = (id: string) => names.subject(id)
 
-// ---------- Som e fala da Capi ----------
+// ---------- Som e fala da Mendi ----------
 export function sfx(kind: Sfx) {
   if (rush.get().sound) playSfx(kind)
 }
@@ -77,7 +77,7 @@ export const LINES = {
     demon: ['HAHA. Eu avisei.', 'Mais um pro meu caderno', 'Essa era braba. Volta mais forte.'],
     boss: ['Ele venceu hoje. Vai voltar pra te pegar.', 'Chefão 1 x 0. Por enquanto.', 'Doeu? Doeu. Bora revisar.'],
   },
-  click: ['Ei! Foca na questão', 'Tô aqui te esperando.', 'Cutuca não, responde.', 'Tô observando. Sempre.', 'Me dá um combo de 5 que eu danço.', 'Eu era uma capivara tranquila. Agora sou sua coach.'],
+  click: ['Ei! Foca na questão', 'Tô aqui te esperando.', 'Cutuca não, responde.', 'Tô observando. Sempre.', 'Me dá um combo de 5 que eu danço.', 'Eu era uma coruja tranquila. Agora sou sua coach.'],
 } as const
 
 type LineKey = keyof typeof LINES
@@ -90,7 +90,7 @@ export function onTalk(l: Listener) {
     talkers.delete(l)
   }
 }
-/** A Capi fala uma frase do grupo (e do tom) pedido. */
+/** A Mendi fala uma frase do grupo (e do tom) pedido. */
 export function say(key: LineKey, tier?: string, vars?: { L?: string }) {
   let pool: readonly string[] | Record<string, readonly string[]> = LINES[key]
   if (!Array.isArray(pool)) {

@@ -173,7 +173,7 @@ export function Simulado() {
           <Capybara pose="focado" size={90} />
           <div>
             <h2 className="font-display text-3xl font-extrabold">Simulado</h2>
-            <p className="text-sm text-muted">Como numa prova de verdade: só múltipla escolha, tempo marcado, sem dica, sem Capi, sem efeitos. A nota e os erros entram nas suas estatísticas.</p>
+            <p className="text-sm text-muted">Como numa prova de verdade: só múltipla escolha, tempo marcado, sem dica, sem Mendi, sem efeitos. A nota e os erros entram nas suas estatísticas.</p>
           </div>
         </div>
         <div className="space-y-5">

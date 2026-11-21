@@ -426,7 +426,7 @@ export function BlockDialog({ weekId, block, draft, onClose }: { weekId: string;
   )
 }
 
-/** Questões feitas no bloco (editável depois da pergunta da Capi). */
+/** Questões feitas no bloco (editável depois da pergunta da Mendi). */
 function QuestionsFields({ block, color }: { block: Block; color: string }) {
   const [q, setQ] = useState(String(block.questions ?? ''))
   const [c, setC] = useState(block.correct === undefined ? '' : String(block.correct))

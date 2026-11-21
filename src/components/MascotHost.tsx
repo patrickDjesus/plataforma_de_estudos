@@ -17,7 +17,7 @@ import { useSyncStatus } from '../lib/cloud'
 import { FxText } from './Fx'
 
 /**
- * Onde o Capi mora: o botão no canto da tela, o balão de fala,
+ * Onde a Mendi mora: o botão no canto da tela, o balão de fala,
  * as boas-vindas ao abrir o site e o aviso de nível novo.
  */
 export function MascotHost() {
@@ -149,7 +149,7 @@ export function MascotHost() {
     window.setTimeout(() => say(capiWelcome(ctx)), 700)
   }, [ctx, data, say, sync])
 
-  // Meta do dia batida: a Capi dança (uma vez por dia)
+  // Meta do dia batida: a Mendi dança (uma vez por dia)
   const goalDay = useRef<string | null>(null)
   useEffect(() => {
     if (!data) return
@@ -194,7 +194,7 @@ export function MascotHost() {
     lastLevel.current = lvl
   }, [data])
 
-  // Conquistas novas: o Capi comemora (na primeira vez, registra sem alarde)
+  // Conquistas novas: a Mendi comemora (na primeira vez, registra sem alarde)
   useEffect(() => {
     if (!data) return
     const list = achievements(computeStats({ sessions: data.sessions, blocks: data.allBlocks, reviews: data.reviews, notes: data.notes, subjects: data.subjects }))
@@ -228,7 +228,7 @@ export function MascotHost() {
     if (a.run) await a.run()
   }
 
-  // No celular a Capi fica menor, para não cobrir o conteúdo
+  // No celular a Mendi fica menor, para não cobrir o conteúdo
   const phone = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 640px)').matches
   if (phone) return null
   return (
@@ -262,8 +262,8 @@ export function MascotHost() {
       <button
         onClick={ask}
         className="pointer-events-auto group relative grid place-items-center rounded-full transition hover:-translate-y-1"
-        aria-label="Conversar com o Capi"
-        title="Conversar com o Capi"
+        aria-label="Conversar com a Mendi"
+        title="Conversar com a Mendi"
       >
         <span className="absolute inset-x-3 bottom-1 h-16 rounded-full bg-brand/15 blur-xl transition group-hover:bg-brand/25" />
         <Capybara key={msg ? `p-${key}` : 'idle'} pose={msg?.pose ?? mood ?? idlePose} size={phone ? (msg ? 72 : 46) : msg ? 104 : 78} className="relative transition-all" />

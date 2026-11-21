@@ -33,12 +33,12 @@ const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${St
 const nowMin = (d: Date) => d.getHours() * 60 + d.getMinutes()
 
 export const CAPI_FACTS = [
-  'Sabia que a capivara é o maior roedor do mundo? E mesmo assim é a mais tranquila da turma.',
-  'Capivaras conseguem ficar alguns minutos debaixo d’água. Foco também é prender o fôlego e mergulhar no assunto.',
-  'Os dentes da frente da capivara crescem a vida toda. Igual ao seu conhecimento, se você continuar estudando.',
-  'O nome capivara vem do tupi e significa algo como “comedora de capim”. Eu prefiro dizer “comedora de conteúdo”.',
-  'Capivaras vivem em grupo. Estudar com alguém e explicar a matéria em voz alta ajuda muito a fixar.',
-  'Capivaras passam boa parte do dia descansando. Pausas fazem parte do aprendizado, viu?',
+  'Sabia que a coruja-buraqueira mora em buracos no chão? Eu cavo fundo, igual quando você estuda um assunto até o fim.',
+  'Corujas giram a cabeça até 270 graus. Eu uso isso pra olhar todas as matérias da semana ao mesmo tempo.',
+  'Diferente das outras corujas, a buraqueira fica acordada de dia também. Estudo bom é o que cabe na sua rotina, não só de madrugada.',
+  'Os olhos da coruja não se mexem dentro da cabeça, por isso ela vira o rosto inteiro. Foco é isso: olhar de frente pro que importa.',
+  'Corujas voam quase sem fazer barulho. Estudar em silêncio, sem notificação, rende muito mais.',
+  'A buraqueira faz "ninho" perto da família. Estudar com alguém e explicar em voz alta ajuda demais a fixar.',
 ]
 
 export const CAPI_TIPS = [
@@ -57,13 +57,13 @@ export function capiWelcome(ctx: CapiContext): MascotMessage {
   const greeting = late ? 'Olá' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'
   const pose: CapiPose = late ? 'dormindo' : h < 12 ? 'acenando' : h < 18 ? pick(['acenando', 'relaxando']) : pick(['acenando', 'estudando'])
   const title = `${greeting}, ${ctx.name}!`
-  const close = { label: 'Valeu, Capi!' }
+  const close = { label: 'Valeu, Mendi!' }
 
   if (!ctx.hasSubjects)
     return {
       pose: 'acenando',
       title,
-      text: 'Eu sou o Capi, a capivara que vai te acompanhar nos estudos. Bora começar cadastrando suas matérias?',
+      text: 'Eu sou a Mendi, a coruja que vai te acompanhar nos estudos. Bora começar cadastrando suas matérias?',
       actions: [{ label: 'Cadastrar matérias', primary: true, to: '/materias' }, close],
     }
   if (!ctx.hasWeek)
@@ -93,12 +93,12 @@ export function capiWelcome(ctx: CapiContext): MascotMessage {
   return { pose: 'relaxando', title, text: 'Hoje não tem nada no plano. Aproveita para descansar ou revisar algo no caderno.', actions: [{ label: 'Abrir caderno', to: '/caderno' }, close] }
 }
 
-/** Perguntas e conversas quando você clica no Capi. `n` alterna o assunto. */
+/** Perguntas e conversas quando você clica na Mendi. `n` alterna o assunto. */
 export function capiQuestion(ctx: CapiContext, n: number): MascotMessage {
   const close = { label: 'Agora não' }
   const contextual: MascotMessage[] = []
 
-  if (ctx.timerRunning) contextual.push({ pose: 'focado', title: 'Foco total!', text: 'Você está no meio de um bloco. Vou ficar quietinho aqui do lado. 🤫', actions: [{ label: 'Valeu!' }] })
+  if (ctx.timerRunning) contextual.push({ pose: 'focado', title: 'Foco total!', text: 'Você está no meio de um bloco. Vou ficar quietinha aqui do lado. 🤫', actions: [{ label: 'Valeu!' }] })
 
   const missed = ctx.missedToday[0]
   if (missed)
@@ -162,8 +162,8 @@ export function capiQuestion(ctx: CapiContext, n: number): MascotMessage {
       text: 'Qual matéria está sendo a mais difícil essa semana? Vale aumentar o peso dela em Matérias.',
       actions: [{ label: 'Ajustar pesos', primary: true, to: '/materias' }, close],
     },
-    { pose: pick<CapiPose>(['relaxando', 'acenando', 'formado']), title: 'Curiosidade de capivara', text: pick(CAPI_FACTS), actions: [{ label: 'Haha, legal!' }] },
-    { pose: pick<CapiPose>(['estudando', 'focado', 'formado']), title: 'Dica do Capi', text: pick(CAPI_TIPS), actions: [{ label: 'Anotado!' }] },
+    { pose: pick<CapiPose>(['relaxando', 'acenando', 'formado']), title: 'Curiosidade de coruja', text: pick(CAPI_FACTS), actions: [{ label: 'Haha, legal!' }] },
+    { pose: pick<CapiPose>(['estudando', 'focado', 'formado']), title: 'Dica da Mendi', text: pick(CAPI_TIPS), actions: [{ label: 'Anotado!' }] },
   ]
 
   const all = [...contextual, ...general]

@@ -107,14 +107,14 @@ const H = 3600
 export function achievements(s: Stats): Achievement[] {
   const list: Omit<Achievement, 'unlocked'>[] = [
     { id: 'primeiro-passo', title: 'Primeiro passo', description: 'Conclua seu primeiro bloco de estudo.', icon: 'footprints', color: '#3e63f2', value: s.doneBlocks, target: 1 },
-    { id: 'foco-capivara', title: 'Foco de capivara', description: 'Faça uma sessão de 50 minutos sem parar.', icon: 'timer', color: '#8b5cf6', value: Math.floor(s.longestSession / 60), target: 50 },
+    { id: 'foco-capivara', title: 'Foco de coruja', description: 'Faça uma sessão de 50 minutos sem parar.', icon: 'timer', color: '#8b5cf6', value: Math.floor(s.longestSession / 60), target: 50 },
     { id: 'pegando-ritmo', title: 'Pegando o ritmo', description: 'Estude 3 dias seguidos.', icon: 'flame', color: '#f97316', value: s.longestStreak, target: 3 },
     { id: 'semana-de-ferro', title: 'Semana de ferro', description: 'Estude 7 dias seguidos.', icon: 'flame', color: '#ef4444', value: s.longestStreak, target: 7 },
     { id: 'plano-cumprido', title: 'Plano cumprido', description: 'Feche uma semana com 100% dos blocos feitos.', icon: 'calendar', color: '#10b981', value: s.perfectWeeks, target: 1 },
     { id: 'maratonista', title: 'Maratonista', description: 'Some 10 horas de estudo.', icon: 'mountain', color: '#0ea5e9', value: Math.floor(s.totalSeconds / H), target: 10 },
     { id: 'universitario', title: 'Universitário de verdade', description: 'Some 100 horas de Faculdade.', icon: 'graduation', color: '#3e63f2', value: Math.floor(s.secondsByArea.faculdade / H), target: 100 },
     { id: 'poliglota', title: 'Poliglota', description: 'Some 5 horas de Idiomas.', icon: 'languages', color: '#10b981', value: Math.floor(s.secondsByArea.idiomas / H), target: 5 },
-    { id: 'memoria-capivara', title: 'Memória de capivara', description: 'Registre 10 revisões.', icon: 'brain', color: '#ec4899', value: s.reviewsDone, target: 10 },
+    { id: 'memoria-capivara', title: 'Memória de coruja', description: 'Registre 10 revisões.', icon: 'brain', color: '#ec4899', value: s.reviewsDone, target: 10 },
     { id: 'cartografo', title: 'Cartógrafo', description: 'Crie 10 ligações [[…]] entre notas.', icon: 'link', color: '#f59e0b', value: s.citations, target: 10 },
     { id: 'escritor', title: 'Escritor', description: 'Escreva em 20 notas do caderno.', icon: 'pen', color: '#14b8a6', value: s.notesCount, target: 20 },
     { id: 'madrugador', title: 'Madrugador', description: 'Estude 15 min antes das 8h.', icon: 'sunrise', color: '#f59e0b', value: s.earlyBird ? 1 : 0, target: 1 },

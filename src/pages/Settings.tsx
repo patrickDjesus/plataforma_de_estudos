@@ -205,8 +205,8 @@ export function SettingsPage() {
           </div>
         </Section>
 
-        {/* Capi */}
-        <Section title="Capi" icon={<Smile size={18} />} from="#ffc24d" to="#e08a00">
+        {/* Mendi */}
+        <Section title="Mendi" icon={<Smile size={18} />} from="#ffc24d" to="#e08a00">
           <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-[#f6f7f9] px-4 py-3">
             <span className="text-sm font-semibold">Boas-vindas ao abrir</span>
             <Switch on={settings.mascotWelcome !== false} onChange={(v) => updateSettings({ mascotWelcome: v })} label="Boas-vindas ao abrir o site" />
