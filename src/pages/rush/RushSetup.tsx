@@ -63,6 +63,7 @@ export function RushSetup() {
 
   return (
     <div>
+      {S.started && (
       <div className="relative isolate mb-6 flex flex-wrap items-center gap-5 overflow-hidden rounded-[24px] bg-[#16181d] p-5 text-white sm:p-7">
         <span className="pointer-events-none absolute -top-24 -left-16 -z-10 h-72 w-72 rounded-full bg-[#3e63f2]/35 blur-3xl" />
         <span className="pointer-events-none absolute -right-10 -bottom-28 -z-10 h-72 w-72 rounded-full bg-[#b3122e]/30 blur-3xl" />
@@ -85,6 +86,7 @@ export function RushSetup() {
           </p>
         </div>
       </div>
+      )}
 
       {/* 1. Matérias */}
       <Step n={1} title="Quais matérias hoje?">

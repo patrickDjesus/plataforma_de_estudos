@@ -11,7 +11,7 @@ import { CodeLab } from '../components/CodeLab'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Capybara } from '../components/Capybara'
 import { Card, PageHeader } from '../components/ui'
-import { QuestionModes, modeInfo } from '../components/QuestionModes'
+import { ModeBanner, QuestionModes, modeInfo } from '../components/QuestionModes'
 import { RushPage } from './rush/RushPage'
 import { ExtraQuestions } from './ExtraQuestions'
 import { Simulado } from './Simulado'
@@ -33,21 +33,25 @@ export function QuestionsPage() {
   const label = mode?.title ?? (tab === 'registrar' ? 'Registrar extras' : 'Histórico')
   return (
     <>
-      <PageHeader icon={<FileQuestion size={24} />} title="Questões" subtitle={tab ? undefined : 'Escolha um modo.'} />
       {!tab ? (
-        <div key="menu" className="page-in">
-          <QuestionModes onPick={setTab} onExtra={setTab} />
-        </div>
+        <>
+          <PageHeader icon={<FileQuestion size={24} />} title="Questões" subtitle="Escolha um modo." />
+          <div key="menu" className="page-in">
+            <QuestionModes onPick={setTab} onExtra={setTab} />
+          </div>
+        </>
       ) : (
         <>
-          <div className="mb-5 flex items-center gap-3">
-            <button onClick={() => setTab(null)} className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-              <ArrowLeft size={16} /> Modos
-            </button>
-            <span className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-white" style={{ background: mode ? `linear-gradient(135deg, ${mode.from}, ${mode.to})` : '#121826' }}>
-              {label}
-            </span>
-          </div>
+          {mode ? (
+            <ModeBanner id={mode.id} onBack={() => setTab(null)} onSwitch={setTab} />
+          ) : (
+            <div className="mb-5 flex items-center gap-3">
+              <button onClick={() => setTab(null)} className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                <ArrowLeft size={16} /> Modos
+              </button>
+              <h1 className="text-xl font-bold">{label}</h1>
+            </div>
+          )}
           <div key={tab} className="page-in">
             {tab === 'rush' && <RushPage />}
             {tab === 'simulado' && <Simulado />}

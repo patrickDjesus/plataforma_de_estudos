@@ -5,7 +5,7 @@ import { playSfx } from '../lib/sfx'
 
 export type ModeId = 'rush' | 'simulado' | 'gerar' | 'codigo'
 
-type Mode = { id: ModeId; title: string; tag: string; from: string; to: string; ink: string; pose: CapiPose; back: ReactNode; front?: ReactNode }
+type Mode = { id: ModeId; title: string; tag: string; about: string; sky: [string, string]; from: string; to: string; ink: string; pose: CapiPose; back: ReactNode; front?: ReactNode }
 
 /*
  * Cada cartão é uma ilustração inteira num SVG só (viewBox 260x520, ancorado embaixo):
@@ -294,10 +294,10 @@ const writeFront = (
 )
 
 const MODES: Mode[] = [
-  { id: 'rush', title: 'Rush', tag: 'Questões sem parar. Até errar.', from: '#ff9a3d', to: '#e2401b', ink: '#e2401b', pose: 'focado', back: rushBack, front: rushFront },
-  { id: 'simulado', title: 'Simulado', tag: 'Prova com tempo, nota no final.', from: '#5b7cff', to: '#2a3fb8', ink: '#2a3fb8', pose: 'pensando', back: simBack, front: simFront },
-  { id: 'gerar', title: 'Gerar lista', tag: 'Questões sob medida.', from: '#a77bff', to: '#6233d6', ink: '#6233d6', pose: 'acenando', back: magicBack, front: magicFront },
-  { id: 'codigo', title: 'Código', tag: 'Lógica, desafios e dúvidas.', from: '#2fcf9b', to: '#0f8a63', ink: '#0f8a63', pose: 'focado', back: writeBack, front: writeFront },
+  { id: 'rush', title: 'Rush', tag: 'Questões sem parar. Até errar.', about: 'Errou? Eu explico na hora e a mesma ideia volta umas questões depois, até você dominar.', sky: ['#e2551b', '#ffb36b'], from: '#ff9a3d', to: '#e2401b', ink: '#e2401b', pose: 'focado', back: rushBack, front: rushFront },
+  { id: 'simulado', title: 'Simulado', tag: 'Prova com tempo, nota no final.', about: 'Como prova de verdade: só múltipla escolha, tempo marcado e nada de dica.', sky: ['#3e63f2', '#8aa4ff'], from: '#5b7cff', to: '#2a3fb8', ink: '#2a3fb8', pose: 'pensando', back: simBack, front: simFront },
+  { id: 'gerar', title: 'Gerar lista', tag: 'Questões sob medida.', about: 'Escolha a matéria, o tópico e o nível. A lista sai do jeito que você precisa.', sky: ['#4a28b8', '#8a64f2'], from: '#a77bff', to: '#6233d6', ink: '#6233d6', pose: 'acenando', back: magicBack, front: magicFront },
+  { id: 'codigo', title: 'Código', tag: 'Lógica, desafios e dúvidas.', about: 'Desafios de lógica, seu código revisado linha por linha e dúvidas de programação.', sky: ['#0f8a63', '#5fdcb0'], from: '#2fcf9b', to: '#0f8a63', ink: '#0f8a63', pose: 'focado', back: writeBack, front: writeFront },
 ]
 
 export function modeInfo(id: string) {
@@ -349,6 +349,43 @@ export function QuestionModes({ onPick, onExtra }: { onPick: (id: ModeId) => voi
         <button onClick={() => onExtra('historico')} className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
           <History size={15} /> Histórico
         </button>
+      </div>
+    </div>
+  )
+}
+
+/** Faixa do topo dentro de cada modo: a mesma ilustração do cartão, deitada. */
+export function ModeBanner({ id, onBack, onSwitch }: { id: ModeId; onBack: () => void; onSwitch: (id: ModeId) => void }) {
+  const m = MODES.find((x) => x.id === id)!
+  return (
+    <div className="page-in relative mb-6 h-[210px] overflow-hidden rounded-[26px] text-white shadow-[0_18px_34px_-22px_rgba(16,24,40,0.6)]" style={{ background: `linear-gradient(100deg, ${m.sky[0]}, ${m.sky[1]})` }}>
+      {/* cenário do cartão, encaixado à direita */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-[300px] sm:w-[340px]" style={{ maskImage: 'linear-gradient(to right, transparent, #000 32%)', WebkitMaskImage: 'linear-gradient(to right, transparent, #000 32%)' }}>
+        <svg viewBox="0 170 260 290" preserveAspectRatio="xMidYMax slice" className="essential-motion h-full w-full" aria-hidden>
+          {m.back}
+          <g transform="translate(52 268)">
+            <g className={m.id === 'rush' ? 'qm-run' : undefined}>
+              <Capybara pose={m.pose} size={156} />
+            </g>
+          </g>
+          {m.front}
+        </svg>
+      </div>
+      <div className="relative z-10 flex h-full max-w-[62%] flex-col justify-between p-6">
+        <button onClick={onBack} className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold backdrop-blur transition hover:bg-white/30">
+          ← Modos
+        </button>
+        <div>
+          <h1 className="font-display text-[34px] leading-none font-extrabold drop-shadow-[0_2px_4px_rgba(0,0,0,.15)]">{m.title}</h1>
+          <p className="mt-2 max-w-md text-sm leading-snug font-semibold text-white/90">{m.about}</p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {MODES.filter((x) => x.id !== id).map((x) => (
+            <button key={x.id} onClick={() => onSwitch(x.id)} className="rounded-full border border-white/40 px-2.5 py-1 text-[11px] font-bold text-white/90 transition hover:bg-white hover:text-ink">
+              {x.title}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )

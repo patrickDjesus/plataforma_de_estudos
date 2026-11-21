@@ -169,13 +169,6 @@ export function Simulado() {
   if (phase === 'config')
     return (
       <Card className="mx-auto max-w-3xl p-6 sm:p-8">
-        <div className="mb-5 flex items-center gap-4">
-          <Capybara pose="focado" size={90} />
-          <div>
-            <h2 className="font-display text-3xl font-extrabold">Simulado</h2>
-            <p className="text-sm text-muted">Como numa prova de verdade: só múltipla escolha, tempo marcado, sem dica, sem Mendi, sem efeitos. A nota e os erros entram nas suas estatísticas.</p>
-          </div>
-        </div>
         <div className="space-y-5">
           <div>
             <div className="mb-2 text-sm font-bold">Matérias</div>
