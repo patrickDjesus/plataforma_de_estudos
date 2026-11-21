@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Bot, CheckCircle2, Code2, Eye, Lightbulb, Loader2, MessageCircleQuestion, Play, Send, Sparkles, Trash2, XCircle } from 'lucide-react'
+import { Bot, CheckCircle2, Code2, FileCode2, Lock, MessageSquareReply, Wand2, Eye, Lightbulb, Loader2, MessageCircleQuestion, Play, Send, Sparkles, Trash2, XCircle } from 'lucide-react'
 import { db, uid } from '../db/db'
 import type { CodeChallenge } from '../db/types'
 import { AIError, getAI } from '../lib/ai'
@@ -129,10 +129,20 @@ function runJS(code: string, fn?: string, tests?: CodeChallenge['tests']): Promi
 /* ---------------- Editor ---------------- */
 
 /** Editor simples: números de linha, Tab = 4 espaços e Enter mantendo a indentação. */
-function CodeEditor({ value, onChange, lang }: { value: string; onChange: (v: string) => void; lang: Lang }) {
+const LINE_H = 21.6
+function CodeEditor({ value, onChange, lang, highlight, tall = false }: { value: string; onChange: (v: string) => void; lang: Lang; highlight?: number; tall?: boolean }) {
   const ref = useRef<HTMLTextAreaElement>(null)
   const gutter = useRef<HTMLDivElement>(null)
+  const [scroll, setScroll] = useState(0)
   const lines = value.split('\n').length
+
+  // Linha apontada pela Capi: rola até ela
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !highlight) return
+    const y = (highlight - 1) * LINE_H
+    if (y < el.scrollTop || y > el.scrollTop + el.clientHeight - 40) el.scrollTop = Math.max(0, y - 60)
+  }, [highlight])
 
   const insert = (text: string, back = 0) => {
     const el = ref.current!
@@ -157,10 +167,13 @@ function CodeEditor({ value, onChange, lang }: { value: string; onChange: (v: st
   }
 
   return (
-    <div className="flex max-h-[460px] min-h-[260px] overflow-hidden rounded-2xl bg-[#16181d] font-mono text-[13.5px] leading-[1.6] shadow-inner">
-      <div ref={gutter} className="shrink-0 overflow-hidden bg-[#1d2027] py-3 pr-2 pl-3 text-right text-[#596071] select-none" aria-hidden>
-        {Array.from({ length: Math.max(lines, 12) }, (_, i) => (
-          <div key={i}>{i + 1}</div>
+    <div className={`relative flex overflow-hidden rounded-2xl bg-[#16181d] font-mono text-[13.5px] leading-[1.6] shadow-inner ${tall ? 'h-[520px]' : 'max-h-[460px] min-h-[260px]'}`}>
+      {highlight ? <div className="cl-hl pointer-events-none absolute inset-x-0 z-0 bg-[#ffd34d]/15 shadow-[inset_3px_0_0_#ffd34d]" style={{ top: 12 + (highlight - 1) * LINE_H - scroll, height: LINE_H }} /> : null}
+      <div ref={gutter} className="relative z-10 shrink-0 overflow-hidden bg-[#1d2027] py-3 pr-2 pl-3 text-right text-[#596071] select-none" aria-hidden>
+        {Array.from({ length: Math.max(lines, tall ? 24 : 12) }, (_, i) => (
+          <div key={i} className={highlight === i + 1 ? 'font-bold text-[#ffd34d]' : undefined}>
+            {i + 1}
+          </div>
         ))}
       </div>
       <textarea
@@ -168,12 +181,16 @@ function CodeEditor({ value, onChange, lang }: { value: string; onChange: (v: st
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKey}
-        onScroll={(e) => gutter.current && (gutter.current.scrollTop = e.currentTarget.scrollTop)}
+        onScroll={(e) => {
+          const t = e.currentTarget.scrollTop
+          if (gutter.current) gutter.current.scrollTop = t
+          setScroll(t)
+        }}
         spellCheck={false}
         autoCapitalize="off"
         autoCorrect="off"
         aria-label={`Seu código em ${LANG_NAME[lang]}`}
-        className="thin-scroll min-h-[260px] w-full resize-none bg-transparent px-3 py-3 whitespace-pre text-[#e6e9f2] caret-[#7ef0b5] outline-none"
+        className="thin-scroll relative z-10 h-full min-h-[260px] w-full resize-none bg-transparent px-3 py-3 whitespace-pre text-[#e6e9f2] caret-[#7ef0b5] outline-none"
         style={{ tabSize: 4 }}
       />
     </div>
@@ -234,7 +251,7 @@ const chip = (on: boolean) => `rounded-full px-3 py-1.5 text-xs font-bold transi
 /* ---------------- Principal ---------------- */
 
 export function CodeLab() {
-  const [tab, setTab] = useState<'desafio' | 'duvidas'>('desafio')
+  const [tab, setTab] = useState<'desafio' | 'meu' | 'duvidas'>('desafio')
   const [lang, setLangState] = useState<Lang>(() => load<Lang>(LANG_KEY, 'python'))
   const setLang = (l: Lang) => {
     setLangState(l)
@@ -248,12 +265,13 @@ export function CodeLab() {
           onChange={setTab}
           items={[
             { id: 'desafio', label: <><Code2 size={15} /> Desafios</> },
+            { id: 'meu', label: <><FileCode2 size={15} /> Meu código</> },
             { id: 'duvidas', label: <><MessageCircleQuestion size={15} /> Tirar dúvida</> },
           ]}
         />
         <Seg value={lang} onChange={setLang} items={[{ id: 'python', label: 'Python' }, { id: 'javascript', label: 'JavaScript' }]} />
       </div>
-      {tab === 'desafio' ? <Challenges lang={lang} /> : <Doubts lang={lang} />}
+      {tab === 'desafio' ? <Challenges lang={lang} /> : tab === 'meu' ? <Mentor lang={lang} /> : <Doubts lang={lang} />}
     </div>
   )
 }
@@ -687,5 +705,318 @@ function Doubts({ lang }: { lang: Lang }) {
         </button>
       </div>
     </Card>
+  )
+}
+
+/* ---------------- Meu código: a Capi como mentora ---------------- */
+
+type Step = { line: number; kind: 'pergunta' | 'sugestao' | 'erro' | 'elogio'; text: string; hint: string; piece: string; marker: number }
+type Mentoring = { summary: string; capiCode: string; steps: Step[] }
+const MENTOR_KEY = 'mendonca-code-mentor'
+
+const numbered = (code: string) =>
+  code
+    .split('\n')
+    .map((l, i) => `${String(i + 1).padStart(2, ' ')}| ${l}`)
+    .join('\n')
+
+const mentorPrompt = (lang: Lang, code: string, goal: string, doubt: string) => `Você é a Capi, mentora de programação de alguém que está começando. Seu jeito: um professor sentado do lado, que faz o aluno PENSAR. Nunca entregue a resposta pronta de mão beijada.
+Linguagem: ${LANG_NAME[lang]}.
+O que o código deve fazer: ${goal.trim() || '(o aluno não disse; deduza pelo código)'}
+${doubt.trim() ? `Dúvida do aluno: ${doubt.trim()}` : ''}
+
+Código do aluno (com número das linhas):
+${numbered(code)}
+
+Monte:
+1) "codigoCapi": a MELHOR versão desse código (simples, limpa, do jeito que um iniciante entende), mas com os trechos-chave que o aluno precisa descobrir trocados por marcadores [[1]], [[2]]... (de 1 a 4 marcadores). O resto do código aparece normal.
+2) "passos": de 2 a 5 orientações, em ordem, cada uma apontando para uma linha do código DO ALUNO. Escreva como perguntas ou sugestões que guiam, por exemplo: "Na linha 3, por que usar while aqui? Um for não deixaria mais simples?", "Essa variável na linha 5 muda em algum momento?", "E se a lista vier vazia?". Inclua um elogio se algo estiver bom.
+Cada passo pode estar ligado a um marcador do codigoCapi (o trecho que vai nele).
+Responda SOMENTE com JSON:
+{"resumo":"1 ou 2 frases: o que o código faz e como está","codigoCapi":"...","passos":[{"linha":3,"tipo":"pergunta|sugestao|erro|elogio","texto":"a pergunta/sugestão curta","pista":"uma dica a mais, se ele travar (sem dar o código)","marcador":1,"trecho":"o código exato que vai no marcador 1 (vazio se não tiver marcador)"}]}`
+
+const followPrompt = (lang: Lang, code: string, goal: string, m: Mentoring | null, history: Msg[], q: string) => `Você é a Capi, mentora de programação de um iniciante (${LANG_NAME[lang]}). Guie com perguntas e dicas curtas; não entregue o código completo. Se ele acertar, comemore e aponte o próximo passo.
+Objetivo: ${goal.trim() || '(não informado)'}
+Código atual do aluno:
+${numbered(code)}
+${m ? `Sua análise anterior: ${m.summary}\nOrientações: ${m.steps.map((s) => `linha ${s.line}: ${s.text}`).join(' | ')}` : ''}
+
+${history
+  .slice(-8)
+  .map((x) => `${x.role === 'user' ? 'Aluno' : 'Capi'}: ${x.text}`)
+  .join('\n\n')}
+
+Aluno: ${q}
+
+Capi:`
+
+const KIND: Record<Step['kind'], { label: string; cls: string }> = {
+  pergunta: { label: 'Pensa aqui', cls: 'bg-[#eef2ff] text-[#3e63f2]' },
+  sugestao: { label: 'Sugestão', cls: 'bg-[#e6f7f0] text-[#0f8a63]' },
+  erro: { label: 'Olha isso', cls: 'bg-rose-50 text-rose-600' },
+  elogio: { label: 'Mandou bem', cls: 'bg-amber-50 text-amber-700' },
+}
+
+/** Código da Capi com os trechos escondidos ([[n]]) virando cadeados até você revelar. */
+function CapiCode({ code, steps, open }: { code: string; steps: Step[]; open: Set<number> }) {
+  const parts = code.split(/\[\[(\d+)\]\]/g)
+  return (
+    <pre className="thin-scroll max-h-[300px] overflow-auto rounded-2xl bg-[#16181d] px-4 py-3 font-mono text-[13px] leading-[1.65] text-[#e6e9f2]">
+      {parts.map((p, i) => {
+        if (i % 2 === 0) return <span key={i}>{p}</span>
+        const n = Number(p)
+        const piece = steps.find((s) => s.marker === n)?.piece
+        return open.has(n) && piece ? (
+          <span key={i} className="capi-pop rounded bg-[#7ef0b5]/15 px-0.5 text-[#7ef0b5]">
+            {piece}
+          </span>
+        ) : (
+          <span key={i} className="mx-0.5 inline-flex items-center gap-1 rounded-md bg-[#ffd34d]/20 px-1.5 align-middle text-[11px] font-bold text-[#ffd34d]">
+            <Lock size={10} /> {n}
+          </span>
+        )
+      })}
+    </pre>
+  )
+}
+
+function Mentor({ lang }: { lang: Lang }) {
+  const saved = load<{ code: string; goal: string; result: Mentoring | null }>(`${MENTOR_KEY}-${lang}`, { code: '', goal: '', result: null })
+  const [code, setCode] = useState(saved.code)
+  const [goal, setGoal] = useState(saved.goal)
+  const [doubt, setDoubt] = useState('')
+  const [result, setResult] = useState<Mentoring | null>(saved.result)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [focus, setFocus] = useState<number | undefined>()
+  const [opened, setOpened] = useState<Set<number>>(new Set())
+  const [hints, setHints] = useState<Set<number>>(new Set())
+  const [chat, setChat] = useState<Msg[]>([])
+  const [q, setQ] = useState('')
+  const [live, setLive] = useState('')
+  const [chatBusy, setChatBusy] = useState(false)
+  const [run, setRun] = useState<RunResult | null>(null)
+
+  useEffect(() => {
+    save(`${MENTOR_KEY}-${lang}`, { code, goal, result })
+  }, [code, goal, result, lang])
+
+  const analyze = async () => {
+    if (!code.trim()) return
+    setBusy(true)
+    setError('')
+    try {
+      const ai = await getAI()
+      if (!ai) throw new AIError('unavailable', 'O Claude não está disponível aqui. Abra o Mendonça pelo claude.ai.')
+      const o = await ai.json<{ resumo?: string; codigoCapi?: string; passos?: { linha?: number; tipo?: string; texto?: string; pista?: string; trecho?: string; marcador?: number }[] }>(mentorPrompt(lang, code, goal, doubt), { fresh: true })
+      const steps: Step[] = (o?.passos ?? [])
+        .filter((p) => p?.texto)
+        .slice(0, 5)
+        .map((p) => ({
+          line: Math.max(0, Math.round(Number(p.linha) || 0)),
+          kind: (['pergunta', 'sugestao', 'erro', 'elogio'].includes(String(p.tipo)) ? p.tipo : 'pergunta') as Step['kind'],
+          text: String(p.texto),
+          hint: String(p.pista ?? ''),
+          piece: String(p.trecho ?? ''),
+          marker: Math.round(Number(p.marcador) || 0),
+        }))
+      setResult({ summary: String(o?.resumo ?? ''), capiCode: String(o?.codigoCapi ?? ''), steps })
+      setOpened(new Set())
+      setHints(new Set())
+      setChat([])
+      setFocus(steps[0]?.line || undefined)
+      setDoubt('')
+      playSfx('pop')
+    } catch (e) {
+      setError(e instanceof AIError ? e.message : 'Não consegui analisar agora. Seu código continua aqui; tente de novo.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const ask = async (text: string) => {
+    const t = text.trim()
+    if (!t || chatBusy) return
+    const history = chat
+    setChat([...history, { role: 'user', text: t }])
+    setQ('')
+    setChatBusy(true)
+    setLive('')
+    try {
+      const ai = await getAI()
+      if (!ai) throw new AIError('unavailable', 'O Claude não está disponível aqui. Abra o Mendonça pelo claude.ai.')
+      const out = await ai.text(followPrompt(lang, code, goal, result, history, t), { fresh: true, onText: setLive })
+      setChat((m) => [...m, { role: 'capi', text: out.trim() }])
+    } catch (e) {
+      setChat((m) => [...m, { role: 'capi', text: e instanceof AIError ? e.message : 'Ops, não consegui responder agora.' }])
+    } finally {
+      setChatBusy(false)
+      setLive('')
+    }
+  }
+
+  const toggle = (set: Set<number>, n: number) => {
+    const s = new Set(set)
+    if (s.has(n)) s.delete(n)
+    else s.add(n)
+    return s
+  }
+
+  return (
+    <div className="grid items-start gap-5 lg:grid-cols-2">
+      {/* Esquerda: o código do aluno */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-[#16181d] px-3 py-1 text-xs font-bold text-white">Seu código</span>
+          <span className="text-xs text-muted">{LANG_NAME[lang]}</span>
+        </div>
+        <input value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="O que esse código deve fazer? (opcional)" className="w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#0f8a63]" />
+        <CodeEditor value={code} onChange={setCode} lang={lang} highlight={focus} tall />
+        <input
+          value={doubt}
+          onChange={(e) => setDoubt(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && analyze()}
+          placeholder="Alguma dúvida específica? (opcional)"
+          className="w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#0f8a63]"
+        />
+        <div className="flex flex-wrap gap-2">
+          <button onClick={analyze} disabled={busy || !code.trim()} className="act-btn inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60" style={{ background: 'linear-gradient(145deg, #2fcf9b, #0f8a63)', boxShadow: '0 10px 18px -10px #0f8a63' }}>
+            {busy ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />} {busy ? 'A Capi está lendo…' : result ? 'Analisar de novo' : 'Pedir ajuda pra Capi'}
+          </button>
+          {lang === 'javascript' && (
+            <button
+              onClick={async () => setRun(await runJS(code))}
+              disabled={!code.trim()}
+              className="act-btn inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+              style={{ background: 'linear-gradient(145deg, #5b7cff, #2a3fb8)', boxShadow: '0 10px 18px -10px #2a3fb8' }}
+            >
+              <Play size={16} fill="currentColor" /> Rodar
+            </button>
+          )}
+        </div>
+        {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
+        {run && (
+          <pre className="thin-scroll max-h-40 overflow-auto rounded-2xl bg-[#16181d] px-3.5 py-2.5 font-mono text-[12.5px] text-[#c9cede]">
+            {run.error ? <span className="text-rose-300">{run.error}</span> : run.logs.length ? run.logs.join('\n') : '(nada foi impresso — use console.log)'}
+          </pre>
+        )}
+      </div>
+
+      {/* Direita: a Capi guiando */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-[#0f8a63] px-3 py-1 text-xs font-bold text-white">Capi</span>
+          <span className="text-xs text-muted">guia passo a passo, sem entregar tudo</span>
+        </div>
+        {!result ? (
+          <Card className="flex flex-col items-center px-6 py-12 text-center">
+            <Capybara pose="estudando" size={110} />
+            <p className="mt-2 font-bold">Escreva seu código do lado e me chama.</p>
+            <p className="mt-1 max-w-sm text-sm text-muted">Eu monto a minha versão, mas escondo as partes importantes. Você vai descobrindo com as minhas perguntas.</p>
+          </Card>
+        ) : (
+          <>
+            {result.summary && (
+              <div className="flex items-start gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-line">
+                <Capybara pose="pensando" size={52} />
+                <p className="text-sm text-slate-700">{result.summary}</p>
+              </div>
+            )}
+            {result.capiCode && <CapiCode code={result.capiCode} steps={result.steps} open={opened} />}
+
+            <div className="space-y-2">
+              {result.steps.map((s, i) => {
+                const k = KIND[s.kind]
+                const active = focus === s.line && s.line > 0
+                return (
+                  <div
+                    key={i}
+                    onClick={() => s.line && setFocus(s.line)}
+                    className={`capi-pop cursor-pointer rounded-2xl bg-white p-4 shadow-sm ring-1 transition ${active ? 'ring-2 ring-[#ffd34d]' : 'ring-line hover:ring-[#0f8a63]/40'}`}
+                    style={{ animationDelay: `${i * 0.08}s` }}
+                  >
+                    <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                      <span className="grid h-6 w-6 place-items-center rounded-full bg-[#16181d] text-[11px] font-bold text-white">{i + 1}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${k.cls}`}>{k.label}</span>
+                      {s.line > 0 && <span className="rounded-full bg-[#fff6dc] px-2 py-0.5 font-mono text-[11px] font-bold text-[#7a5a00]">linha {s.line}</span>}
+                    </div>
+                    <div className="text-sm text-slate-800">
+                      <RichText text={s.text} />
+                    </div>
+                    {hints.has(i) && s.hint && (
+                      <div className="capi-pop mt-2 rounded-xl bg-[#fff6dc] px-3 py-2 text-sm text-[#7a5a00]">
+                        <RichText text={s.hint} />
+                      </div>
+                    )}
+                    <div className="mt-2.5 flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      {s.hint && (
+                        <button onClick={() => setHints((h) => toggle(h, i))} className={chip(hints.has(i))}>
+                          <Lightbulb size={12} className="mr-1 inline" /> Dica
+                        </button>
+                      )}
+                      {s.marker > 0 && s.piece && (
+                        <button
+                          onClick={async () => {
+                            if (!opened.has(s.marker) && !hints.has(i) && s.hint && !(await askConfirm('Tenta a dica antes? Descobrir sozinho fixa muito mais.', false, { title: 'Revelar o trecho', yes: 'Revelar mesmo assim', no: 'Ver a dica' }))) {
+                              setHints((h) => new Set(h).add(i))
+                              return
+                            }
+                            setOpened((o) => toggle(o, s.marker))
+                          }}
+                          className={chip(opened.has(s.marker))}
+                        >
+                          <Lock size={12} className="mr-1 inline" /> {opened.has(s.marker) ? 'Esconder' : `Revelar trecho ${s.marker}`}
+                        </button>
+                      )}
+                      <button onClick={() => setQ(`Sobre o passo ${i + 1}: `)} className={chip(false)}>
+                        <MessageSquareReply size={12} className="mr-1 inline" /> Responder
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* conversa sobre o código */}
+            <Card className="p-0">
+              {(chat.length > 0 || chatBusy) && (
+                <div className="thin-scroll max-h-[320px] space-y-3 overflow-y-auto px-4 pt-4">
+                  {chat.map((m, i) =>
+                    m.role === 'user' ? (
+                      <div key={i} className="flex justify-end">
+                        <div className="max-w-[85%] rounded-2xl rounded-br-md bg-[#0f8a63] px-3.5 py-2 text-sm whitespace-pre-wrap text-white">{m.text}</div>
+                      </div>
+                    ) : (
+                      <div key={i} className="max-w-[92%] rounded-2xl rounded-tl-md bg-[#f6f7f9] px-3.5 py-2.5">
+                        <RichText text={m.text} />
+                      </div>
+                    ),
+                  )}
+                  {chatBusy && <div className="max-w-[92%] rounded-2xl rounded-tl-md bg-[#f6f7f9] px-3.5 py-2.5">{live ? <RichText text={live} /> : <Loader2 size={16} className="animate-spin text-muted" />}</div>}
+                </div>
+              )}
+              <div className="flex items-end gap-2 p-3">
+                <textarea
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      ask(q)
+                    }
+                  }}
+                  rows={Math.min(5, Math.max(1, q.split('\n').length))}
+                  placeholder="Responda a Capi ou pergunte algo sobre o código…"
+                  className="thin-scroll max-h-32 flex-1 resize-none rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#0f8a63]"
+                />
+                <button onClick={() => ask(q)} disabled={chatBusy || !q.trim()} className="act-btn grid h-11 w-11 place-items-center rounded-xl text-white disabled:opacity-50" style={{ background: 'linear-gradient(145deg, #2fcf9b, #0f8a63)' }} aria-label="Enviar">
+                  <Send size={17} />
+                </button>
+              </div>
+            </Card>
+          </>
+        )}
+      </div>
+    </div>
   )
 }
