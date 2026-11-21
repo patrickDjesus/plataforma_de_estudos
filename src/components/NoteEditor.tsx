@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -10,6 +10,8 @@ import { db } from '../db/db'
 import type { Note, Subject } from '../db/types'
 import { WikiLink } from '../lib/wikilink'
 import { tint } from '../lib/colors'
+import { MicButton } from './Voice'
+import { Fx } from './Fx'
 
 const HIGHLIGHTS = ['#fde047', '#86efac', '#93c5fd', '#f9a8d4', '#fdba74', '#c4b5fd']
 
@@ -106,6 +108,7 @@ export function NoteEditor({ note, subject, allTitles, reloadToken = 0 }: { note
     navigate(`/caderno/${id}`)
   }
 
+  const [partial, setPartial] = useState('')
   if (!editor) return null
   const color = subject?.color ?? '#3e63f2'
   const btn = (active: boolean | undefined) =>
@@ -155,6 +158,24 @@ export function NoteEditor({ note, subject, allTitles, reloadToken = 0 }: { note
         <button onClick={() => editor.chain().focus().unsetHighlight().run()} className="ml-1 rounded-lg px-2 py-1 text-xs font-semibold text-muted hover:bg-slate-100">
           Limpar
         </button>
+        {/* falar em vez de digitar: o texto entra onde está o cursor */}
+        <span className="ml-auto flex items-center gap-2 pr-1">
+          <span className="hidden text-xs font-semibold text-muted sm:inline">Falar</span>
+          <MicButton
+            color={color}
+            onPartial={setPartial}
+            onFinal={(t) => {
+              const before = editor.state.doc.textBetween(Math.max(0, editor.state.selection.from - 1), editor.state.selection.from)
+              const text = (before && !/\s/.test(before) ? ' ' : '') + t.trim().replace(/^./, (c) => (before === '' || /[.!?]\s*$/.test(before) ? c.toUpperCase() : c)) + ' '
+              editor.chain().focus().insertContent(text).run()
+            }}
+          />
+        </span>
+        {partial && (
+          <div className="capi-pop basis-full px-2 pb-1 text-sm text-muted italic">
+            <Fx name="mic" /> {partial}…
+          </div>
+        )}
       </div>
       <div onClick={onClick}>
         <EditorContent editor={editor} />
