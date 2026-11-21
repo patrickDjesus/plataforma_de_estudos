@@ -171,6 +171,24 @@ export function subjectTargets(input: PlanInput, totalMinutes: number): Map<stri
 }
 
 /**
+ * Conteúdo perdido ganha prioridade, mas só dentro da própria área: a matéria atrasada
+ * puxa tempo das outras matérias da mesma área, sem roubar das outras áreas.
+ * (Antes o atraso somava por cima e uma área com muito atraso engolia a semana inteira.)
+ */
+export function applyCarryOver(targets: Map<string, number>, input: Pick<PlanInput, 'subjects' | 'carryOver'>) {
+  const carry = input.carryOver ?? {}
+  const areas = new Set(input.subjects.filter((s) => targets.has(s.id)).map((s) => s.areaId))
+  for (const area of areas) {
+    const ids = input.subjects.filter((s) => s.areaId === area && targets.has(s.id)).map((s) => s.id)
+    const budget = ids.reduce((a, id) => a + targets.get(id)!, 0)
+    const boosted = ids.map((id) => targets.get(id)! + (carry[id] ?? 0))
+    const sum = boosted.reduce((a, b) => a + b, 0)
+    if (sum <= 0) continue
+    ids.forEach((id, i) => targets.set(id, (boosted[i] * budget) / sum))
+  }
+}
+
+/**
  * Encaixa as revisões no início dos horários livres, a partir da data de vencimento,
  * gastando no máximo `maxReviewShare` da semana. Devolve os blocos de revisão
  * e os horários que sobraram para estudo.
@@ -214,8 +232,7 @@ export function planWeek(input: PlanInput): PlannedBlock[] {
   const total = slots.reduce((acc, s) => acc + (s.end - s.start), 0)
   const targets = subjectTargets(input, total)
   if (targets.size === 0) return reviewBlocks
-  // Conteúdo perdido ganha prioridade (soma ao alvo da matéria)
-  for (const [id, min] of Object.entries(input.carryOver ?? {})) if (targets.has(id)) targets.set(id, targets.get(id)! + min)
+  applyCarryOver(targets, input)
 
   const assigned = new Map<string, number>([...targets.keys()].map((k) => [k, 0]))
   const topicsBySubject = new Map<string, Topic[]>()

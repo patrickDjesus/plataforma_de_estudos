@@ -273,8 +273,11 @@ async function regeneratePlanNow(weekId: string, now: Date) {
     db.blocks.where('weekId').equals(weekId).toArray(),
     db.timer.get('timer'),
   ])
-  const toRemove = blocks.filter((b) => isRegenerable(b, now, timer?.blockId))
-  const keep = blocks.filter((b) => !isRegenerable(b, now, timer?.blockId))
+  // Blocos de matéria apagada (ex.: apagada em outro aparelho) que ainda não aconteceram saem também
+  const alive = new Set(allSubjects.map((s) => s.id))
+  const orphan = (b: Block) => !!b.subjectId && !alive.has(b.subjectId) && !b.done && b.studiedSeconds === 0
+  const toRemove = blocks.filter((b) => isRegenerable(b, now, timer?.blockId) || orphan(b))
+  const keep = blocks.filter((b) => !isRegenerable(b, now, timer?.blockId) && !orphan(b))
   // Revisões que vencem até o fim da semana e ainda não têm bloco fixo pendente
   const weekEnd = addDays(weekId, 6)
   const pinned = new Set(keep.filter((b) => b.kind === 'revisao' && !b.done && !b.missed && b.topicId).map((b) => b.topicId!))

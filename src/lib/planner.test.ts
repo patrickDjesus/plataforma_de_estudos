@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Subject, Topic } from '../db/types'
-import { buildSlots, orderTopics, planWeek, subtract, type PlanInput } from './planner'
+import { applyCarryOver, buildSlots, orderTopics, planWeek, subtract, type PlanInput } from './planner'
 
 const sub = (id: string, areaId: Subject['areaId'], extra: Partial<Subject> = {}): Subject => ({
   id,
@@ -111,9 +111,9 @@ describe('planWeek', () => {
     expect(revMin / allMin).toBeLessThanOrEqual(0.21)
   })
 
-  it('conteúdo perdido ganha prioridade', () => {
-    const normal = planWeek(base()).filter((b) => b.subjectId === 'ing').length
-    const carried = planWeek(base({ carryOver: { ing: 100 } })).filter((b) => b.subjectId === 'ing').length
+  it('conteúdo perdido ganha prioridade dentro da área', () => {
+    const normal = planWeek(base()).filter((b) => b.subjectId === 'fis').length
+    const carried = planWeek(base({ carryOver: { fis: 200 } })).filter((b) => b.subjectId === 'fis').length
     expect(carried).toBeGreaterThan(normal)
   })
 
@@ -161,5 +161,29 @@ describe('modo flexível (horas por dia)', () => {
   it('planWeek preenche as horas com matérias', () => {
     const plan = planWeek(flex())
     expect(plan.reduce((a, b) => a + b.end - b.start, 0)).toBe(450)
+  })
+
+  it('atraso de uma área não engole as outras (semana temática continua aparecendo)', () => {
+    const subs: Subject[] = [
+      { id: 'fac', name: 'Faculdade', areaId: 'faculdade', color: '#000', weight: 1 } as Subject,
+      { id: 'bio', name: 'Biologia', areaId: 'ensino', color: '#000', weight: 1 } as Subject,
+      { id: 'ing', name: 'Inglês', areaId: 'idiomas', color: '#000', weight: 1 } as Subject,
+    ]
+    const targets = new Map([['fac', 470], ['bio', 94], ['ing', 62]])
+    applyCarryOver(targets, { subjects: subs, carryOver: { fac: 400, ing: 150 } })
+    expect(Math.round(targets.get('fac')!)).toBe(470)
+    expect(Math.round(targets.get('bio')!)).toBe(94)
+    expect(Math.round(targets.get('ing')!)).toBe(62)
+  })
+
+  it('atraso puxa tempo das outras matérias da mesma área', () => {
+    const subs: Subject[] = [
+      { id: 'a', name: 'A', areaId: 'ensino', color: '#000', weight: 1 } as Subject,
+      { id: 'b', name: 'B', areaId: 'ensino', color: '#000', weight: 1 } as Subject,
+    ]
+    const targets = new Map([['a', 100], ['b', 100]])
+    applyCarryOver(targets, { subjects: subs, carryOver: { a: 100 } })
+    expect(Math.round(targets.get('a')!)).toBe(133)
+    expect(Math.round(targets.get('b')!)).toBe(67)
   })
 })
