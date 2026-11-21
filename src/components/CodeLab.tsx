@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Bot, CheckCircle2, Code2, FileCode2, Lock, Wand2, Eye, Lightbulb, Loader2, MessageCircleQuestion, Play, Send, Sparkles, Trash2, XCircle } from 'lucide-react'
+import { Box, Braces, Brackets, CheckCircle2, Dices, Eye, FileCode2, GitBranch, Lightbulb, Loader2, Lock, MessageCircleQuestion, Play, Repeat, Send, Sparkles, Swords, Trash2, Type, Wand2, XCircle } from 'lucide-react'
 import { db, uid } from '../db/db'
 import type { CodeChallenge } from '../db/types'
 import { AIError, getAI } from '../lib/ai'
@@ -8,7 +8,7 @@ import { centerOf, confetti, playSfx } from '../lib/sfx'
 import { showMascot } from '../lib/mascotBus'
 import { askConfirm } from './confirm'
 import { Capybara, type CapiPose } from './Capybara'
-import { Btn, Card } from './ui'
+import { Card } from './ui'
 import { Fx } from './Fx'
 
 type Lang = CodeChallenge['lang']
@@ -249,19 +249,6 @@ function RichText({ text }: { text: string }) {
 
 /* ---------------- Peças ---------------- */
 
-function Seg<T extends string>({ value, onChange, items }: { value: T; onChange: (v: T) => void; items: { id: T; label: ReactNode }[] }) {
-  return (
-    <div className="inline-flex gap-1 rounded-2xl bg-[#f1f2f5] p-1 text-sm font-bold">
-      {items.map((it) => (
-        <button key={it.id} onClick={() => onChange(it.id)} className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 transition ${value === it.id ? 'bg-white text-[#0f8a63] shadow-sm' : 'text-muted hover:text-ink'}`}>
-          {it.label}
-        </button>
-      ))}
-    </div>
-  )
-}
-const chip = (on: boolean) => `rounded-full px-3 py-1.5 text-xs font-bold transition ${on ? 'bg-[#0f8a63] text-white shadow-[0_6px_12px_-6px_#0f8a63]' : 'bg-[#f1f2f5] text-slate-600 hover:bg-[#e6f7f0]'}`
-
 /* ---------------- Principal ---------------- */
 
 export function CodeLab() {
@@ -272,22 +259,81 @@ export function CodeLab() {
     save(LANG_KEY, l)
   }
   return (
-    <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <Seg
-          value={tab}
-          onChange={setTab}
-          items={[
-            { id: 'desafio', label: <><Code2 size={15} /> Desafios</> },
-            { id: 'meu', label: <><FileCode2 size={15} /> Meu código</> },
-            { id: 'duvidas', label: <><MessageCircleQuestion size={15} /> Tirar dúvida</> },
-          ]}
-        />
-        <Seg value={lang} onChange={setLang} items={[{ id: 'python', label: 'Python' }, { id: 'javascript', label: 'JavaScript' }]} />
+    <div className="flex overflow-hidden rounded-[22px] border border-line bg-white shadow-[0_8px_24px_-12px_rgba(16,24,40,0.08)]" style={{ minHeight: 'max(600px, calc(100vh - 340px))' }}>
+      <aside className="flex w-[84px] shrink-0 flex-col items-center gap-1 bg-[#1c1d22] py-4">
+        <NavItem active={tab === 'desafio'} onClick={() => setTab('desafio')} icon={<Swords size={21} />} label="Desafios" />
+        <NavItem active={tab === 'meu'} onClick={() => setTab('meu')} icon={<FileCode2 size={21} />} label="Meu código" />
+        <NavItem active={tab === 'duvidas'} onClick={() => setTab('duvidas')} icon={<MessageCircleQuestion size={21} />} label="Dúvidas" />
+        <div className="mt-auto flex w-full flex-col items-center gap-2 border-t border-white/10 pt-3">
+          <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">Língua</span>
+          {(['python', 'javascript'] as Lang[]).map((l) => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              title={LANG_NAME[l]}
+              className={`grid h-10 w-10 place-items-center rounded-xl font-mono text-[13px] font-extrabold transition ${lang === l ? (l === 'python' ? 'bg-gradient-to-br from-[#4b8bbe] to-[#306998] text-[#ffd43b] shadow-[0_0_16px_rgba(75,139,190,.6)]' : 'bg-[#f7df1e] text-[#16181d] shadow-[0_0_16px_rgba(247,223,30,.5)]') : 'bg-white/5 text-slate-500 hover:text-slate-300'}`}
+            >
+              {l === 'python' ? 'Py' : 'JS'}
+            </button>
+          ))}
+        </div>
+      </aside>
+      <div key={tab} className="home-panel flex min-w-0 flex-1 flex-col p-4 sm:p-5">
+        {tab === 'desafio' ? <Challenges lang={lang} /> : tab === 'meu' ? <Mentor lang={lang} /> : <Doubts lang={lang} />}
       </div>
-      {tab === 'desafio' ? <Challenges lang={lang} /> : tab === 'meu' ? <Mentor lang={lang} /> : <Doubts lang={lang} />}
     </div>
   )
+}
+
+function NavItem({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: ReactNode; label: string }) {
+  return (
+    <button onClick={onClick} className={`flex w-full flex-col items-center gap-1 py-1.5 text-[11px] font-semibold transition ${active ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>
+      <span className={`grid h-10 w-10 place-items-center rounded-full transition ${active ? 'bg-gradient-to-br from-[#2fcf9b] to-[#0f8a63] shadow-[0_0_18px_rgba(47,207,155,0.55)]' : 'bg-white/5'}`}>{icon}</span>
+      {label}
+    </button>
+  )
+}
+
+/** Janela escura de editor, com bolinhas no topo e ações à direita. */
+function IdeWindow({ file, actions, children, className = '' }: { file: string; actions?: ReactNode; children: ReactNode; className?: string }) {
+  return (
+    <div className={`overflow-hidden rounded-[20px] bg-[#16181d] shadow-[0_20px_40px_-24px_rgba(16,24,40,.8)] ${className}`}>
+      <div className="flex flex-wrap items-center gap-3 border-b border-white/5 bg-[#1d2027] px-4 py-2.5">
+        <span className="flex gap-1.5">
+          <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+          <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
+          <span className="h-3 w-3 rounded-full bg-[#28c840]" />
+        </span>
+        <span className="rounded-lg bg-[#16181d] px-3 py-1 font-mono text-xs text-[#e6e9f2]">{file}</span>
+        {actions && <span className="ml-auto flex flex-wrap gap-2">{actions}</span>}
+      </div>
+      {children}
+    </div>
+  )
+}
+const ideBtn = 'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition disabled:opacity-40'
+const slug = (t: string, lang: Lang) =>
+  t
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, lang === 'python' ? '_' : '-')
+    .replace(/^[-_]|[-_]$/g, '')
+    .slice(0, 28) + (lang === 'python' ? '.py' : '.js')
+
+const LEVEL_INFO: Record<string, { bars: number; hint: string }> = {
+  'Bem fácil': { bars: 1, hint: 'uma conta ou um if' },
+  Fácil: { bars: 2, hint: 'if/else e laços simples' },
+  Médio: { bars: 3, hint: 'laços com listas e textos' },
+}
+const TOPIC_ICON: Record<string, { icon: ReactNode; from: string; to: string }> = {
+  Qualquer: { icon: <Dices size={18} />, from: '#8a93a8', to: '#5b6478' },
+  'Variáveis e contas': { icon: <Box size={18} />, from: '#5b7cff', to: '#3e63f2' },
+  'Condições (if)': { icon: <GitBranch size={18} />, from: '#ff9a3d', to: '#e2551b' },
+  'Laços (for/while)': { icon: <Repeat size={18} />, from: '#a77bff', to: '#6233d6' },
+  Listas: { icon: <Brackets size={18} />, from: '#2fb5d6', to: '#1479a8' },
+  Textos: { icon: <Type size={18} />, from: '#ff6b7a', to: '#c9273b' },
+  Funções: { icon: <Braces size={18} />, from: '#2fcf9b', to: '#0f8a63' },
 }
 
 /* ---------------- Desafios ---------------- */
@@ -411,184 +457,188 @@ function Challenges({ lang }: { lang: Lang }) {
   // Sem desafio aberto: escolher nível/tema e ver o histórico
   if (!cur)
     return (
-      <div className="grid items-start gap-5 lg:grid-cols-[1.3fr_1fr]">
-        <Card className="relative overflow-hidden p-6">
-          <div className="flex items-start gap-4">
-            <Capybara pose="focado" size={92} />
-            <div className="min-w-0 flex-1">
-              <h2 className="text-xl font-bold">Desafio de lógica</h2>
-              <p className="mt-1 text-sm text-muted">A Mendi inventa, você resolve em {LANG_NAME[lang]}.</p>
+      <div className="grid flex-1 items-start gap-5 xl:grid-cols-[1fr_300px]">
+        <div>
+          <div className="mb-4 flex items-center gap-3">
+            <Capybara pose="focado" size={64} />
+            <div>
+              <h2 className="text-xl font-bold">Novo desafio</h2>
+              <p className="text-sm text-muted">A Mendi inventa, você resolve em {LANG_NAME[lang]}.</p>
             </div>
           </div>
-          <div className="mt-5 space-y-4">
-            <div>
-              <div className="mb-2 text-xs font-bold tracking-wider text-muted uppercase">Nível</div>
-              <div className="flex flex-wrap gap-2">
-                {LEVELS.map((l) => (
-                  <button key={l} onClick={() => setLevel(l)} className={chip(level === l)}>
-                    {l}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className="mb-2 text-xs font-bold tracking-wider text-muted uppercase">Tema</div>
-              <div className="flex flex-wrap gap-2">
-                {TOPICS.map((t) => (
-                  <button key={t} onClick={() => setTopic(t)} className={chip(topic === t)}>
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
+
+          <div className="mb-2 text-xs font-bold tracking-wider text-muted uppercase">Nível</div>
+          <div className="mb-5 grid grid-cols-3 gap-2.5">
+            {LEVELS.map((l) => {
+              const on = level === l
+              const info = LEVEL_INFO[l]
+              return (
+                <button key={l} onClick={() => setLevel(l)} className={`rounded-2xl border-2 p-3.5 text-left transition ${on ? 'border-[#0f8a63] bg-[#e9f9f2]' : 'border-line bg-white hover:border-[#9fe6cb]'}`}>
+                  <span className="flex gap-1">
+                    {[1, 2, 3].map((k) => (
+                      <span key={k} className={`h-2 w-5 rounded-full ${k <= info.bars ? (on ? 'bg-[#0f8a63]' : 'bg-[#2fcf9b]') : 'bg-[#e6e8ee]'}`} />
+                    ))}
+                  </span>
+                  <span className="mt-2 block font-bold">{l}</span>
+                  <span className="block text-xs text-muted">{info.hint}</span>
+                </button>
+              )
+            })}
           </div>
-          {error && <p className="mt-4 text-sm font-semibold text-rose-600">{error}</p>}
+
+          <div className="mb-2 text-xs font-bold tracking-wider text-muted uppercase">Tema</div>
+          <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {TOPICS.map((t) => {
+              const on = topic === t
+              const ic = TOPIC_ICON[t]
+              return (
+                <button key={t} onClick={() => setTopic(t)} className={`flex items-center gap-2.5 rounded-2xl border-2 p-2.5 text-left text-sm font-semibold transition ${on ? 'border-[#0f8a63] bg-[#e9f9f2]' : 'border-line bg-white hover:border-[#9fe6cb]'}`}>
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-white shadow-[0_6px_12px_-6px_rgba(16,24,40,.5)]" style={{ background: `linear-gradient(145deg, ${ic.from}, ${ic.to})` }}>
+                    {ic.icon}
+                  </span>
+                  <span className="leading-tight">{t}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          {error && <p className="mb-3 text-sm font-semibold text-rose-600">{error}</p>}
           <button
             onClick={create}
             disabled={!!loading}
-            className="act-btn mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 font-display text-base font-bold text-white disabled:opacity-70"
+            className="act-btn inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3.5 font-display text-base font-bold text-white disabled:opacity-70"
             style={{ background: 'linear-gradient(145deg, #2fcf9b, #0f8a63)', boxShadow: '0 12px 22px -12px #0f8a63' }}
           >
             {loading === 'novo' ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-            {loading === 'novo' ? 'Criando desafio…' : 'Novo desafio'}
+            {loading === 'novo' ? 'Criando…' : 'Gerar desafio'}
           </button>
-        </Card>
+        </div>
 
-        <Card className="p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="font-bold">Seus desafios</h3>
+        {/* histórico como "arquivos" */}
+        <div className="overflow-hidden rounded-[20px] bg-[#16181d] text-[#e6e9f2]">
+          <div className="flex items-center justify-between border-b border-white/5 bg-[#1d2027] px-4 py-3">
+            <span className="text-xs font-bold tracking-wider text-[#8a93a8] uppercase">Seus desafios</span>
             {history.length > 0 && (
-              <span className="rounded-full bg-[#e6f7f0] px-2.5 py-1 text-xs font-bold text-[#0f8a63]">
-                {solved} de {history.length} resolvidos
+              <span className="rounded-full bg-[#2fcf9b]/15 px-2 py-0.5 text-[11px] font-bold text-[#7ef0b5]">
+                {solved}/{history.length}
               </span>
             )}
           </div>
           {history.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted">Nenhum ainda. O primeiro é o mais legal!</p>
+            <p className="px-4 py-8 text-center text-sm text-[#8a93a8]">Nenhum ainda.</p>
           ) : (
-            <div className="thin-scroll max-h-[420px] space-y-1.5 overflow-y-auto">
+            <div className="thin-scroll max-h-[440px] overflow-y-auto py-1.5">
               {history.map((h) => (
-                <div key={h.id} className="group flex items-center gap-2.5 rounded-xl px-2.5 py-2 hover:bg-[#f6f7f9]">
-                  {h.solved ? <CheckCircle2 size={18} className="shrink-0 text-emerald-500" /> : <span className="h-[18px] w-[18px] shrink-0 rounded-full border-2 border-[#d6d9e2]" />}
+                <div key={h.id} className="group flex items-center gap-2.5 px-3 py-1.5 hover:bg-white/5">
+                  {h.solved ? <CheckCircle2 size={15} className="shrink-0 text-[#2fcf9b]" /> : <span className="h-[15px] w-[15px] shrink-0 rounded-full border-2 border-[#596071]" />}
                   <button onClick={() => open(h)} className="min-w-0 flex-1 text-left">
-                    <div className="truncate text-sm font-semibold">{h.title}</div>
-                    <div className="text-[11px] text-muted">
-                      {LANG_NAME[h.lang]} · {h.level}
-                    </div>
+                    <div className="truncate font-mono text-[12.5px]">{slug(h.title, h.lang)}</div>
+                    <div className="text-[10.5px] text-[#8a93a8]">{h.level}</div>
                   </button>
-                  <button
-                    onClick={async () => (await askConfirm('Apagar este desafio?')) && db.code.delete(h.id)}
-                    className="rounded-lg p-1 text-muted opacity-0 transition group-hover:opacity-100 hover:text-rose-600"
-                    title="Apagar"
-                  >
-                    <Trash2 size={14} />
+                  <button onClick={async () => (await askConfirm('Apagar este desafio?')) && db.code.delete(h.id)} className="rounded p-1 text-[#596071] opacity-0 transition group-hover:opacity-100 hover:text-rose-400" title="Apagar">
+                    <Trash2 size={13} />
                   </button>
                 </div>
               ))}
             </div>
           )}
-        </Card>
+        </div>
       </div>
     )
 
   const isJS = cur.lang === 'javascript'
   return (
-    <div ref={box} className="grid items-start gap-5 lg:grid-cols-[1fr_1.25fr]">
-      {/* Enunciado */}
-      <Card className="p-6">
-        <button onClick={() => setCur(null)} className="mb-3 text-xs font-bold text-muted hover:text-ink">
-          ← Desafios
-        </button>
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-[#e6f7f0] px-2.5 py-1 text-[11px] font-bold text-[#0f8a63]">
-            {LANG_NAME[cur.lang]} · {cur.level}
-          </span>
-          {cur.solved && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-2.5 py-1 text-[11px] font-bold text-white">
-              <CheckCircle2 size={12} /> Resolvido
-            </span>
-          )}
+    <div ref={box} className="space-y-4">
+      <button onClick={() => setCur(null)} className="text-xs font-bold text-muted hover:text-ink">
+        ← Desafios
+      </button>
+      <IdeWindow
+        file={slug(cur.title, cur.lang)}
+        actions={
+          <>
+            {cur.hint && (
+              <button onClick={() => setShowHint((v) => !v)} className={`${ideBtn} bg-[#ffd34d]/15 text-[#ffd34d] hover:bg-[#ffd34d]/25`}>
+                <Lightbulb size={13} /> Dica
+              </button>
+            )}
+            {cur.solution && (
+              <button
+                onClick={async () => {
+                  if (showSolution) return setShowSolution(false)
+                  if (await askConfirm('Ver a solução? Vale tentar mais um pouquinho antes!', false, { title: 'Ver solução', yes: 'Ver mesmo assim', no: 'Vou tentar' })) setShowSolution(true)
+                }}
+                className={`${ideBtn} bg-white/10 text-white hover:bg-white/20`}
+              >
+                <Eye size={13} /> Solução
+              </button>
+            )}
+            {isJS && (
+              <button onClick={doRun} disabled={!!loading} className={`${ideBtn} bg-[#5b7cff] text-white hover:brightness-110`}>
+                {loading === 'rodar' ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} fill="currentColor" />} Rodar
+              </button>
+            )}
+            <button onClick={send} disabled={!!loading || !code.trim()} className={`${ideBtn} bg-[#2fcf9b] text-[#08321f] hover:brightness-110`}>
+              {loading === 'enviar' ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />} {loading === 'enviar' ? 'Lendo…' : 'Enviar pra Mendi'}
+            </button>
+          </>
+        }
+      >
+        <div className="grid lg:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
+          {/* enunciado, como um README */}
+          <div className="thin-scroll max-h-[460px] overflow-y-auto border-b border-white/5 p-5 text-[#c9cede] lg:border-r lg:border-b-0">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="rounded-md bg-white/10 px-2 py-0.5 text-[11px] font-bold text-[#8a93a8]">{cur.level}</span>
+              {cur.solved && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-[#2fcf9b]/15 px-2 py-0.5 text-[11px] font-bold text-[#7ef0b5]">
+                  <CheckCircle2 size={11} /> resolvido
+                </span>
+              )}
+            </div>
+            <h2 className="font-display text-xl font-bold text-white">{cur.title}</h2>
+            <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap">{cur.statement}</p>
+            {cur.examples.length > 0 && (
+              <div className="mt-4 space-y-1.5">
+                {cur.examples.map((e, i) => (
+                  <div key={i} className="rounded-lg bg-black/30 px-3 py-2 font-mono text-[12.5px]">
+                    <span className="text-[#596071]">&gt;</span> {e.input} <span className="text-[#596071]">→</span> <span className="text-[#7ef0b5]">{e.output}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {showHint && cur.hint && (
+              <div className="capi-pop mt-4 rounded-xl border border-[#ffd34d]/30 bg-[#ffd34d]/10 px-3.5 py-2.5 text-sm text-[#ffe08a]">
+                <Fx name="bulb" /> {cur.hint}
+              </div>
+            )}
+            {showSolution && cur.solution && <pre className="capi-pop thin-scroll mt-4 overflow-x-auto rounded-xl bg-black/30 px-3.5 py-3 font-mono text-[12.5px] leading-[1.55] text-[#e6e9f2]">{cur.solution}</pre>}
+          </div>
+          <CodeEditor value={code} onChange={setCode} lang={cur.lang} bare />
         </div>
-        <h2 className="mt-3 text-xl font-bold">{cur.title}</h2>
-        <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap text-slate-700">{cur.statement}</p>
-        {cur.examples.length > 0 && (
-          <div className="mt-4 space-y-1.5">
-            <div className="text-xs font-bold tracking-wider text-muted uppercase">Exemplos</div>
-            {cur.examples.map((e, i) => (
-              <div key={i} className="rounded-xl bg-[#16181d] px-3.5 py-2 font-mono text-[12.5px] text-[#e6e9f2]">
-                {e.input} <span className="text-[#596071]">→</span> <span className="text-[#7ef0b5]">{e.output}</span>
+        {run && (
+          <div className="border-t border-white/5 px-5 py-3 font-mono text-[12.5px]">
+            <div className="mb-1.5 text-[10.5px] font-bold tracking-wider text-[#596071] uppercase">Terminal</div>
+            {run.error && <p className="text-rose-300">{run.error}</p>}
+            {run.results.map((r, i) => (
+              <div key={i} className="flex items-start gap-2 text-[#c9cede]">
+                {r.ok ? <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[#2fcf9b]" /> : <XCircle size={14} className="mt-0.5 shrink-0 text-rose-400" />}
+                <span className="min-w-0 break-all">
+                  {r.label} → <b className={r.ok ? 'text-[#7ef0b5]' : 'text-rose-300'}>{r.got}</b>
+                  {!r.ok && <span className="text-[#596071]"> (esperado {r.expected})</span>}
+                </span>
               </div>
             ))}
+            {run.logs.length > 0 && <pre className="thin-scroll mt-2 max-h-32 overflow-auto text-[#8a93a8]">{run.logs.join('\n')}</pre>}
           </div>
         )}
-        <div className="mt-5 flex flex-wrap gap-2">
-          {cur.hint && (
-            <Btn variant="soft" onClick={() => setShowHint((v) => !v)}>
-              <Lightbulb size={16} /> Dica
-            </Btn>
-          )}
-          {cur.solution && (
-            <Btn
-              onClick={async () => {
-                if (showSolution) return setShowSolution(false)
-                if (await askConfirm('Ver a solução? Vale tentar mais um pouquinho antes!', false, { title: 'Ver solução', yes: 'Ver mesmo assim', no: 'Vou tentar' })) setShowSolution(true)
-              }}
-            >
-              <Eye size={16} /> Solução
-            </Btn>
-          )}
-        </div>
-        {showHint && cur.hint && <div className="capi-pop mt-3 rounded-2xl bg-[#fff6dc] px-4 py-3 text-sm font-semibold text-[#7a5a00]"><Fx name="bulb" /> {cur.hint}</div>}
-        {showSolution && cur.solution && (
-          <pre className="capi-pop thin-scroll mt-3 overflow-x-auto rounded-xl bg-[#16181d] px-3.5 py-3 font-mono text-[12.5px] leading-[1.55] text-[#e6e9f2]">{cur.solution}</pre>
-        )}
-      </Card>
+      </IdeWindow>
+      {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
 
-      {/* Editor e resultado */}
-      <div className="space-y-4">
-        <CodeEditor value={code} onChange={setCode} lang={cur.lang} />
-        <div className="flex flex-wrap gap-2">
-          {isJS && (
-            <button onClick={doRun} disabled={!!loading} className="act-btn inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60" style={{ background: 'linear-gradient(145deg, #5b7cff, #2a3fb8)', boxShadow: '0 10px 18px -10px #2a3fb8' }}>
-              {loading === 'rodar' ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} fill="currentColor" />} Rodar testes
-            </button>
-          )}
-          <button onClick={send} disabled={!!loading || !code.trim()} className="act-btn inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60" style={{ background: 'linear-gradient(145deg, #2fcf9b, #0f8a63)', boxShadow: '0 10px 18px -10px #0f8a63' }}>
-            {loading === 'enviar' ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} {loading === 'enviar' ? 'A Mendi está lendo…' : 'Enviar pra Mendi'}
-          </button>
-        </div>
-        {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
-
-        {run && (
-          <Card className="p-4">
-            <div className="mb-2 text-xs font-bold tracking-wider text-muted uppercase">Testes</div>
-            {run.error && <p className="rounded-xl bg-rose-50 px-3 py-2 font-mono text-[12.5px] text-rose-700">{run.error}</p>}
-            <div className="space-y-1">
-              {run.results.map((r, i) => (
-                <div key={i} className="flex items-start gap-2 font-mono text-[12.5px]">
-                  {r.ok ? <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-500" /> : <XCircle size={16} className="mt-0.5 shrink-0 text-rose-500" />}
-                  <span className="min-w-0 break-all">
-                    {r.label} → <b className={r.ok ? 'text-emerald-700' : 'text-rose-700'}>{r.got}</b>
-                    {!r.ok && <span className="text-muted"> (esperado {r.expected})</span>}
-                  </span>
-                </div>
-              ))}
-            </div>
-            {run.logs.length > 0 && (
-              <pre className="thin-scroll mt-3 max-h-40 overflow-auto rounded-xl bg-[#16181d] px-3 py-2 font-mono text-[12px] text-[#c9cede]">{run.logs.join('\n')}</pre>
-            )}
-          </Card>
-        )}
-
-        {review && (
-          <Card className={`capi-pop p-5 ${review.correto ? 'ring-2 ring-emerald-200' : 'ring-2 ring-amber-200'}`}>
-            <div className="flex items-start gap-3">
-              <Capybara pose={review.correto ? 'comemorando' : 'pensando'} size={64} />
-              <div className="min-w-0 flex-1">
-                <div className={`font-bold ${review.correto ? 'text-emerald-700' : 'text-amber-700'}`}>{review.correto ? 'Resolvido!' : 'Quase lá'}</div>
-                <p className="mt-0.5 text-sm text-slate-700">{review.resumo}</p>
-              </div>
-            </div>
+      {review && (
+        <div className={`capi-pop flex items-start gap-4 rounded-[20px] border-2 bg-white p-5 ${review.correto ? 'border-[#9fe6cb]' : 'border-[#ffe08a]'}`}>
+          <Capybara pose={review.correto ? 'comemorando' : 'pensando'} size={78} />
+          <div className="min-w-0 flex-1">
+            <div className={`font-display text-lg font-bold ${review.correto ? 'text-[#0f8a63]' : 'text-[#b7791f]'}`}>{review.correto ? 'Resolvido!' : 'Quase lá'}</div>
+            <p className="mt-0.5 text-sm text-slate-700">{review.resumo}</p>
             {review.pontos.length > 0 && (
               <ul className="mt-3 space-y-1.5">
                 {review.pontos.map((p, i) => (
@@ -599,15 +649,15 @@ function Challenges({ lang }: { lang: Lang }) {
                 ))}
               </ul>
             )}
-            {review.proximoPasso && <div className="mt-3 rounded-xl bg-[#f6f7f9] px-3.5 py-2.5 text-sm"><Fx name="point" /> {review.proximoPasso}</div>}
+            {review.proximoPasso && <p className="mt-3 text-sm font-semibold text-slate-800">{review.proximoPasso}</p>}
             {review.correto && (
-              <Btn variant="primary" className="mt-4" onClick={() => setCur(null)}>
+              <button onClick={() => setCur(null)} className="mt-4 rounded-xl bg-[#0f8a63] px-4 py-2 text-sm font-bold text-white hover:brightness-110">
                 Próximo desafio
-              </Btn>
+              </button>
             )}
-          </Card>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -653,19 +703,25 @@ function Doubts({ lang }: { lang: Lang }) {
   }
 
   return (
-    <Card className="flex h-[min(680px,calc(100vh-260px))] min-h-[440px] flex-col p-0">
-      <div className="thin-scroll flex-1 space-y-4 overflow-y-auto px-5 py-5">
+    <div className="flex min-h-0 flex-1 flex-col" style={{ maxHeight: 'max(560px, calc(100vh - 380px))' }}>
+      <div className="thin-scroll flex-1 space-y-4 overflow-y-auto px-1 pb-4">
         {msgs.length === 0 && !busy && (
-          <div className="flex flex-col items-center py-6 text-center">
-            <Capybara pose="estudando" size={110} />
-            <p className="mt-2 font-bold">Pergunta qualquer coisa de programação.</p>
+          <div className="flex flex-col items-center py-8 text-center">
+            <Capybara pose="estudando" size={104} />
+            <p className="mt-2 font-display text-lg font-bold">O que você quer entender?</p>
             <p className="text-sm text-muted">Pode colar seu código também.</p>
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {STARTERS.map((s) => (
-                <button key={s} onClick={() => ask(s)} className={chip(false)}>
-                  {s}
-                </button>
-              ))}
+            <div className="mt-5 grid w-full max-w-xl gap-2.5 sm:grid-cols-2">
+              {STARTERS.map((s, i) => {
+                const ic = Object.values(TOPIC_ICON)[i + 1]
+                return (
+                  <button key={s} onClick={() => ask(s)} className="flex items-center gap-3 rounded-2xl border-2 border-line bg-white p-3 text-left text-sm font-semibold transition hover:-translate-y-0.5 hover:border-[#9fe6cb]">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-white" style={{ background: `linear-gradient(145deg, ${ic.from}, ${ic.to})` }}>
+                      {ic.icon}
+                    </span>
+                    {s}
+                  </button>
+                )
+              })}
             </div>
           </div>
         )}
@@ -675,10 +731,8 @@ function Doubts({ lang }: { lang: Lang }) {
               <div className="max-w-[80%] rounded-2xl rounded-br-md bg-[#0f8a63] px-4 py-2.5 text-sm whitespace-pre-wrap text-white">{m.text}</div>
             </div>
           ) : (
-            <div key={i} className="flex items-start gap-2.5">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#e6f7f0] text-[#0f8a63]">
-                <Bot size={17} />
-              </span>
+            <div key={i} className="flex items-start gap-2">
+              <Capybara pose="estudando" size={38} alive={false} />
               <div className="max-w-[85%] min-w-0 rounded-2xl rounded-tl-md bg-[#f6f7f9] px-4 py-3">
                 <RichText text={m.text} />
               </div>
@@ -686,16 +740,14 @@ function Doubts({ lang }: { lang: Lang }) {
           ),
         )}
         {busy && (
-          <div className="flex items-start gap-2.5">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#e6f7f0] text-[#0f8a63]">
-              <Bot size={17} />
-            </span>
+          <div className="flex items-start gap-2">
+            <Capybara pose="pensando" size={38} alive={false} />
             <div className="max-w-[85%] min-w-0 rounded-2xl rounded-tl-md bg-[#f6f7f9] px-4 py-3">{live ? <RichText text={live} /> : <Loader2 size={16} className="animate-spin text-muted" />}</div>
           </div>
         )}
         <div ref={end} />
       </div>
-      <div className="flex items-end gap-2 border-t border-line p-3">
+      <div className="flex items-end gap-2 rounded-2xl border border-line bg-[#f7f8fb] p-2">
         {msgs.length > 0 && (
           <button onClick={() => setMsgs([])} className="rounded-xl p-2.5 text-muted hover:bg-[#f6f7f9] hover:text-ink" title="Limpar conversa">
             <Trash2 size={17} />
@@ -711,14 +763,14 @@ function Doubts({ lang }: { lang: Lang }) {
             }
           }}
           rows={Math.min(6, Math.max(1, q.split('\n').length))}
-          placeholder="Sua dúvida… (Shift+Enter pula linha)"
-          className="thin-scroll max-h-40 flex-1 resize-none rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm outline-none focus:border-[#0f8a63]"
+          placeholder="Escreva sua dúvida…"
+          className="thin-scroll max-h-40 flex-1 resize-none rounded-xl bg-transparent px-2 py-2.5 text-sm outline-none"
         />
         <button onClick={() => ask(q)} disabled={busy || !q.trim()} className="act-btn grid h-11 w-11 place-items-center rounded-xl text-white disabled:opacity-50" style={{ background: 'linear-gradient(145deg, #2fcf9b, #0f8a63)' }} aria-label="Enviar">
           <Send size={17} />
         </button>
       </div>
-    </Card>
+    </div>
   )
 }
 
