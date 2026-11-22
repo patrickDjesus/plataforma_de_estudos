@@ -48,7 +48,7 @@ export function RushPage() {
       <div className={`grid items-start gap-5 ${showSide ? 'lg:grid-cols-[minmax(0,1fr)_320px]' : ''}`}>
         <div className="min-w-0">
           {!S.started || S.view === 'setup' ? (
-            <div className="rush-enter rounded-[26px] border border-line bg-white p-5 shadow-[0_8px_24px_-12px_rgba(16,24,40,0.08)] sm:p-7">
+            <div className="rush-enter">
               <RushSetup />
             </div>
           ) : S.view === 'report' ? (

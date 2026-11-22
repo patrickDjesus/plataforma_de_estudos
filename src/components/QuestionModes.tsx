@@ -354,38 +354,154 @@ export function QuestionModes({ onPick, onExtra }: { onPick: (id: ModeId) => voi
   )
 }
 
-/** Faixa do topo dentro de cada modo: a mesma ilustração do cartão, deitada. */
+/* ---------- Cenários das faixas (560×210), animados, com a Mendi de verdade ---------- */
+const OWL = (pose: CapiPose, x: number, y: number, cls?: string) => (
+  <g transform={`translate(${x} ${y})`}>
+    <g className={cls}>
+      <Capybara pose={pose} size={150} />
+    </g>
+  </g>
+)
+const BANNER_SCENE: Record<ModeId, ReactNode> = {
+  rush: (
+    <>
+      <g className="mb-spin" style={{ transformOrigin: '300px 60px' }}>
+        <path d="M300 8v14M300 98v14M248 60h14M338 60h14M263 23l10 10M327 87l10 10M263 97l10-10M327 33l10-10" stroke="#fff6d6" strokeWidth="5" strokeLinecap="round" opacity=".75" />
+      </g>
+      <circle cx="300" cy="60" r="30" fill="#ffe7a3" />
+      <circle cx="300" cy="60" r="22" fill="#fff3cc" />
+      <g className="mb-drift"><g fill="#fff" opacity=".85"><ellipse cx="60" cy="40" rx="30" ry="11" /><circle cx="48" cy="33" r="13" /><circle cx="68" cy="29" r="15" /></g></g>
+      <g className="mb-drift" style={{ animationDuration: '28s', animationDelay: '-12s' }}><g fill="#fff" opacity=".6"><ellipse cx="40" cy="96" rx="22" ry="8" /><circle cx="32" cy="91" r="9" /><circle cx="46" cy="88" r="11" /></g></g>
+      <path d="M0 150 Q120 112 240 140 T560 126 V210 H0Z" fill="#fff" opacity=".16" />
+      <path d="M0 176 Q160 154 300 170 T560 162 V210 H0Z" fill="#fff" opacity=".22" />
+      <path d="M420 172 L464 172 L542 210 L342 210Z" fill="#fff" opacity=".35" />
+      <path className="mb-lane" d="M442 174 L442 210" stroke="#fff" strokeWidth="4" strokeDasharray="9 8" />
+      {[[112, 0], [132, 0.3], [152, 0.6]].map(([y, d]) => (
+        <rect key={y} className="mb-spd" style={{ animationDelay: `${d}s` }} x="304" y={y} width="46" height="5" rx="2.5" fill="#fff" />
+      ))}
+      <path className="mb-flash" d="M532 22 L514 58 L528 58 L518 90 L548 46 L534 46 L544 22Z" fill="#ffe14d" stroke="#fff" strokeWidth="2.5" strokeLinejoin="round" />
+      {OWL('focado', 366, 36, 'mb-run')}
+    </>
+  ),
+  simulado: (
+    <>
+      <rect x="150" y="26" width="196" height="118" rx="10" fill="#c99260" />
+      <rect x="158" y="34" width="180" height="102" rx="6" fill="#24345a" />
+      <path className="mb-chalk" d="M176 66 h20 M204 66 h10 M222 66 h30 M262 66 h10 M280 66 h22" stroke="#fff" strokeWidth="5" strokeLinecap="round" pathLength={100} />
+      <path className="mb-chalk" style={{ animationDelay: '.7s' }} d="M176 98 h12 M198 98 h10 M218 98 h14" stroke="#fff" strokeWidth="5" strokeLinecap="round" pathLength={100} />
+      <path className="mb-chalk" style={{ animationDelay: '1.4s' }} d="M246 98 l8 8 l16 -18" fill="none" stroke="#7ef0b5" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" pathLength={100} />
+      <g className="mb-show" style={{ animationDelay: '1.8s' }}>
+        <circle cx="312" cy="84" r="15" fill="none" stroke="#ffd34d" strokeWidth="3" />
+        <text x="312" y="90" textAnchor="middle" fontFamily="Sora, sans-serif" fontSize="15" fontWeight="800" fill="#ffd34d">A</text>
+      </g>
+      <rect x="170" y="144" width="156" height="6" rx="3" fill="#a87648" />
+      <g transform="translate(520 54)">
+        <circle r="24" fill="#fff" />
+        <circle r="19" fill="#eef2ff" />
+        <path d="M0 -17v4M0 13v4M-17 0h4M13 0h4" stroke="#3e63f2" strokeWidth="2.4" strokeLinecap="round" />
+        <g className="mb-hand"><path d="M0 0V-15" stroke="#ff5a5f" strokeWidth="2.4" strokeLinecap="round" /></g>
+        <path d="M0 0L7 6" stroke="#121826" strokeWidth="3" strokeLinecap="round" />
+        <circle r="2.6" fill="#121826" />
+      </g>
+      {OWL('pensando', 372, 20)}
+      <rect x="356" y="166" width="180" height="12" rx="5" fill="#ffd7a3" />
+      <rect x="366" y="178" width="160" height="34" rx="4" fill="#e6a964" />
+      <path d="M412 166 L452 166 L448 156 L416 156Z" fill="#fff" />
+      <rect x="462" y="158" width="32" height="4" rx="2" fill="#ffc83d" transform="rotate(-8 478 160)" />
+    </>
+  ),
+  gerar: (
+    <>
+      {[[190, 30, 0, 2.4], [240, 80, 0.5, 2], [330, 22, 1, 2.6], [220, 140, 1.5, 2], [540, 120, 0.8, 2.2], [380, 60, 1.9, 1.8], [300, 130, 1.2, 1.8]].map(([x, y, d, r]) => (
+        <circle key={`${x}${y}`} className="mb-tw" style={{ animationDelay: `${d}s` }} cx={x} cy={y} r={r} fill="#fff" />
+      ))}
+      <circle cx="290" cy="64" r="26" fill="#fff3c4" />
+      <circle cx="302" cy="54" r="22" fill="#7656e6" />
+      <path d="M0 184 Q200 160 560 176 V210 H0Z" fill="#000" opacity=".12" />
+      <ellipse className="mb-glow" cx="446" cy="198" rx="96" ry="14" fill="#ffe14d" opacity=".5" />
+      <ellipse className="mb-ring" cx="446" cy="198" rx="84" ry="11" fill="none" stroke="#ffe14d" strokeWidth="2.5" strokeDasharray="8 9" />
+      {[0, 0.8, 1.6].map((d, i) => (
+        <g key={d} className="mb-paper" style={{ animationDelay: `${d}s` }}>
+          <g transform={`translate(${500 + i * 4} 70) rotate(${-14 + i * 12})`}>
+            <rect x="-13" y="-17" width="26" height="34" rx="4" fill="#fff" />
+            <path d="M-7 -8h14M-7 -1h10M-7 6h14" stroke="#7c58e8" strokeWidth="2.2" strokeLinecap="round" />
+          </g>
+        </g>
+      ))}
+      {OWL('acenando', 372, 34)}
+      <g className="mb-wand" style={{ transformOrigin: '500px 120px' }}>
+        <rect x="497" y="64" width="7" height="58" rx="3.5" fill="#2a1d55" transform="rotate(18 500 93)" />
+        <path d="M505 52 l2.6 6 6 2.6 -6 2.6 -2.6 6 -2.6 -6 -6 -2.6 6 -2.6z" fill="#ffe14d" />
+      </g>
+    </>
+  ),
+  codigo: (
+    <>
+      <rect x="186" y="20" width="96" height="90" rx="10" fill="#fff" />
+      <rect x="193" y="27" width="82" height="76" rx="6" fill="#bfe6ff" />
+      <circle cx="258" cy="46" r="9" fill="#ffe27a" />
+      <g className="mb-cloud"><g fill="#fff"><ellipse cx="200" cy="82" rx="16" ry="6" /><circle cx="194" cy="78" r="7" /><circle cx="205" cy="75" r="8" /></g></g>
+      <path d="M234 27v76M193 64h82" stroke="#fff" strokeWidth="5" />
+      <g transform="translate(272 92)">
+        <rect width="120" height="84" rx="10" fill="#23263a" />
+        <rect x="7" y="7" width="106" height="70" rx="5" fill="#16181d" />
+        {[[22, '#7cc4ff', 46, 16], [36, '#ffd34d', 60, 26], [50, '#7ef0b5', 38, 26], [64, '#ff8fa3', 52, 16]].map(([y, c, w, x], i) => (
+          <path key={String(y)} className="mb-type" style={{ animationDelay: `${i * 0.6}s` }} d={`M${x} ${y} h${w}`} stroke={String(c)} strokeWidth="4.5" strokeLinecap="round" pathLength={100} />
+        ))}
+        <rect className="mb-cur" x="76" y="58" width="4" height="12" fill="#fff" />
+        <rect x="52" y="84" width="16" height="16" fill="#23263a" />
+        <rect x="36" y="98" width="48" height="6" rx="3" fill="#23263a" />
+      </g>
+      <g className="mb-sway" style={{ transformOrigin: '540px 196px' }}>
+        <path d="M540 196 C524 178 522 162 528 148 C536 162 540 178 540 196Z M540 196 C556 176 560 160 556 146 C546 160 540 178 540 196Z" fill="#0f8a63" />
+        <path d="M540 196 C538 172 542 156 540 140 C546 158 546 178 540 196Z" fill="#7ef0b5" />
+      </g>
+      <path d="M524 194 h32 l-4 18 h-24Z" fill="#ff8f6b" />
+      {OWL('estudando', 388, 36)}
+      <g className="mb-bub">
+        <rect x="490" y="22" width="56" height="32" rx="11" fill="#fff" />
+        <path d="M506 54 l-4 9 10 -9Z" fill="#fff" />
+        <text x="518" y="44" textAnchor="middle" fontFamily="ui-monospace, monospace" fontSize="15" fontWeight="800" fill="#0f8a63">{'</>'}</text>
+      </g>
+    </>
+  ),
+}
+
+/** Faixa do topo dentro de cada modo: cenário animado com a Mendi. */
 export function ModeBanner({ id, onBack, onSwitch }: { id: ModeId; onBack: () => void; onSwitch: (id: ModeId) => void }) {
   const m = MODES.find((x) => x.id === id)!
   return (
-    <div className="page-in relative mb-6 h-[210px] overflow-hidden rounded-[26px] text-white shadow-[0_18px_34px_-22px_rgba(16,24,40,0.6)]" style={{ background: `linear-gradient(100deg, ${m.sky[0]}, ${m.sky[1]})` }}>
-      {/* cenário do cartão, encaixado à direita */}
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-[300px] sm:w-[340px]" style={{ maskImage: 'linear-gradient(to right, transparent, #000 32%)', WebkitMaskImage: 'linear-gradient(to right, transparent, #000 32%)' }}>
-        <svg viewBox="0 170 260 290" preserveAspectRatio="xMidYMax slice" className="essential-motion h-full w-full" aria-hidden>
-          {m.back}
-          <g transform="translate(52 268)">
-            <g className={m.id === 'rush' ? 'qm-run' : undefined}>
-              <Capybara pose={m.pose} size={156} />
-            </g>
-          </g>
-          {m.front}
-        </svg>
-      </div>
-      <div className="relative z-10 flex h-full max-w-[62%] flex-col justify-between p-6">
-        <button onClick={onBack} className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold backdrop-blur transition hover:bg-white/30">
+    <div className="page-in relative mb-6 min-h-[210px] overflow-hidden rounded-[26px] text-white shadow-[0_18px_34px_-22px_rgba(16,24,40,0.6)]" style={{ background: `linear-gradient(100deg, ${m.sky[0]}, ${m.sky[1]})` }}>
+      <svg
+        viewBox="0 0 560 210"
+        preserveAspectRatio="xMaxYMax meet"
+        className="essential-motion pointer-events-none absolute right-0 bottom-0 h-full w-[600px] max-w-[70%]"
+        style={{ maskImage: 'linear-gradient(to right, transparent, #000 28%)', WebkitMaskImage: 'linear-gradient(to right, transparent, #000 28%)' }}
+        aria-hidden
+      >
+        {BANNER_SCENE[id]}
+      </svg>
+      <div className="relative z-10 flex min-h-[210px] max-w-[620px] flex-col justify-between gap-3 p-6">
+        <button onClick={onBack} className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-2 text-[13px] font-bold backdrop-blur transition hover:bg-white/30">
           ← Modos
         </button>
         <div>
-          <h1 className="font-display text-[34px] leading-none font-extrabold drop-shadow-[0_2px_4px_rgba(0,0,0,.15)]">{m.title}</h1>
-          <p className="mt-2 max-w-md text-sm leading-snug font-semibold text-white/90">{m.about}</p>
+          <h1 className="font-display text-[42px] leading-none font-extrabold drop-shadow-[0_2px_4px_rgba(0,0,0,.15)]">{m.title}</h1>
+          <p className="mt-2.5 max-w-md text-[15px] leading-snug font-semibold text-white/90">{m.about}</p>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {MODES.filter((x) => x.id !== id).map((x) => (
-            <button key={x.id} onClick={() => onSwitch(x.id)} className="rounded-full border border-white/40 px-2.5 py-1 text-[11px] font-bold text-white/90 transition hover:bg-white hover:text-ink">
-              {x.title}
-            </button>
-          ))}
-        </div>
+        <nav aria-label="Outros modos" className="flex flex-wrap gap-2">
+          {MODES.map((x) =>
+            x.id === id ? (
+              <span key={x.id} className="rounded-full bg-white px-3.5 py-1.5 text-xs font-extrabold" style={{ color: x.ink }}>
+                {x.title}
+              </span>
+            ) : (
+              <button key={x.id} onClick={() => onSwitch(x.id)} className="rounded-full border-[1.5px] border-white/55 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white hover:text-ink">
+                {x.title}
+              </button>
+            ),
+          )}
+        </nav>
       </div>
     </div>
   )

@@ -1,15 +1,15 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, BookOpenCheck, CheckSquare, FileText, ListChecks, MessageSquareText, PenLine, Search, Sparkles, ToggleLeft } from 'lucide-react'
+import { ArrowLeft, CheckSquare, FileText, ListChecks, MessageSquareText, PenLine, Search, Sparkles, ToggleLeft } from 'lucide-react'
 import { AREAS, useNotes, useSubjects, useTopics, useSettings } from '../db/hooks'
 import type { ChallengeType, Difficulty } from '../lib/prompts'
 import { tint } from '../lib/colors'
-import { Capybara } from '../components/Capybara'
 import { ChallengeModal } from '../components/ChallengeModal'
 import { SubjectIcon } from '../components/SubjectIcon'
 import { Card } from '../components/ui'
 import { VoiceTextarea } from '../components/Voice'
 import { FxText, Fx } from '../components/Fx'
+import { SummaryCard } from '../components/SetupKit'
 
 const TYPES: { id: ChallengeType; label: string; hint: string; icon: ReactNode }[] = [
   { id: 'multipla', label: 'Múltipla escolha', hint: '4 alternativas', icon: <ListChecks size={18} /> },
@@ -263,48 +263,28 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
           )}
         </div>
 
-        {/* Resumo com a Mendi */}
+        {/* Resumo */}
         <div className="lg:sticky lg:top-24">
-          <Card className="overflow-hidden p-0">
-            <div className="relative flex flex-col items-center px-6 pt-6 pb-4 text-center" style={{ background: `radial-gradient(120% 90% at 50% 0%, ${tint(color, 0.18)}, transparent 70%)` }}>
-              <div key={capiLine} className="capi-pop relative mb-1 rounded-2xl border border-line bg-white px-4 py-2.5 text-sm font-semibold shadow-sm">
-                {capiLine}
-                <span className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-r border-b border-line bg-white" />
-              </div>
-              <Capybara pose={!subject ? 'pensando' : topic && fromNotes ? 'estudando' : 'focado'} size={130} />
-            </div>
-            <div className="space-y-2 px-6 pb-6">
-              <Row label="Matéria" value={subject ? subject.name : '—'} />
-              <Row label="Tópico" value={subject ? (topic?.name ?? 'Matéria inteira') : '—'} />
-              <Row label="Questões" value={`${count} · ${LEVELS.find((l) => l.id === difficulty)?.label}`} />
-              <Row label="Base" value={topic ? (fromNotes ? 'Suas anotações' : 'Conhecimento geral') : 'Conhecimento geral'} />
-              {isQ && request.trim() && <Row label="Pedido" value={request.trim()} />}
-              <div className="flex flex-wrap gap-1 pt-1">
-                {isQ ? (
-                  <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: tint(color, 0.12), color }}>
-                    {Q_STYLES.find((q) => q.id === qStyle)?.label}
-                  </span>
-                ) : (
-                  effectiveTypes.map((t) => (
-                    <span key={t} className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: tint(color, 0.12), color }}>
-                      {TYPES.find((x) => x.id === t)?.label}
-                    </span>
-                  ))
-                )}
-              </div>
-              <button
-                onClick={() => setRunning(true)}
-                disabled={!subject}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-display text-lg font-bold text-white transition hover:-translate-y-0.5 disabled:opacity-40"
-                style={{ background: color, boxShadow: `0 16px 34px -16px ${color}` }}
-              >
-                <Sparkles size={20} /> {isQ ? `Gerar ${count} questões` : 'Gerar desafio'}
-              </button>
-              <p className="flex items-center justify-center gap-1 text-[11px] text-muted">
-                <BookOpenCheck size={12} /> Erros e acertos ficam no histórico
-              </p>
-            </div>
-          </Card>
+          <SummaryCard
+            kicker={isQ ? 'Sua lista' : 'Seu desafio'}
+            accent={isQ ? '#b796ff' : '#8aa4ff'}
+            title={subject ? `${count} questões de ${subject.name}` : 'Escolha a matéria'}
+            sub={subject ? `${topic?.name ?? 'Matéria inteira'} · ${LEVELS.find((l) => l.id === difficulty)?.label}` : capiLine}
+            rows={[
+              { label: 'Base', value: topic ? (fromNotes ? 'Suas anotações' : 'Conhecimento geral') : 'Conhecimento geral' },
+              ...(isQ ? [{ label: 'Estilo', value: Q_STYLES.find((q) => q.id === qStyle)?.label ?? '' }] : [{ label: 'Tipos', value: `${effectiveTypes.length}` }]),
+              ...(isQ && request.trim() ? [{ label: 'Pedido', value: request.trim() }] : []),
+            ]}
+            cta={
+              <>
+                <Sparkles size={20} /> {isQ ? 'Gerar lista' : 'Gerar desafio'}
+              </>
+            }
+            from={isQ ? '#a77bff' : '#5b7cff'}
+            to={isQ ? '#6233d6' : '#2a3fb8'}
+            onStart={() => subject && setRunning(true)}
+            note={subject ? 'Leva alguns segundos. Fica tudo no histórico.' : 'Escolha a matéria primeiro.'}
+          />
         </div>
       </div>
 
@@ -328,8 +308,8 @@ export function ChallengeBuilderPage({ mode = 'desafio' }: { mode?: 'desafio' | 
 
 function StepTitle({ n, title }: { n: number; title: string }) {
   return (
-    <h2 className="mb-4 flex items-center gap-2.5 text-lg font-bold">
-      <span className="grid h-7 w-7 place-items-center rounded-full bg-ink font-sans text-xs font-bold text-white">{n}</span>
+    <h2 className="mb-4 flex items-center gap-3 font-display text-[19px] font-bold">
+      <span className="grid h-[30px] w-[30px] place-items-center rounded-full bg-[#6233d6] font-sans text-sm font-extrabold text-white">{n}</span>
       {title}
     </h2>
   )
@@ -340,14 +320,5 @@ function Pill({ on, color, onClick, title, children }: { on: boolean; color: str
     <button onClick={onClick} title={title} className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${on ? 'border-transparent text-white' : 'border-line bg-white hover:bg-slate-50'}`} style={on ? { background: color } : undefined}>
       {children}
     </button>
-  )
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-dashed border-line pb-1.5 text-sm">
-      <span className="text-muted">{label}</span>
-      <span className="truncate text-right font-semibold">{value}</span>
-    </div>
   )
 }

@@ -15,6 +15,7 @@ import { Card } from '../components/ui'
 import { showMascot } from '../lib/mascotBus'
 import { useCountUp } from './rush/RushFx'
 import { Fx } from '../components/Fx'
+import { ChoiceTile, RuleCard, SetupLayout, StepCard, SummaryCard } from '../components/SetupKit'
 
 const SIZES = [10, 20, 45]
 const PER_Q = [2, 3, 4]
@@ -166,66 +167,103 @@ export function Simulado() {
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
   }
 
-  if (phase === 'config')
+  if (phase === 'config') {
+    const B = '#3e63f2'
+    const SOFT = '#eef2ff'
+    const SIZE_LABEL: Record<number, string> = { 10: 'rápido', 20: 'médio', 45: 'meio ENEM' }
+    const TIME_LABEL: Record<number, string> = { 2: 'apertado', 3: 'vestibular', 4: 'com folga' }
+    const names = subjects.filter((s) => chosen.includes(s.id)).map((s) => s.name)
     return (
-      <Card className="mx-auto max-w-3xl p-6 sm:p-8">
-        <div className="space-y-5">
-          <div>
-            <div className="mb-2 text-sm font-bold">Matérias</div>
-            {AREAS.map((a) => {
-              const list = subjects.filter((s) => s.areaId === a.id)
-              if (!list.length) return null
-              return (
-                <div key={a.id} className="mb-2">
-                  <div className="mb-1 text-[11px] font-bold tracking-wider text-muted uppercase">{a.name}</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {list.map((s) => {
-                      const on = chosen.includes(s.id)
-                      return (
-                        <button key={s.id} onClick={() => setChosen(on ? chosen.filter((x) => x !== s.id) : [...chosen, s.id])} aria-pressed={on} className={`flex items-center gap-1.5 rounded-full border py-1 pr-3 pl-1 text-sm font-semibold transition ${on ? 'text-white' : 'border-line bg-white'}`} style={on ? { background: s.color, borderColor: s.color } : undefined}>
-                          <SubjectIcon subject={s} size={22} /> {s.name}
-                        </button>
-                      )
-                    })}
-                  </div>
+      <SetupLayout
+        aside={
+          <SummaryCard
+            kicker="Sua prova"
+            accent="#8aa4ff"
+            title={
+              <span className="flex items-baseline gap-2">
+                <span className="text-5xl leading-none">{size * perQ}</span>
+                <span className="text-[15px] font-bold text-[#c9cede]">minutos</span>
+              </span>
+            }
+            sub={`${size} questões · ${perQ} min cada`}
+            rows={[{ label: 'Matérias', value: names.length ? names.join(', ') : '—' }]}
+            extra={error ? <p className="mb-3 rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">{error}</p> : undefined}
+            cta={
+              <>
+                <Timer size={18} /> Começar simulado
+              </>
+            }
+            from="#5b7cff"
+            to="#2a3fb8"
+            onStart={() => chosen.length && generate()}
+            note={chosen.length ? 'O relógio só começa quando a prova abrir.' : 'Escolha pelo menos uma matéria.'}
+          />
+        }
+      >
+        <StepCard n={1} title="Matérias da prova" color={B} right={week?.themes ? 'Já marquei as da semana' : undefined}>
+          {AREAS.map((a) => {
+            const list = subjects.filter((s) => s.areaId === a.id)
+            if (!list.length) return null
+            return (
+              <div key={a.id} className="mb-4 last:mb-0">
+                <div className="mb-2 text-[11px] font-bold tracking-wider text-muted uppercase">{a.name}</div>
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                  {list.map((s) => {
+                    const on = chosen.includes(s.id)
+                    return (
+                      <ChoiceTile key={s.id} on={on} color={B} soft={SOFT} onClick={() => setChosen(on ? chosen.filter((x) => x !== s.id) : [...chosen, s.id])} className="flex min-h-[54px] items-center gap-2.5 p-2.5">
+                        <SubjectIcon subject={s} size={38} />
+                        <span className={`min-w-0 truncate text-sm ${on ? 'font-extrabold' : 'font-semibold'}`}>{s.name}</span>
+                      </ChoiceTile>
+                    )
+                  })}
                 </div>
-              )
-            })}
-            {week?.themes && <p className="text-[11px] text-muted">Pré-selecionadas: as matérias da semana temática.</p>}
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <div className="mb-2 text-sm font-bold">Questões</div>
-              <div className="flex gap-2">
+              </div>
+            )
+          })}
+        </StepCard>
+        <div className="flex flex-wrap gap-5">
+          <div className="min-w-0 flex-[1_1_280px]">
+            <StepCard n={2} title="Quantas questões" color={B}>
+              <div className="grid grid-cols-3 gap-2.5">
                 {SIZES.map((n) => (
-                  <button key={n} onClick={() => setSize(n)} className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${size === n ? 'border-brand bg-brand text-white' : 'border-line bg-white'}`}>
-                    {n}
-                  </button>
+                  <ChoiceTile key={n} on={size === n} color={B} soft={SOFT} onClick={() => setSize(n)} className="px-1.5 py-3.5 text-center">
+                    <span className="block font-display text-[22px] font-extrabold" style={size === n ? { color: '#2a3fb8' } : undefined}>
+                      {n}
+                    </span>
+                    <span className={`text-xs ${size === n ? 'font-semibold text-[#2a3fb8]' : 'text-muted'}`}>{SIZE_LABEL[n] ?? ''}</span>
+                  </ChoiceTile>
                 ))}
               </div>
-              <p className="mt-1 text-[11px] text-muted">45 = meio ENEM de uma área.</p>
-            </div>
-            <div>
-              <div className="mb-2 text-sm font-bold">Tempo por questão</div>
-              <div className="flex gap-2">
-                {PER_Q.map((n) => (
-                  <button key={n} onClick={() => setPerQ(n)} className={`rounded-full border-2 px-4 py-1.5 text-sm font-bold ${perQ === n ? 'border-brand bg-brand text-white' : 'border-line bg-white'}`}>
-                    {n} min
-                  </button>
-                ))}
-              </div>
-              <p className="mt-1 text-[11px] text-muted">
-                Total: {size * perQ} min. Vestibular dá cerca de 3.
-              </p>
-            </div>
+            </StepCard>
           </div>
-          {error && <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">{error}</p>}
-          <button disabled={!chosen.length} onClick={generate} className="flex items-center gap-2 rounded-2xl bg-ink px-7 py-3.5 font-display text-lg font-bold text-white shadow-[0_6px_0_#000] transition active:translate-y-1 disabled:opacity-40">
-            <Timer size={18} /> Começar simulado
-          </button>
+          <div className="min-w-0 flex-[1_1_280px]">
+            <StepCard n={3} title="Tempo por questão" color={B}>
+              <div className="grid grid-cols-3 gap-2.5">
+                {PER_Q.map((n) => (
+                  <ChoiceTile key={n} on={perQ === n} color={B} soft={SOFT} onClick={() => setPerQ(n)} className="px-1.5 py-3.5 text-center">
+                    <span className="block font-display text-[22px] font-extrabold" style={perQ === n ? { color: '#2a3fb8' } : undefined}>
+                      {n}
+                      <span className="text-[13px]"> min</span>
+                    </span>
+                    <span className={`text-xs ${perQ === n ? 'font-semibold text-[#2a3fb8]' : 'text-muted'}`}>{TIME_LABEL[n] ?? ''}</span>
+                  </ChoiceTile>
+                ))}
+              </div>
+            </StepCard>
+          </div>
         </div>
-      </Card>
+        <section className="rounded-[22px] border border-line bg-white p-5">
+          <h2 className="mb-3 font-display text-base font-bold">Regras da prova</h2>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <RuleCard badge="nohint" title="Sem dica" text="Nada de Mendi nem ajuda: igual prova de verdade." bg="#fff7ec" />
+            <RuleCard badge="clock" title="Tempo marcado" text="Dá pra pular e voltar antes do tempo acabar." bg="#eef2ff" />
+            <RuleCard badge="notebook" title="Erros guardados" text="O que você errar vai pro Caderno de erros." bg="#fff1f3" />
+          </div>
+        </section>
+      </SetupLayout>
     )
+  }
 
   if (phase === 'gerando')
     return (

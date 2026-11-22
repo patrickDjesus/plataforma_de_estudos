@@ -458,3 +458,61 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 @keyframes fx-peek { 0%, 60%, 100% { transform: translateY(0) } 75% { transform: translateY(3px) } }
 @keyframes fx-zz { 0% { transform: translate(0, 2px); opacity: 0 } 40% { opacity: 1 } 100% { transform: translate(2px, -3px); opacity: 0 } }
 @keyframes fx-glint { 0%, 60% { transform: translateX(0); opacity: 0 } 70% { opacity: .8 } 100% { transform: translateX(10px); opacity: 0 } }
+
+/* ===== Faixas animadas dos modos ===== */
+.mb-spin { animation: qm-hand 26s linear infinite; }
+.mb-drift { animation: mb-drift 20s linear infinite; }
+.mb-cloud { animation: mb-cloud 12s linear infinite; }
+.mb-spd { animation: mb-spd 1s linear infinite; }
+.mb-flash { animation: mb-flash 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.mb-lane { animation: mb-lane .6s linear infinite; }
+.mb-run { animation: mb-run .36s ease-in-out infinite alternate; }
+.mb-chalk { stroke-dasharray: 100; animation: mb-chalk 4.4s ease-in-out infinite; }
+.mb-show { animation: mb-show 4.4s ease-in-out infinite; }
+.mb-hand { animation: qm-hand 6s steps(60) infinite; }
+.mb-tw { animation: mb-tw 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.mb-ring { animation: mb-ring 3s linear infinite; }
+.mb-glow { animation: sc-glow 2.4s ease-in-out infinite; }
+.mb-paper { animation: mb-paper 2.4s ease-out infinite; opacity: 0; }
+.mb-wand { animation: mb-wand 2.4s ease-in-out infinite; }
+.mb-type { stroke-dasharray: 100; animation: mb-type 3.8s ease-in-out infinite; }
+.mb-cur { animation: mb-cur 1s steps(1) infinite; }
+.mb-sway { animation: qm-sway 3.2s ease-in-out infinite; }
+.mb-bub { animation: mb-bub 2.6s ease-in-out infinite; }
+@keyframes mb-drift { from { transform: translateX(-140px) } to { transform: translateX(640px) } }
+@keyframes mb-cloud { from { transform: translateX(-50px) } to { transform: translateX(90px) } }
+@keyframes mb-spd { 0% { transform: translateX(70px); opacity: 0 } 30% { opacity: .9 } 100% { transform: translateX(-60px); opacity: 0 } }
+@keyframes mb-flash { 0%, 100% { transform: scale(1) } 45% { transform: scale(1.18) rotate(-6deg) } 50% { opacity: .55 } 55% { opacity: 1 } }
+@keyframes mb-lane { to { stroke-dashoffset: -34 } }
+@keyframes mb-run { from { transform: translateY(0) rotate(-1.5deg) } to { transform: translateY(-5px) rotate(1.5deg) } }
+@keyframes mb-chalk { 0% { stroke-dashoffset: 100 } 35%, 85% { stroke-dashoffset: 0; opacity: 1 } 100% { stroke-dashoffset: 0; opacity: 0 } }
+@keyframes mb-show { 0%, 10% { opacity: 0 } 25%, 85% { opacity: 1 } 100% { opacity: 0 } }
+@keyframes mb-tw { 0%, 100% { opacity: .25; transform: scale(.6) } 50% { opacity: 1; transform: scale(1.25) } }
+@keyframes mb-ring { to { stroke-dashoffset: -40 } }
+@keyframes mb-paper { 0% { transform: translate(0, 10px) scale(.5); opacity: 0 } 20% { opacity: 1 } 100% { transform: translate(-110px, -90px) rotate(-28deg); opacity: 0 } }
+@keyframes mb-wand { 0%, 100% { transform: rotate(0) } 30% { transform: rotate(-14deg) } 55% { transform: rotate(6deg) } }
+@keyframes mb-type { 0% { stroke-dashoffset: 100 } 35%, 85% { stroke-dashoffset: 0; opacity: 1 } 100% { stroke-dashoffset: 0; opacity: 0 } }
+@keyframes mb-cur { 50% { opacity: 0 } }
+@keyframes mb-bub { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+
+/* ===== Portas do Código: animam só ao passar o mouse ===== */
+.cl-door { transition: transform .25s cubic-bezier(.2,.9,.3,1.4), box-shadow .25s, border-color .2s; }
+.cl-door:hover { transform: translateY(-5px); box-shadow: 0 18px 30px -18px rgba(16,24,40,.45) !important; }
+.cl-door .cl-art { transition: transform .35s cubic-bezier(.2,.9,.3,1.5); }
+.cl-door:hover .cl-art { transform: scale(1.08) rotate(-4deg); }
+.cl-float { animation: cl-float 2.4s ease-in-out infinite; }
+.cl-zap { animation: cl-zap 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.cl-twk { animation: cl-twk 2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.cl-pen { animation: cl-pen 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 20% 90%; }
+.cl-type { stroke-dasharray: 100; animation: cl-type 2.6s ease-in-out infinite; }
+.cl-dots circle { animation: cl-dot 1.2s ease-in-out infinite; }
+.cl-dots circle:nth-child(2) { animation-delay: .15s; }
+.cl-dots circle:nth-child(3) { animation-delay: .3s; }
+.cl-door .cl-art * { animation-play-state: paused !important; }
+.cl-door:hover .cl-art * { animation-play-state: running !important; }
+@keyframes cl-float { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-4px) } }
+@keyframes cl-zap { 0%, 100% { transform: scale(1) } 45% { transform: scale(1.18) rotate(-8deg) } }
+@keyframes cl-twk { 0%, 100% { opacity: .35; transform: scale(.6) } 50% { opacity: 1; transform: scale(1.2) rotate(20deg) } }
+@keyframes cl-pen { 0%, 100% { transform: rotate(0) } 50% { transform: rotate(-9deg) translateY(-1px) } }
+@keyframes cl-type { 0% { stroke-dashoffset: 0 } 30% { stroke-dashoffset: 100 } 70%, 100% { stroke-dashoffset: 0 } }
+@keyframes cl-dot { 0%, 100% { opacity: .4; transform: translateY(0) } 40% { opacity: 1; transform: translateY(-2px) } }

@@ -8,9 +8,12 @@ import { RushCapi } from './RushCapi'
 import { rush } from './store'
 import { sfx, startRush, toast, ensureFill } from './actions'
 import { centerOf, confetti } from '../../lib/sfx'
-import { Fx } from '../../components/Fx'
+import { RuleCard, SetupLayout, StepCard, SummaryCard, ChoiceTile, Toggle } from '../../components/SetupKit'
 
 const GOALS = [50, 100, 200, 300, 500]
+const GOAL_LABEL = ['aquecer', 'normal', 'puxado', 'maratona', 'lenda']
+const OR = '#e2401b'
+const OR_SOFT = '#fff3ec'
 
 export function RushSetup() {
   const S = rush.get()
@@ -88,8 +91,41 @@ export function RushSetup() {
       </div>
       )}
 
+      <SetupLayout
+        aside={
+          <SummaryCard
+            kicker={S.started ? 'Ajustes' : 'Pronto pra jogar'}
+            accent="#ffb36b"
+            title={`${d.goal} questões`}
+            sub={names.length ? names.join(' · ') : 'Escolha as matérias'}
+            rows={[{ label: 'Formato', value: d.format === 'aberta' ? 'Só digitar' : d.format === 'multipla' ? 'Só alternativas' : 'Misturado' }]}
+            extra={
+              <>
+                <div className="mb-3 flex items-center justify-between gap-3 border-t border-[#eef0f4] pt-3 text-sm">
+                  <span className="text-muted">Revisão espaçada</span>
+                  <Toggle on={d.longReview} onChange={(v) => setD({ ...d, longReview: v })} color={OR} label="Revisão espaçada" />
+                </div>
+                {err && <p className="mb-3 rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">{err}</p>}
+              </>
+            }
+            cta={S.started ? <>Salvar e voltar <Save size={18} /></> : <>Começar Rush <Rocket size={18} /></>}
+            from="#ff9a3d"
+            to={OR}
+            onStart={go}
+            note={
+              S.started ? (
+                <button type="button" onClick={() => rush.update((s) => (s.view = 'rush'))} className="font-bold text-slate-600 hover:text-ink">
+                  Cancelar
+                </button>
+              ) : (
+                'Dá pra pausar e mudar as matérias no meio.'
+              )
+            }
+          />
+        }
+      >
       {/* 1. Matérias */}
-      <Step n={1} title="Quais matérias hoje?">
+      <StepCard n={1} title="Quais matérias?" color={OR} right={names.length ? `${names.length} escolhida${names.length > 1 ? 's' : ''}` : undefined}>
         {!subjects.length && <p className="text-sm text-muted">Cadastre matérias em Matérias para começar.</p>}
         <div className="space-y-4">
           {byArea.map(({ a, list }) => (
@@ -192,22 +228,25 @@ export function RushSetup() {
             })}
           </div>
         )}
-      </Step>
+      </StepCard>
 
       {/* 2. Meta */}
-      <Step n={2} title="Quantas questões de meta?">
-        <div className="flex flex-wrap gap-2">
-          {GOALS.map((g) => (
-            <Pill key={g} on={d.goal === g} onClick={() => (setD({ ...d, goal: g }), sfx('pop'))}>
-              {g}
-            </Pill>
+      <StepCard n={2} title="Qual a meta de hoje?" color={OR}>
+        <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
+          {GOALS.map((g, i) => (
+            <ChoiceTile key={g} on={d.goal === g} color={OR} soft={OR_SOFT} onClick={() => (setD({ ...d, goal: g }), sfx('pop'))} className="px-2 py-3.5 text-center">
+              <span className="block font-display text-[22px] font-extrabold" style={d.goal === g ? { color: OR } : undefined}>
+                {g}
+              </span>
+              <span className={`text-xs ${d.goal === g ? 'font-semibold text-[#9a3412]' : 'text-muted'}`}>{GOAL_LABEL[i]}</span>
+            </ChoiceTile>
           ))}
         </div>
-      </Step>
+      </StepCard>
 
       {/* Mais opções */}
-      <div className="mb-5 rounded-2xl border-2 border-dashed border-line">
-        <button type="button" onClick={() => setMore(!more)} className="flex w-full items-center justify-between px-4 py-3 text-sm font-bold text-muted">
+      <div className="rounded-[22px] border border-line bg-white">
+        <button type="button" onClick={() => setMore(!more)} className="flex w-full items-center justify-between px-5 py-4 text-sm font-bold text-slate-600">
           Mais opções (contas x teoria, formato, nível, correção)
           <ChevronDown size={16} className={`transition ${more ? 'rotate-180' : ''}`} />
         </button>
@@ -249,64 +288,21 @@ export function RushSetup() {
                 </Pill>
               </div>
             </Field>
-            <Field label="Checagem final" hint="Quando você acerta as revisões de um erro, volta mais uma questão daquela ideia umas 18 questões depois, para ver se fixou.">
-              <Pill on={d.longReview} onClick={() => setD({ ...d, longReview: !d.longReview })}>
-                <Fx name="pin" /> Revisão espaçada {d.longReview ? 'ligada' : 'desligada'}
-              </Pill>
-            </Field>
           </div>
-        )}
-      </div>
-
-      {err && <p className="mb-3 rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">{err}</p>}
-      <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={(e) => go(e.currentTarget)} className="rk-shine-host flex items-center gap-2 rounded-2xl bg-brand px-8 py-4 font-display text-xl font-bold text-white shadow-[0_6px_0_#2a47c4] transition hover:brightness-110 active:translate-y-1 active:shadow-[0_2px_0_#2a47c4]">
-          {S.started ? (
-            <>
-              Salvar e voltar <Save size={18} />
-            </>
-          ) : (
-            <>
-              Começar! <Rocket size={18} />
-            </>
-          )}
-        </button>
-        {S.started && (
-          <button type="button" onClick={() => rush.update((s) => (s.view = 'rush'))} className="rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-100">
-            Cancelar
-          </button>
         )}
       </div>
 
       {!S.started && (
-        <div className="mt-8 border-t-2 border-dotted border-line pt-5">
-          <div className="mb-2 text-[11px] font-bold tracking-wider text-muted uppercase">Como a fila se mexe quando você erra</div>
-          <div className="flex flex-wrap gap-1">
-            {['✗', '+1', '+2', 'R1', '+4', '+5', '+6', 'R2', '+8', '+9', '+10', '+11', 'R3'].map((t, i) => (
-              <span key={i} className={`capi-pop grid h-8 w-9 place-items-center rounded-xl text-[11px] font-extrabold ${t === '✗' ? 'bg-rose-500 text-white' : t[0] === 'R' ? 'bg-amber-300 text-amber-900' : 'bg-[#f1f2f5] text-muted'}`} style={{ animationDelay: `${i * 50}ms` }}>
-                {t}
-              </span>
-            ))}
+        <StepCard n={3} title="Como funciona" color={OR}>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <RuleCard badge="combo" title="Combo" text="Acertos seguidos multiplicam os pontos." bg="#fff7f2" />
+            <RuleCard badge="boss" title="Chefões" text="De tempos em tempos vem uma questão bem difícil." bg="#fff7f2" />
+            <RuleCard badge="volta" title="Volta da ideia" text="Errou: variações voltam daqui a 3, 7 e 12 questões." bg="#fff7f2" />
           </div>
-          <p className="mt-2 max-w-3xl text-sm text-muted">
-            Errou ou apertou "Não sei": aparece a resolução na hora e 3 variações da mesma ideia (outra situação, a última um pouco mais difícil) entram na fila daqui a 3, 7 e 12 questões. Errou a revisão também? Vêm mais 2. Acertou no
-            chute? Tem um botão para mandar de novo. Os erros também vão para o seu Caderno de erros.
-          </p>
-        </div>
+        </StepCard>
       )}
+      </SetupLayout>
     </div>
-  )
-}
-
-function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
-  return (
-    <section className="mb-6">
-      <h3 className="mb-3 flex items-center gap-2.5 font-display text-lg font-bold">
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-brand text-sm text-white">{n}</span>
-        {title}
-      </h3>
-      {children}
-    </section>
   )
 }
 

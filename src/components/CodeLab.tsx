@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Box, Braces, Brackets, CheckCircle2, Dices, Eye, FileCode2, GitBranch, Lightbulb, Loader2, Lock, MessageCircleQuestion, Play, Repeat, Send, Sparkles, Swords, Trash2, Type, Wand2, XCircle } from 'lucide-react'
+import { Box, Braces, Brackets, CheckCircle2, Dices, Eye, GitBranch, Lightbulb, Loader2, Lock, Play, Repeat, Send, Sparkles, Trash2, Type, Wand2, XCircle } from 'lucide-react'
 import { db, uid } from '../db/db'
 import type { CodeChallenge } from '../db/types'
 import { AIError, getAI } from '../lib/ai'
@@ -258,39 +258,152 @@ export function CodeLab() {
     setLangState(l)
     save(LANG_KEY, l)
   }
+  const doors: { id: typeof tab; title: string; text: string; art: ReactNode; ring: string }[] = [
+    { id: 'desafio', title: 'Desafios', text: 'A Mendi inventa um problema de lógica e você resolve.', art: <DoorChallenge />, ring: '#0f8a63' },
+    { id: 'meu', title: 'Meu código', text: 'Cole o seu código e a Mendi aponta o que melhorar.', art: <DoorMine />, ring: '#3e63f2' },
+    { id: 'duvidas', title: 'Dúvidas', text: 'Pergunta qualquer coisa de programação.', art: <DoorDoubts />, ring: '#e08a00' },
+  ]
   return (
-    <div className="flex overflow-hidden rounded-[22px] border border-line bg-white shadow-[0_8px_24px_-12px_rgba(16,24,40,0.08)]" style={{ minHeight: 'max(600px, calc(100vh - 340px))' }}>
-      <aside className="flex w-[84px] shrink-0 flex-col items-center gap-1 bg-[#1c1d22] py-4">
-        <NavItem active={tab === 'desafio'} onClick={() => setTab('desafio')} icon={<Swords size={21} />} label="Desafios" />
-        <NavItem active={tab === 'meu'} onClick={() => setTab('meu')} icon={<FileCode2 size={21} />} label="Meu código" />
-        <NavItem active={tab === 'duvidas'} onClick={() => setTab('duvidas')} icon={<MessageCircleQuestion size={21} />} label="Dúvidas" />
-        <div className="mt-auto flex w-full flex-col items-center gap-2 border-t border-white/10 pt-3">
-          <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">Língua</span>
+    <div className="space-y-5">
+      <div className="grid gap-4 sm:grid-cols-3">
+        {doors.map((d) => {
+          const on = tab === d.id
+          return (
+            <button
+              key={d.id}
+              onClick={() => setTab(d.id)}
+              aria-pressed={on}
+              className="cl-door flex flex-col items-start gap-2.5 rounded-[22px] border-2 bg-white p-5 text-left"
+              style={{ borderColor: on ? d.ring : '#e6e8ee', boxShadow: on ? `0 14px 26px -18px ${d.ring}` : undefined }}
+            >
+              {d.art}
+              <span className="font-display text-[19px] font-extrabold">{d.title}</span>
+              <span className="text-[13px] leading-snug text-slate-600">{d.text}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="flex flex-col rounded-[22px] border border-line bg-white p-4 sm:p-5" style={{ minHeight: 'max(520px, calc(100vh - 520px))' }}>
+        <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+          <span className="mr-1 text-xs font-bold text-muted">Linguagem</span>
           {(['python', 'javascript'] as Lang[]).map((l) => (
             <button
               key={l}
               onClick={() => setLang(l)}
-              title={LANG_NAME[l]}
-              className={`grid h-10 w-10 place-items-center rounded-xl font-mono text-[13px] font-extrabold transition ${lang === l ? (l === 'python' ? 'bg-gradient-to-br from-[#4b8bbe] to-[#306998] text-[#ffd43b] shadow-[0_0_16px_rgba(75,139,190,.6)]' : 'bg-[#f7df1e] text-[#16181d] shadow-[0_0_16px_rgba(247,223,30,.5)]') : 'bg-white/5 text-slate-500 hover:text-slate-300'}`}
+              aria-pressed={lang === l}
+              className="flex items-center gap-2 rounded-xl border-2 px-3 py-1.5 text-sm font-bold transition"
+              style={lang === l ? { borderColor: l === 'python' ? '#306998' : '#c9b400', background: l === 'python' ? '#eef5fb' : '#fffbe0', color: l === 'python' ? '#306998' : '#6b5e00' } : { borderColor: '#e6e8ee', color: '#6b7280' }}
             >
-              {l === 'python' ? 'Py' : 'JS'}
+              {l === 'python' ? <PythonLogo /> : <JsLogo />}
+              {LANG_NAME[l]}
             </button>
           ))}
         </div>
-      </aside>
-      <div key={tab} className="home-panel flex min-w-0 flex-1 flex-col p-4 sm:p-5">
-        {tab === 'desafio' ? <Challenges lang={lang} /> : tab === 'meu' ? <Mentor lang={lang} /> : <Doubts lang={lang} />}
+        <div key={tab} className="home-panel flex min-w-0 flex-1 flex-col">
+          {tab === 'desafio' ? <Challenges lang={lang} /> : tab === 'meu' ? <Mentor lang={lang} /> : <Doubts lang={lang} />}
+        </div>
       </div>
     </div>
   )
 }
 
-function NavItem({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: ReactNode; label: string }) {
+/* Logos das linguagens */
+function PythonLogo({ size = 22 }: { size?: number }) {
   return (
-    <button onClick={onClick} className={`flex w-full flex-col items-center gap-1 py-1.5 text-[11px] font-semibold transition ${active ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>
-      <span className={`grid h-10 w-10 place-items-center rounded-full transition ${active ? 'bg-gradient-to-br from-[#2fcf9b] to-[#0f8a63] shadow-[0_0_18px_rgba(47,207,155,0.55)]' : 'bg-white/5'}`}>{icon}</span>
-      {label}
-    </button>
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+      <path d="M11.9 2c-5.1 0-4.8 2.2-4.8 2.2v2.3h4.9v.7H5.2S2 6.8 2 12s2.8 5 2.8 5h1.7v-2.4s-.1-2.8 2.8-2.8h4.8s2.7 0 2.7-2.6V4.6S17.2 2 11.9 2zM9.2 3.5a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8z" fill="#3776ab" />
+      <path d="M12.1 22c5.1 0 4.8-2.2 4.8-2.2v-2.3H12v-.7h6.8S22 17.2 22 12s-2.8-5-2.8-5h-1.7v2.4s.1 2.8-2.8 2.8H9.9s-2.7 0-2.7 2.6v4.6S6.8 22 12.1 22zm2.7-1.5a.9.9 0 1 1 0-1.8.9.9 0 0 1 0 1.8z" fill="#ffd43b" />
+    </svg>
+  )
+}
+function JsLogo({ size = 22 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+      <rect width="24" height="24" rx="3" fill="#f7df1e" />
+      <text x="21" y="20.5" textAnchor="end" fontFamily="Inter, Arial, sans-serif" fontSize="10.5" fontWeight="800" fill="#16181d">
+        JS
+      </text>
+    </svg>
+  )
+}
+
+/* Ilustrações das três portas (animam ao passar o mouse) */
+function DoorChallenge() {
+  return (
+    <svg viewBox="0 0 80 80" width="72" height="72" aria-hidden="true" className="cl-art">
+      <defs>
+        <linearGradient id="cl-d-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3fdca0" /><stop offset="1" stopColor="#0f8a63" /></linearGradient>
+        <linearGradient id="cl-d-pz" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ffffff" /><stop offset="1" stopColor="#d9f7ec" /></linearGradient>
+      </defs>
+      <rect x="4" y="8" width="72" height="68" rx="20" fill="#0b6b4c" />
+      <rect x="4" y="4" width="72" height="68" rx="20" fill="url(#cl-d-bg)" />
+      <ellipse cx="26" cy="16" rx="16" ry="6" fill="#fff" opacity=".22" />
+      <g className="cl-float">
+        <path d="M22 26h10a5 5 0 1 1 10 0h10v10a5 5 0 1 1 0 10v10H42a5 5 0 1 0-10 0H22V46a5 5 0 1 0 0-10z" fill="#0b6b4c" opacity=".35" transform="translate(2 3)" />
+        <path d="M22 26h10a5 5 0 1 1 10 0h10v10a5 5 0 1 1 0 10v10H42a5 5 0 1 0-10 0H22V46a5 5 0 1 0 0-10z" fill="url(#cl-d-pz)" />
+        <path d="M30 37l-4 4 4 4M44 37l4 4-4 4M39 34l-4 14" fill="none" stroke="#0f8a63" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+      <path className="cl-zap" d="M62 6 L54 22 L60 22 L56 34 L68 18 L62 18 L66 6Z" fill="#ffd34d" stroke="#fff" strokeWidth="2" strokeLinejoin="round" />
+      <path className="cl-twk" d="M14 58 l1.6 3.4 3.4 1.6 -3.4 1.6 -1.6 3.4 -1.6 -3.4 -3.4 -1.6 3.4 -1.6z" fill="#fff" />
+    </svg>
+  )
+}
+function DoorMine() {
+  return (
+    <svg viewBox="0 0 80 80" width="72" height="72" aria-hidden="true" className="cl-art">
+      <defs>
+        <linearGradient id="cl-m-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#7d97ff" /><stop offset="1" stopColor="#3e63f2" /></linearGradient>
+      </defs>
+      <rect x="4" y="8" width="72" height="68" rx="20" fill="#2a3fb8" />
+      <rect x="4" y="4" width="72" height="68" rx="20" fill="url(#cl-m-bg)" />
+      <ellipse cx="26" cy="16" rx="16" ry="6" fill="#fff" opacity=".22" />
+      <rect x="17" y="24" width="46" height="38" rx="7" fill="#1b1e2a" opacity=".35" />
+      <rect x="15" y="21" width="46" height="38" rx="7" fill="#16181d" />
+      <rect x="15" y="21" width="46" height="9" rx="7" fill="#262a36" />
+      <rect x="15" y="26" width="46" height="4" fill="#262a36" />
+      <circle cx="21" cy="25.5" r="1.6" fill="#ff5f57" />
+      <circle cx="26" cy="25.5" r="1.6" fill="#febc2e" />
+      <circle cx="31" cy="25.5" r="1.6" fill="#28c840" />
+      <path className="cl-type" d="M20 36h12" stroke="#7cc4ff" strokeWidth="3" strokeLinecap="round" pathLength={100} />
+      <path className="cl-type" style={{ animationDelay: '.3s' }} d="M24 42h16" stroke="#7cc4ff" strokeWidth="3" strokeLinecap="round" pathLength={100} />
+      <path className="cl-type" style={{ animationDelay: '.6s' }} d="M24 48h9" stroke="#ffd34d" strokeWidth="3" strokeLinecap="round" pathLength={100} />
+      <path className="cl-type" style={{ animationDelay: '.9s' }} d="M20 54h14" stroke="#7cc4ff" strokeWidth="3" strokeLinecap="round" pathLength={100} />
+      <g className="cl-pen">
+        <path d="M51 68 L69 42 L75 46 L57 72 L50 74Z" fill="#0b1026" opacity=".25" />
+        <path d="M50 66 L68 40 L74 44 L56 70 L49 72Z" fill="#ffc83d" />
+        <path d="M68 40 L70 37 Q72 35 74.5 36.6 Q76.6 38.4 75 41 L74 44Z" fill="#ff8fa3" />
+        <path d="M49 72 L50 66 L56 70Z" fill="#f3d2a2" />
+        <path d="M48.6 72.6 L49.4 69.8 L52 71.4Z" fill="#23263a" />
+      </g>
+    </svg>
+  )
+}
+function DoorDoubts() {
+  return (
+    <svg viewBox="0 0 80 80" width="72" height="72" aria-hidden="true" className="cl-art">
+      <defs>
+        <linearGradient id="cl-q-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ffd166" /><stop offset="1" stopColor="#f29100" /></linearGradient>
+      </defs>
+      <rect x="4" y="8" width="72" height="68" rx="20" fill="#c06d00" />
+      <rect x="4" y="4" width="72" height="68" rx="20" fill="url(#cl-q-bg)" />
+      <ellipse cx="26" cy="16" rx="16" ry="6" fill="#fff" opacity=".28" />
+      <g className="cl-float" style={{ animationDelay: '.3s' }}>
+        <path d="M36 34h28a6 6 0 0 1 6 6v14a6 6 0 0 1-6 6h-6l1 7-8-7H36a6 6 0 0 1-6-6V40a6 6 0 0 1 6-6z" fill="#16181d" />
+        <g className="cl-dots">
+          <circle cx="42" cy="47" r="3" fill="#7ef0b5" />
+          <circle cx="50" cy="47" r="3" fill="#7ef0b5" />
+          <circle cx="58" cy="47" r="3" fill="#7ef0b5" />
+        </g>
+      </g>
+      <g className="cl-float">
+        <path d="M18 17h26a7 7 0 0 1 7 7v13a7 7 0 0 1-7 7H30l-9 7 1.5-7H18a7 7 0 0 1-7-7V24a7 7 0 0 1 7-7z" fill="#7a4100" opacity=".25" />
+        <path d="M16 14h26a7 7 0 0 1 7 7v13a7 7 0 0 1-7 7H28l-9 7 1.5-7H16a7 7 0 0 1-7-7V21a7 7 0 0 1 7-7z" fill="#fff" />
+        <path d="M24.5 23.5a4.5 4.5 0 1 1 6.6 4c-1.4.8-2.1 1.6-2.1 3" fill="none" stroke="#e08a00" strokeWidth="3" strokeLinecap="round" />
+        <circle cx="29" cy="35" r="1.9" fill="#e08a00" />
+      </g>
+      <path className="cl-twk" d="M66 14 l1.8 3.8 3.8 1.8 -3.8 1.8 -1.8 3.8 -1.8 -3.8 -3.8 -1.8 3.8 -1.8z" fill="#fff" />
+    </svg>
   )
 }
 
