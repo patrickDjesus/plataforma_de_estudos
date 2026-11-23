@@ -8,6 +8,7 @@ import { centerOf, confetti, playSfx } from '../lib/sfx'
 import { showMascot } from '../lib/mascotBus'
 import { askConfirm } from './confirm'
 import { Capybara, type CapiPose } from './Capybara'
+import type { CodeReview } from '../db/types'
 import { Card } from './ui'
 import { Fx } from './Fx'
 
@@ -252,7 +253,7 @@ function RichText({ text }: { text: string }) {
 /* ---------------- Principal ---------------- */
 
 export function CodeLab() {
-  const [tab, setTab] = useState<'desafio' | 'meu' | 'duvidas'>('desafio')
+  const [tab, setTab] = useState<'desafio' | 'meu' | 'duvidas' | 'biblioteca'>('desafio')
   const [lang, setLangState] = useState<Lang>(() => load<Lang>(LANG_KEY, 'python'))
   const setLang = (l: Lang) => {
     setLangState(l)
@@ -262,10 +263,11 @@ export function CodeLab() {
     { id: 'desafio', title: 'Desafios', text: 'A Mendi inventa um problema de lógica e você resolve.', art: <DoorChallenge />, ring: '#0f8a63' },
     { id: 'meu', title: 'Meu código', text: 'Cole o seu código e a Mendi aponta o que melhorar.', art: <DoorMine />, ring: '#3e63f2' },
     { id: 'duvidas', title: 'Dúvidas', text: 'Pergunta qualquer coisa de programação.', art: <DoorDoubts />, ring: '#e08a00' },
+    { id: 'biblioteca', title: 'Biblioteca', text: 'Seus códigos aprovados, com a nota de cada um.', art: <DoorLibrary />, ring: '#6233d6' },
   ]
   return (
     <div className="space-y-5">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {doors.map((d) => {
           const on = tab === d.id
           return (
@@ -301,7 +303,7 @@ export function CodeLab() {
           ))}
         </div>
         <div key={tab} className="home-panel flex min-w-0 flex-1 flex-col">
-          {tab === 'desafio' ? <Challenges lang={lang} /> : tab === 'meu' ? <Mentor lang={lang} /> : <Doubts lang={lang} />}
+          {tab === 'desafio' ? <Challenges lang={lang} /> : tab === 'meu' ? <Mentor lang={lang} /> : tab === 'biblioteca' ? <Library /> : <Doubts lang={lang} />}
         </div>
       </div>
     </div>
@@ -376,6 +378,33 @@ function DoorMine() {
         <path d="M49 72 L50 66 L56 70Z" fill="#f3d2a2" />
         <path d="M48.6 72.6 L49.4 69.8 L52 71.4Z" fill="#23263a" />
       </g>
+    </svg>
+  )
+}
+function DoorLibrary() {
+  return (
+    <svg viewBox="0 0 80 80" width="72" height="72" aria-hidden="true" className="cl-art">
+      <defs>
+        <linearGradient id="cl-l-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#b896ff" /><stop offset="1" stopColor="#6233d6" /></linearGradient>
+      </defs>
+      <rect x="4" y="8" width="72" height="68" rx="20" fill="#3b1f9e" />
+      <rect x="4" y="4" width="72" height="68" rx="20" fill="url(#cl-l-bg)" />
+      <ellipse cx="26" cy="16" rx="16" ry="6" fill="#fff" opacity=".22" />
+      <rect x="14" y="58" width="52" height="5" rx="2.5" fill="#2a1d55" opacity=".35" />
+      <g className="cl-float">
+        <rect x="16" y="22" width="11" height="36" rx="3" fill="#fff" />
+        <rect x="16" y="28" width="11" height="3" fill="#ff8fa3" />
+        <rect x="29" y="18" width="12" height="40" rx="3" fill="#ffd34d" />
+        <path d="M32 26h6M32 30h6" stroke="#b8860b" strokeWidth="2" strokeLinecap="round" />
+        <rect x="44" y="26" width="11" height="32" rx="3" fill="#7ef0b5" transform="rotate(12 49.5 42)" />
+      </g>
+      <g className="cl-zap">
+        <circle cx="60" cy="20" r="11" fill="#fff" />
+        <text x="60" y="25" textAnchor="middle" fontFamily="Sora, sans-serif" fontSize="13" fontWeight="800" fill="#6233d6">
+          10
+        </text>
+      </g>
+      <path className="cl-twk" d="M14 12 l1.6 3.4 3.4 1.6 -3.4 1.6 -1.6 3.4 -1.6 -3.4 -3.4 -1.6 3.4 -1.6z" fill="#fff" />
     </svg>
   )
 }
@@ -890,7 +919,7 @@ function Doubts({ lang }: { lang: Lang }) {
 /* ---------------- Meu código: a Mendi como mentora ---------------- */
 
 type Step = { line: number; kind: 'pergunta' | 'sugestao' | 'erro' | 'elogio'; text: string; hint: string; piece: string; marker: number }
-type Mentoring = { summary: string; capiCode: string; steps: Step[] }
+type Mentoring = { summary: string; capiCode: string; steps: Step[]; done?: boolean; grade?: number; verdict?: string; tips?: string[] }
 const MENTOR_KEY = 'mendonca-code-mentor'
 
 const numbered = (code: string) =>
@@ -911,8 +940,9 @@ Monte:
 1) "codigoCapi": a MELHOR versão desse código (simples, limpa, do jeito que um iniciante entende), mas com os trechos-chave que o aluno precisa descobrir trocados por marcadores [[1]], [[2]]... (de 1 a 4 marcadores). O resto do código aparece normal.
 2) "passos": de 2 a 5 orientações, em ordem, cada uma apontando para uma linha do código DO ALUNO. Escreva como perguntas ou sugestões que guiam, por exemplo: "Na linha 3, por que usar while aqui? Um for não deixaria mais simples?", "Essa variável na linha 5 muda em algum momento?", "E se a lista vier vazia?". Inclua um elogio se algo estiver bom.
 Cada passo pode estar ligado a um marcador do codigoCapi (o trecho que vai nele).
+3) Avalie se o código JÁ CUMPRE o objetivo (funciona, sem erro que quebre o resultado). Se cumprir, dê uma nota de 0 a 10 (seja justo: 10 é impecável) e no máximo 2 melhorias opcionais curtas; nesse caso "passos" pode vir vazio e o codigoCapi pode vir SEM marcadores.
 Responda SOMENTE com JSON:
-{"resumo":"1 ou 2 frases: o que o código faz e como está","codigoCapi":"...","passos":[{"linha":3,"tipo":"pergunta|sugestao|erro|elogio","texto":"a pergunta/sugestão curta","pista":"uma dica a mais, se ele travar (sem dar o código)","marcador":1,"trecho":"o código exato que vai no marcador 1 (vazio se não tiver marcador)"}]}`
+{"cumpre":false,"nota":7,"veredito":"1 frase curta, tipo: Faz o que foi pedido, só dava pra simplificar o laço.","melhorias":["até 2, opcionais"],"resumo":"1 ou 2 frases: o que o código faz e como está","codigoCapi":"...","passos":[{"linha":3,"tipo":"pergunta|sugestao|erro|elogio","texto":"a pergunta/sugestão curta","pista":"uma dica a mais, se ele travar (sem dar o código)","marcador":1,"trecho":"o código exato que vai no marcador 1 (vazio se não tiver marcador)"}]}`
 
 const followPrompt = (lang: Lang, code: string, goal: string, m: Mentoring | null, history: Msg[], q: string) => `Você é a Mendi, mentora de programação de um iniciante (${LANG_NAME[lang]}). Guie com perguntas e dicas curtas; não entregue o código completo. Se ele acertar, comemore e aponte o próximo passo.
 Objetivo: ${goal.trim() || '(não informado)'}
@@ -980,7 +1010,7 @@ function Mentor({ lang }: { lang: Lang }) {
     try {
       const ai = await getAI()
       if (!ai) throw new AIError('unavailable', 'O Claude não está disponível aqui. Abra o Mendonça pelo claude.ai.')
-      const o = await ai.json<{ resumo?: string; codigoCapi?: string; passos?: { linha?: number; tipo?: string; texto?: string; pista?: string; trecho?: string; marcador?: number }[] }>(mentorPrompt(lang, code, goal, ''), { fresh: true })
+      const o = await ai.json<{ cumpre?: boolean; nota?: number; veredito?: string; melhorias?: string[]; resumo?: string; codigoCapi?: string; passos?: { linha?: number; tipo?: string; texto?: string; pista?: string; trecho?: string; marcador?: number }[] }>(mentorPrompt(lang, code, goal, ''), { fresh: true })
       const steps: Step[] = (o?.passos ?? [])
         .filter((p) => p?.texto)
         .slice(0, 5)
@@ -992,7 +1022,28 @@ function Mentor({ lang }: { lang: Lang }) {
           piece: String(p.trecho ?? ''),
           marker: Math.round(Number(p.marcador) || 0),
         }))
-      setResult({ summary: String(o?.resumo ?? ''), capiCode: String(o?.codigoCapi ?? ''), steps })
+      const grade = Math.max(0, Math.min(10, Math.round(Number(o?.nota) || 0)))
+      const done = !!o?.cumpre && grade >= 6
+      const res: Mentoring = {
+        summary: String(o?.resumo ?? ''),
+        capiCode: String(o?.codigoCapi ?? ''),
+        steps,
+        done,
+        grade,
+        verdict: String(o?.veredito ?? ''),
+        tips: Array.isArray(o?.melhorias) ? o.melhorias.map(String).filter(Boolean).slice(0, 2) : [],
+      }
+      setResult(res)
+      if (done) {
+        // Guarda na biblioteca (o mesmo código atualiza o registro em vez de duplicar)
+        const same = await db.snippets.filter((x) => x.lang === lang && x.code.trim() === code.trim()).first()
+        const rec = { lang, goal: goal.trim(), code, grade, verdict: res.verdict ?? '', tips: res.tips ?? [], capiCode: res.capiCode.replace(/\[\[(\d+)\]\]/g, (_, n) => steps.find((st) => st.marker === Number(n))?.piece ?? '') }
+        if (same) await db.snippets.update(same.id, rec)
+        else await db.snippets.add({ id: uid(), createdAt: Date.now(), ...rec })
+        playSfx('ok')
+        const [x, y] = centerOf(document.getElementById('mentor-grade'))
+        window.setTimeout(() => confetti(x || innerWidth / 2, y || innerHeight / 2, 70, ['#2fcf9b', '#ffd34d', '#ffffff', '#3e63f2']), 80)
+      }
       setOpened(new Set())
       setHints(new Set())
       setChat([])
@@ -1036,7 +1087,7 @@ function Mentor({ lang }: { lang: Lang }) {
   const steps = result?.steps ?? []
   const step = steps[cur]
   const markers = new Map<number, number>()
-  steps.forEach((st, i) => st.line > 0 && !markers.has(st.line) && markers.set(st.line, i))
+  if (!result?.done) steps.forEach((st, i) => st.line > 0 && !markers.has(st.line) && markers.set(st.line, i))
   const file = lang === 'python' ? 'main.py' : 'main.js'
   const pose: CapiPose = step?.kind === 'elogio' ? 'comemorando' : step?.kind === 'erro' ? 'pensando' : 'estudando'
 
@@ -1068,13 +1119,13 @@ function Mentor({ lang }: { lang: Lang }) {
           </span>
         </div>
         <div className="grid lg:grid-cols-2">
-          <CodeEditor value={code} onChange={setCode} lang={lang} highlight={step?.line || undefined} tall bare markers={markers} onMarker={setCur} />
+          <CodeEditor value={code} onChange={setCode} lang={lang} highlight={result?.done ? undefined : step?.line || undefined} tall bare markers={markers} onMarker={setCur} />
           <div className="flex min-h-[200px] flex-col border-t border-white/5 lg:border-t-0 lg:border-l">
             <div className="flex items-center gap-2 border-b border-white/5 px-4 py-2 font-mono text-xs text-[#8a93a8]">
               <span className="h-2 w-2 rounded-full bg-[#2fcf9b]" /> versão da Mendi
             </div>
             {result?.capiCode ? (
-              <CapiCode code={result.capiCode} steps={steps} open={opened} className="h-[420px] flex-1" />
+              <CapiCode code={result.capiCode} steps={steps} open={result.done ? new Set(steps.map((st) => st.marker)) : opened} className="h-[420px] flex-1" />
             ) : (
               <div className="grid flex-1 place-items-center px-6 text-center text-sm text-[#8a93a8]">
                 <div>
@@ -1106,8 +1157,34 @@ function Mentor({ lang }: { lang: Lang }) {
       </div>
       {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
 
+      {/* Aprovado: nota e fim */}
+      {result?.done && (
+        <div id="mentor-grade" className="capi-pop flex flex-wrap items-center gap-5 rounded-[22px] border-2 border-[#9fe6cb] bg-white p-5">
+          <GradeRing grade={result.grade ?? 0} />
+          <div className="min-w-[220px] flex-1">
+            <div className="font-display text-xl font-extrabold text-[#0f8a63]">Missão cumprida!</div>
+            <p className="mt-1 text-[15px] text-slate-700">{result.verdict}</p>
+            {(result.tips?.length ?? 0) > 0 && (
+              <div className="mt-3">
+                <div className="mb-1.5 text-[11px] font-bold tracking-wider text-muted uppercase">Dava pra melhorar</div>
+                <ul className="space-y-1.5">
+                  {result.tips!.map((t, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-slate-700">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0f8a63]" />
+                      <RichText text={t} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <p className="mt-3 text-xs font-semibold text-muted">Guardado na Biblioteca.</p>
+          </div>
+          <Capybara pose="comemorando" size={92} />
+        </div>
+      )}
+
       {/* Comentários da Mendi, um de cada vez */}
-      {result && (
+      {result && !result.done && (
         <Card className="p-5">
           {result.summary && <p className="mb-4 border-b border-line pb-4 text-sm text-slate-600">{result.summary}</p>}
           {step ? (
@@ -1194,6 +1271,121 @@ function Mentor({ lang }: { lang: Lang }) {
           </div>
         </Card>
       )}
+    </div>
+  )
+}
+
+/** Nota de 0 a 10 num anel colorido. */
+function GradeRing({ grade, size = 96 }: { grade: number; size?: number }) {
+  const r = 40
+  const c = 2 * Math.PI * r
+  const color = grade >= 9 ? '#0f8a63' : grade >= 7 ? '#2fb5d6' : '#e08a00'
+  return (
+    <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={`Nota ${grade}`} className="shrink-0">
+      <circle cx="50" cy="50" r={r} fill="none" stroke="#eef0f4" strokeWidth="10" />
+      <circle cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="10" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - grade / 10)} transform="rotate(-90 50 50)" style={{ transition: 'stroke-dashoffset .8s ease' }} />
+      <text x="50" y="58" textAnchor="middle" fontFamily="Sora, sans-serif" fontSize="30" fontWeight="800" fill="#121826">
+        {grade}
+      </text>
+    </svg>
+  )
+}
+
+/* ---------------- Biblioteca: códigos aprovados ---------------- */
+function Library() {
+  const list = useLiveQuery(() => db.snippets.orderBy('createdAt').reverse().toArray(), [], [])
+  const [open, setOpen] = useState<CodeReview | null>(null)
+  const [tab, setTab] = useState<'seu' | 'mendi'>('seu')
+  const title = (r: CodeReview) => r.goal || r.code.split('\n').find((l) => l.trim())?.trim().slice(0, 60) || 'Código'
+
+  if (!list.length)
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
+        <Capybara pose="estudando" size={104} />
+        <p className="mt-2 font-display text-lg font-bold">Sua biblioteca está vazia</p>
+        <p className="max-w-sm text-sm text-muted">Quando a Mendi aprovar um código seu no Meu código, ele fica guardado aqui com a nota.</p>
+      </div>
+    )
+
+  if (open)
+    return (
+      <div className="space-y-4">
+        <button onClick={() => setOpen(null)} className="text-xs font-bold text-muted hover:text-ink">
+          ← Biblioteca
+        </button>
+        <div className="flex flex-wrap items-center gap-5">
+          <GradeRing grade={open.grade} size={84} />
+          <div className="min-w-0 flex-1">
+            <h2 className="font-display text-xl font-bold">{title(open)}</h2>
+            <p className="mt-1 text-sm text-slate-700">{open.verdict}</p>
+            <p className="mt-1 text-xs text-muted">
+              {LANG_NAME[open.lang]} · {new Date(open.createdAt).toLocaleDateString('pt-BR')}
+            </p>
+          </div>
+        </div>
+        {open.tips.length > 0 && (
+          <div className="rounded-2xl bg-[#f6f7f9] p-4">
+            <div className="mb-1.5 text-[11px] font-bold tracking-wider text-muted uppercase">Dava pra melhorar</div>
+            <ul className="space-y-1.5">
+              {open.tips.map((t, i) => (
+                <li key={i} className="flex gap-2 text-sm text-slate-700">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#0f8a63]" />
+                  <RichText text={t} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <div className="overflow-hidden rounded-[20px] bg-[#16181d]">
+          <div className="flex gap-1 border-b border-white/5 bg-[#1d2027] px-3 py-2">
+            {(['seu', 'mendi'] as const).map((k) =>
+              k === 'mendi' && !open.capiCode ? null : (
+                <button key={k} onClick={() => setTab(k)} className={`rounded-lg px-3 py-1 font-mono text-xs ${tab === k ? 'bg-[#16181d] text-white' : 'text-[#8a93a8] hover:text-white'}`}>
+                  {k === 'seu' ? `seu ${open.lang === 'python' ? 'main.py' : 'main.js'}` : 'versão da Mendi'}
+                </button>
+              ),
+            )}
+          </div>
+          <pre className="thin-scroll max-h-[420px] overflow-auto px-4 py-3 font-mono text-[13px] leading-[1.65] text-[#e6e9f2]">{tab === 'mendi' && open.capiCode ? open.capiCode : open.code}</pre>
+        </div>
+        <button onClick={async () => (await askConfirm('Tirar este código da biblioteca?')) && (await db.snippets.delete(open.id), setOpen(null))} className="text-xs font-bold text-rose-600 hover:underline">
+          Apagar da biblioteca
+        </button>
+      </div>
+    )
+
+  const avg = list.reduce((a, r) => a + r.grade, 0) / list.length
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <h2 className="font-display text-xl font-bold">Biblioteca</h2>
+        <span className="rounded-full bg-[#e9f9f2] px-2.5 py-1 text-xs font-bold text-[#0f8a63]">
+          {list.length} código{list.length > 1 ? 's' : ''} · média {avg.toFixed(1).replace('.', ',')}
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {list.map((r) => (
+          <button
+            key={r.id}
+            onClick={() => {
+              setOpen(r)
+              setTab('seu')
+            }}
+            className="group flex flex-col gap-3 rounded-[20px] border-2 border-line bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-[#9fe6cb]"
+          >
+            <div className="flex items-start gap-3">
+              <GradeRing grade={r.grade} size={52} />
+              <div className="min-w-0 flex-1">
+                <div className="line-clamp-2 text-sm font-bold">{title(r)}</div>
+                <div className="mt-0.5 text-[11px] text-muted">
+                  {LANG_NAME[r.lang]} · {new Date(r.createdAt).toLocaleDateString('pt-BR')}
+                </div>
+              </div>
+            </div>
+            <pre className="line-clamp-3 overflow-hidden rounded-xl bg-[#16181d] px-3 py-2 font-mono text-[11.5px] leading-[1.5] text-[#c9cede]">{r.code}</pre>
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

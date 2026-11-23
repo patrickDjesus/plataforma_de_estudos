@@ -315,3 +315,16 @@ export interface CodeChallenge {
   attempts: number
   feedback?: string
 }
+
+/** Código revisado pela Mendi e aprovado (biblioteca do "Meu código"). */
+export interface CodeReview {
+  id: string
+  createdAt: number
+  lang: 'python' | 'javascript'
+  goal: string
+  code: string
+  grade: number
+  verdict: string
+  tips: string[]
+  capiCode?: string
+}
