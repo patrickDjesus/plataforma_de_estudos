@@ -300,6 +300,9 @@ const MODES: Mode[] = [
   { id: 'codigo', title: 'Código', tag: 'Lógica, desafios e dúvidas.', about: 'Desafios de lógica, seu código revisado linha por linha e dúvidas de programação.', sky: ['#0f8a63', '#5fdcb0'], from: '#2fcf9b', to: '#0f8a63', ink: '#0f8a63', pose: 'focado', back: writeBack, front: writeFront },
 ]
 
+/** Cor do topo do céu de cada cenário: preenche a área do título, acima da ilustração. */
+const CARD_SKY: Record<ModeId, string> = { rush: '#ff9f5a', simulado: '#6f8dff', gerar: '#5a35c9', codigo: '#3fcf9e' }
+
 export function modeInfo(id: string) {
   return MODES.find((m) => m.id === id)
 }
@@ -318,9 +321,9 @@ export function QuestionModes({ onPick, onExtra }: { onPick: (id: ModeId) => voi
             }}
             onMouseEnter={() => playSfx('blip')}
             className="qm-card group relative flex h-[clamp(440px,calc(100vh-230px),640px)] flex-col justify-start overflow-hidden rounded-[26px] p-5 text-left text-white shadow-[0_18px_34px_-20px_rgba(16,24,40,0.65)] ring-1 ring-black/5 outline-none focus-visible:ring-4 focus-visible:ring-brand/40"
-            style={{ animationDelay: `${i * 0.08}s` }}
+            style={{ animationDelay: `${i * 0.08}s`, background: CARD_SKY[m.id] }}
           >
-            <svg viewBox={`0 ${TOP} ${W} ${H - TOP}`} preserveAspectRatio="xMidYMax slice" className="essential-motion pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+            <svg viewBox={`0 30 ${W} ${H - 30}`} preserveAspectRatio="xMidYMax slice" className="essential-motion pointer-events-none absolute inset-x-0 bottom-0 top-[96px] h-[calc(100%-96px)] w-full" style={{ maskImage: 'linear-gradient(to bottom, transparent, #000 56px)', WebkitMaskImage: 'linear-gradient(to bottom, transparent, #000 56px)' }} aria-hidden>
               {m.back}
               <g transform="translate(52 268)">
                 <g className={`qm-capi ${m.id === 'rush' ? 'qm-run' : ''}`}>
