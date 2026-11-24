@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Block, Challenge, ErrorEntry, Writing, Flashcard, MapLink, MapPosition, Note, Review, Session, Settings, Subject, TimerState, Topic, UnlockedAchievement, Week, Practice, CodeChallenge, CodeReview } from './types'
+import type { OfficeProject, Block, Challenge, ErrorEntry, Writing, Flashcard, MapLink, MapPosition, Note, Review, Session, Settings, Subject, TimerState, Topic, UnlockedAchievement, Week, Practice, CodeChallenge, CodeReview } from './types'
 
 /**
  * Banco local (IndexedDB). Toda leitura/escrita passa por `src/db/*`,
@@ -25,6 +25,7 @@ export class MendoncaDB extends Dexie {
   practice!: EntityTable<Practice, 'id'>
   code!: EntityTable<CodeChallenge, 'id'>
   snippets!: EntityTable<CodeReview, 'id'>
+  projects!: EntityTable<OfficeProject, 'id'>
 
   constructor() {
     super('mendonca')
@@ -52,6 +53,8 @@ export class MendoncaDB extends Dexie {
     this.version(8).stores({ code: 'id, createdAt' })
     // Biblioteca de códigos aprovados
     this.version(9).stores({ snippets: 'id, createdAt' })
+    // Modo Empresarial (projetos com tarefas do gerente)
+    this.version(10).stores({ projects: 'id, createdAt' })
   }
 }
 

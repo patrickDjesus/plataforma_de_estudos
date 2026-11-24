@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Box, Braces, Brackets, CheckCircle2, Dices, Eye, GitBranch, Lightbulb, Loader2, Lock, Play, Repeat, Send, Sparkles, Trash2, Type, Wand2, XCircle } from 'lucide-react'
+import { Box, Braces, Building2 as Building, Brackets, CheckCircle2, Dices, Eye, GitBranch, Lightbulb, Loader2, Lock, Play, Repeat, Send, Sparkles, Trash2, Type, Wand2, XCircle } from 'lucide-react'
 import { db, uid } from '../db/db'
 import type { CodeChallenge } from '../db/types'
 import { AIError, getAI } from '../lib/ai'
@@ -11,13 +11,15 @@ import { Capybara, type CapiPose } from './Capybara'
 import type { CodeReview } from '../db/types'
 import { Card } from './ui'
 import { Fx } from './Fx'
+import { Office } from './CodeOffice'
 
-type Lang = CodeChallenge['lang']
-const LANG_NAME: Record<Lang, string> = { python: 'Python', javascript: 'JavaScript' }
+export type Lang = CodeChallenge['lang']
+export const LANG_NAME: Record<Lang, string> = { python: 'Python', javascript: 'JavaScript' }
 const LEVELS = ['Bem fácil', 'Fácil', 'Médio']
 const TOPICS = ['Qualquer', 'Variáveis e contas', 'Condições (if)', 'Laços (for/while)', 'Listas', 'Textos', 'Funções']
 
 const LANG_KEY = 'mendonca-code-lang'
+const MODE_KEY = 'mendonca-code-mode'
 const CHAT_KEY = 'mendonca-code-chat'
 const load = <T,>(k: string, def: T): T => {
   try {
@@ -76,7 +78,7 @@ Mendi:`
 
 /* ---------------- Rodar JavaScript ---------------- */
 
-type RunResult = { logs: string[]; results: { label: string; ok: boolean; got: string; expected: string }[]; error?: string }
+export type RunResult = { logs: string[]; results: { label: string; ok: boolean; got: string; expected: string }[]; error?: string }
 
 const WORKER = `
 const fmt = (v) => typeof v === 'string' ? v : (() => { try { return JSON.stringify(v) } catch { return String(v) } })()
@@ -99,7 +101,7 @@ self.onmessage = (e) => {
   self.postMessage({ logs, results, error })
 }`
 
-function runJS(code: string, fn?: string, tests?: CodeChallenge['tests']): Promise<RunResult> {
+export function runJS(code: string, fn?: string, tests?: CodeChallenge['tests']): Promise<RunResult> {
   const safeFn = fn && /^[A-Za-z_$][\w$]*$/.test(fn) ? fn : undefined
   return new Promise((resolve) => {
     let w: Worker
@@ -131,7 +133,7 @@ function runJS(code: string, fn?: string, tests?: CodeChallenge['tests']): Promi
 
 /** Editor simples: números de linha, Tab = 4 espaços e Enter mantendo a indentação. */
 const LINE_H = 21.6
-function CodeEditor({ value, onChange, lang, highlight, tall = false, bare = false, markers, onMarker }: { value: string; onChange: (v: string) => void; lang: Lang; highlight?: number; tall?: boolean; bare?: boolean; markers?: Map<number, number>; onMarker?: (step: number) => void }) {
+export function CodeEditor({ value, onChange, lang, highlight, tall = false, bare = false, markers, onMarker }: { value: string; onChange: (v: string) => void; lang: Lang; highlight?: number; tall?: boolean; bare?: boolean; markers?: Map<number, number>; onMarker?: (step: number) => void }) {
   const ref = useRef<HTMLTextAreaElement>(null)
   const gutter = useRef<HTMLDivElement>(null)
   const [scroll, setScroll] = useState(0)
@@ -214,7 +216,7 @@ function CodeEditor({ value, onChange, lang, highlight, tall = false, bare = fal
 
 /* ---------------- Texto com blocos de código ---------------- */
 
-function RichText({ text }: { text: string }) {
+export function RichText({ text }: { text: string }) {
   const parts = text.split(/```[\w+-]*\n?([\s\S]*?)(?:```|$)/g)
   return (
     <div className="space-y-2 text-sm leading-relaxed">
@@ -259,8 +261,13 @@ export function CodeLab() {
     setLangState(l)
     save(LANG_KEY, l)
   }
+  const [mode, setModeState] = useState<'treino' | 'empresa'>(() => load(MODE_KEY, 'treino'))
+  const setMode = (m: typeof mode) => {
+    setModeState(m)
+    save(MODE_KEY, m)
+  }
   const doors: { id: typeof tab; title: string; text: string; art: ReactNode; ring: string }[] = [
-    { id: 'desafio', title: 'Desafios', text: 'A Mendi inventa um problema de lógica e você resolve.', art: <DoorChallenge />, ring: '#0f8a63' },
+    { id: 'desafio', title: 'Desafios', text: 'Problemas de lógica ou um projeto de empresa com tarefas do gerente.', art: <DoorChallenge />, ring: '#0f8a63' },
     { id: 'meu', title: 'Meu código', text: 'Cole o seu código e a Mendi aponta o que melhorar.', art: <DoorMine />, ring: '#3e63f2' },
     { id: 'duvidas', title: 'Dúvidas', text: 'Pergunta qualquer coisa de programação.', art: <DoorDoubts />, ring: '#e08a00' },
     { id: 'biblioteca', title: 'Biblioteca', text: 'Seus códigos aprovados, com a nota de cada um.', art: <DoorLibrary />, ring: '#6233d6' },
@@ -288,6 +295,28 @@ export function CodeLab() {
 
       <div className="flex flex-col rounded-[22px] border border-line bg-white p-4 sm:p-5" style={{ minHeight: 'max(520px, calc(100vh - 520px))' }}>
         <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+          {tab === 'desafio' && (
+            <div className="mr-auto flex rounded-2xl bg-[#f1f3f8] p-1" role="tablist">
+              {(
+                [
+                  ['treino', 'Treino', '#0f8a63'],
+                  ['empresa', 'Empresarial', '#3e63f2'],
+                ] as const
+              ).map(([id, label, color]) => (
+                <button
+                  key={id}
+                  role="tab"
+                  aria-selected={mode === id}
+                  onClick={() => setMode(id)}
+                  className={`flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-sm font-bold transition ${mode === id ? 'bg-white shadow-[0_4px_10px_-6px_rgba(16,24,40,.4)]' : 'text-muted hover:text-ink'}`}
+                  style={mode === id ? { color } : undefined}
+                >
+                  {id === 'treino' ? <Dices size={15} /> : <Building size={15} />}
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
           <span className="mr-1 text-xs font-bold text-muted">Linguagem</span>
           {(['python', 'javascript'] as Lang[]).map((l) => (
             <button
@@ -302,8 +331,8 @@ export function CodeLab() {
             </button>
           ))}
         </div>
-        <div key={tab} className="home-panel flex min-w-0 flex-1 flex-col">
-          {tab === 'desafio' ? <Challenges lang={lang} /> : tab === 'meu' ? <Mentor lang={lang} /> : tab === 'biblioteca' ? <Library /> : <Doubts lang={lang} />}
+        <div key={tab + mode} className="home-panel flex min-w-0 flex-1 flex-col">
+          {tab === 'desafio' ? mode === 'empresa' ? <Office lang={lang} /> : <Challenges lang={lang} /> : tab === 'meu' ? <Mentor lang={lang} /> : tab === 'biblioteca' ? <Library /> : <Doubts lang={lang} />}
         </div>
       </div>
     </div>
@@ -311,7 +340,7 @@ export function CodeLab() {
 }
 
 /* Logos das linguagens */
-function PythonLogo({ size = 22 }: { size?: number }) {
+export function PythonLogo({ size = 22 }: { size?: number }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
       <path d="M11.9 2c-5.1 0-4.8 2.2-4.8 2.2v2.3h4.9v.7H5.2S2 6.8 2 12s2.8 5 2.8 5h1.7v-2.4s-.1-2.8 2.8-2.8h4.8s2.7 0 2.7-2.6V4.6S17.2 2 11.9 2zM9.2 3.5a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8z" fill="#3776ab" />
@@ -319,7 +348,7 @@ function PythonLogo({ size = 22 }: { size?: number }) {
     </svg>
   )
 }
-function JsLogo({ size = 22 }: { size?: number }) {
+export function JsLogo({ size = 22 }: { size?: number }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
       <rect width="24" height="24" rx="3" fill="#f7df1e" />
@@ -437,7 +466,7 @@ function DoorDoubts() {
 }
 
 /** Janela escura de editor, com bolinhas no topo e ações à direita. */
-function IdeWindow({ file, actions, children, className = '' }: { file: string; actions?: ReactNode; children: ReactNode; className?: string }) {
+export function IdeWindow({ file, actions, children, className = '' }: { file: string; actions?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <div className={`overflow-hidden rounded-[20px] bg-[#16181d] shadow-[0_20px_40px_-24px_rgba(16,24,40,.8)] ${className}`}>
       <div className="flex flex-wrap items-center gap-3 border-b border-white/5 bg-[#1d2027] px-4 py-2.5">
@@ -453,7 +482,7 @@ function IdeWindow({ file, actions, children, className = '' }: { file: string; 
     </div>
   )
 }
-const ideBtn = 'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition disabled:opacity-40'
+export const ideBtn = 'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition disabled:opacity-40'
 const slug = (t: string, lang: Lang) =>
   t
     .normalize('NFD')
@@ -1276,7 +1305,7 @@ function Mentor({ lang }: { lang: Lang }) {
 }
 
 /** Nota de 0 a 10 num anel colorido. */
-function GradeRing({ grade, size = 96 }: { grade: number; size?: number }) {
+export function GradeRing({ grade, size = 96 }: { grade: number; size?: number }) {
   const r = 40
   const c = 2 * Math.PI * r
   const color = grade >= 9 ? '#0f8a63' : grade >= 7 ? '#2fb5d6' : '#e08a00'

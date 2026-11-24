@@ -316,6 +316,46 @@ export interface CodeChallenge {
   feedback?: string
 }
 
+/** Tarefa do modo Empresarial: uma ordem do gerente dentro do projeto. */
+export interface OfficeTask {
+  id: string
+  title: string
+  kind: 'nova' | 'bug' | 'melhoria'
+  message: string
+  criteria: string[]
+  /** Código que entra no arquivo quando a tarefa começa (função pela metade, código com defeito...). */
+  patch?: string
+  patched?: boolean
+  fn?: string
+  tests?: { args: unknown[]; expected: unknown }[]
+  hint?: string
+  done: boolean
+  attempts: number
+  feedback?: { ok: boolean; summary: string; points: string[]; next: string }
+  qa?: { q: string; a: string }[]
+}
+
+/** Projeto do modo Empresarial: uma empresa inventada, um arquivo que cresce e uma fila de tarefas. */
+export interface OfficeProject {
+  id: string
+  createdAt: number
+  lang: 'python' | 'javascript'
+  level: string
+  sector: string
+  company: string
+  product: string
+  pitch: string
+  manager: { name: string; role: string }
+  fileName: string
+  code: string
+  tasks: OfficeTask[]
+  current: number
+  finishedAt?: number
+  grade?: number
+  verdict?: string
+  tips?: string[]
+}
+
 /** Código revisado pela Mendi e aprovado (biblioteca do "Meu código"). */
 export interface CodeReview {
   id: string
