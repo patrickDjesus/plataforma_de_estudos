@@ -24,6 +24,8 @@ import { ErrorsPage } from './pages/Errors'
 import { ReviewTodayPage } from './pages/ReviewToday'
 
 startCloudSync()
+// Pede ao navegador para não apagar o banco local quando faltar espaço
+void navigator.storage?.persist?.().catch(() => false)
 
 // Na página publicada no claude.ai a URL não pode mudar: usa roteamento em memória
 const Router = import.meta.env.VITE_ARTIFACT ? MemoryRouter : BrowserRouter

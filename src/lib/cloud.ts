@@ -200,11 +200,26 @@ type Body = { t?: TableName; id?: string; u?: number; v?: unknown; del?: boolean
 async function applyRemote(bodies: (Body | undefined | null)[]) {
   const puts = new Map<TableName, unknown[]>()
   const dels = new Map<TableName, string[]>()
+  // Carimbo diz "já tenho", mas o registro não está aqui: o banco local foi apagado
+  // pelo navegador e os carimbos (no localStorage) sobraram. Nesse caso a nuvem volta.
+  const claimed = new Map<TableName, string[]>()
+  for (const body of bodies) {
+    if (!body?.t || !body.id || body.del || !SYNCED_TABLES.includes(body.t)) continue
+    const key = keyOf(body.t, body.id)
+    if ((stamps[key] ?? 0) >= Number(body.u ?? 0) && !outbox.has(key)) claimed.set(body.t, [...(claimed.get(body.t) ?? []), body.id])
+  }
+  const missing = new Set<string>()
+  for (const [t, ids] of claimed) {
+    const found = await db.table(t).bulkGet(ids)
+    ids.forEach((id, i) => {
+      if (!found[i]) missing.add(keyOf(t, id))
+    })
+  }
   for (const body of bodies) {
     if (!body?.t || !body.id || !SYNCED_TABLES.includes(body.t)) continue
     const key = keyOf(body.t, body.id)
     const u = Number(body.u ?? 0)
-    if ((stamps[key] ?? 0) >= u) continue // a versão local é igual ou mais nova
+    if ((stamps[key] ?? 0) >= u && !missing.has(key)) continue // a versão local é igual ou mais nova
     stamps[key] = u
     outbox.delete(key)
     if (body.del) dels.set(body.t, [...(dels.get(body.t) ?? []), body.id])
