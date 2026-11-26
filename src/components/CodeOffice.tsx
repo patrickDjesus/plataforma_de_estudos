@@ -17,10 +17,31 @@ import { CodeEditor, GradeRing, IdeWindow, LANG_NAME, RichText, ideBtn, runJS, t
  * (função nova, bug para corrigir, melhoria) uma de cada vez, no mesmo arquivo.
  */
 
-const LEVELS: { id: string; bars: number; text: string; tasks: number; rules: string }[] = [
-  { id: 'Estagiário', bars: 1, text: 'if, contas, textos e funções', tasks: 4, rules: 'Só if/else, contas, textos e funções simples. Nenhuma tarefa do tipo "bug". Uma "melhoria" no máximo.' },
-  { id: 'Júnior', bars: 2, text: 'listas, laços e dicionários', tasks: 5, rules: 'Listas, for, dicionários simples e funções que usam outras funções. Pelo menos 1 tarefa "bug" e 1 "melhoria".' },
-  { id: 'Júnior+', bars: 3, text: 'dados de verdade, bugs e validação', tasks: 6, rules: 'Listas de dicionários, contagem e agrupamento, validação de entrada, casos de borda e funções chamando funções. Pelo menos 2 tarefas "bug" e 1 "melhoria". Ainda sem classes, bibliotecas ou recursão.' },
+const LEVELS: { id: string; bars: number; text: string; tasks: number; lines: string; rules: string }[] = [
+  {
+    id: 'Estagiário',
+    bars: 1,
+    text: 'if, contas, textos e funções',
+    tasks: 4,
+    lines: '45 a 70',
+    rules: 'if/else, contas, textos e funções que chamam funções já prontas do arquivo. Exatamente 1 tarefa "bug", simples (conta errada, comparação trocada, > no lugar de >=). Nada de dicionário dentro de dicionário.',
+  },
+  {
+    id: 'Júnior',
+    bars: 2,
+    text: 'listas, laços e dicionários',
+    tasks: 5,
+    lines: '80 a 110',
+    rules: 'Listas, for, dicionários e listas de dicionários, funções usando outras funções do arquivo, regras de negócio com 2 ou 3 casos. Exatamente 2 tarefas "bug" (uma de lógica, uma de caso de borda) e 1 "melhoria".',
+  },
+  {
+    id: 'Júnior+',
+    bars: 3,
+    text: 'código bagunçado, bugs sutis e regras de negócio',
+    tasks: 6,
+    lines: '110 a 150',
+    rules: 'Listas de dicionários, contagem e agrupamento, ordenação, validação de dados sujos, regras de negócio com várias faixas (desconto progressivo, frete por região, estoque mínimo). 2 ou 3 tarefas "bug", pelo menos uma sutil (erro de uma posição no range, arredondamento, >= vs >, lista alterada sem querer, acumulador que não zera). 1 "melhoria" que é arrumar uma função bagunçada sem quebrar o resto. Sem classes, bibliotecas ou recursão.',
+  },
 ]
 
 const SECTORS: { id: string; icon: ReactNode; from: string; to: string }[] = [
@@ -69,15 +90,24 @@ const projectPrompt = (lang: Lang, level: (typeof LEVELS)[number], sector: strin
 Linguagem: ${LANG_NAME[lang]}. Cargo do funcionário: ${level.id}. Ramo da empresa: ${sector === 'Qualquer' ? 'escolha um ramo do dia a dia' : sector}.
 ${avoid.length ? `Não repita estas empresas: ${avoid.slice(0, 12).join('; ')}.` : ''}
 Monte:
-- Uma empresa com nome criativo e um sistema pequeno e realista que ela precisa (ex.: pedidos de uma lanchonete, estoque de uma loja, notas de uma escola, ranking de um campeonato).
-- "codigoInicial": o começo do arquivo do sistema, com dados de exemplo (${py ? 'listas e dicionários' : 'arrays e objetos'}) e 0 a 2 funções prontas que o funcionário vai ler ou usar. Comentários curtos em português. As funções RETORNAM valores (nada de ${py ? 'input()' : 'prompt()'}).
+- Uma empresa com nome criativo e um sistema realista que ela usa no dia a dia (ex.: pedidos e entregas de uma lanchonete, estoque e reposição de uma loja, boletim e frequência de uma escola, ranking e premiação de um campeonato).
+- "codigoInicial": o arquivo do sistema, com ${level.lines} linhas. CARA DE EMPRESA DE VERDADE (muito importante): é um arquivo que um time pequeno vem mexendo há meses, não um exemplo de livro nem código de IA arrumadinho. Tem que ter:
+  * cabeçalho de comentário tipo "${py ? '#' : '//'} pedidos.${py ? 'py' : 'js'} - sistema do balcão / quem mexeu: Júlio, Pedro, Ana";
+  * constantes de negócio (taxas, limites, preços) e dados de exemplo realistas (8 a 15 registros, com nomes, códigos tipo "SKU-0042", datas em texto, um ou outro dado meio sujo);
+  * de 4 a 8 funções prontas, de tamanhos diferentes, que as tarefas vão usar;
+  * comentários de gente, curtos e informais, com nome de quem escreveu às vezes: "TODO: ver com a Carla se frete grátis vale pra retirada", "FIXME: às vezes sai um centavo a mais", "Pedro: não mexe aqui, o caixa depende disso", "gambiarra pra black friday, tirar depois", e um pedaço de código antigo comentado;
+  * estilo um pouco irregular: uma função mais bagunçada que as outras, um nome ruim tipo tmp ou x2, um número mágico, um comentário desatualizado. MAS tudo funcionando, menos os bugs das tarefas;
+  * o arquivo inteiro roda sem erro: só constantes, dados e funções, nada executando no topo.
 - Exatamente ${level.tasks} tarefas, da mais fácil para a mais difícil. Cada tarefa mexe em UMA função, com nome em ${py ? 'snake_case' : 'camelCase'}, em português sem acento.
-  Tipos: "nova" (criar a função), "bug" (uma função escrita por um colega tem UM defeito realista; o funcionário precisa achar e corrigir; nenhum comentário pode apontar o defeito), "melhoria" (mudar uma função que já existe no arquivo).
+  Tipos:
+  "nova": criar uma função, de preferência usando funções que já existem no arquivo.
+  "bug": o defeito já está DENTRO do codigoInicial, numa função que já existe ("codigoExtra" vazio). A mensagem é uma reclamação de cliente ou de colega descrevendo o SINTOMA ("cliente comprou 3 e pagou como 2", "o relatório de sexta veio com a Ana duplicada"), nunca a causa nem a linha. ${level.id === 'Júnior+' ? 'Não diga qual função é: ele tem que investigar.' : 'Pode dizer qual função está suspeita.'} Pode ter um comentário enganoso perto do bug ("isso aqui tá certo, já testei"). Cada bug é um erro que uma pessoa cometeria de verdade.
+  "melhoria": mudar uma função que já existe no arquivo (regra nova, validação, caso de borda, deixar legível sem mudar o resultado).
   ${level.rules}
-  CLAREZA (o mais importante): a mensagem e os critérios têm que deixar 100% claro o que a função recebe, o que devolve e o que fazer nos casos especiais (lista vazia, item que não existe, valor inválido...). Os "criterios" listam TUDO que vai ser cobrado na revisão; nada fora deles pode ser cobrado depois. Os "testes" batem exatamente com os critérios (confira cada um de cabeça antes de responder).
-  "mensagem": a ordem do gerente, como mensagem de chat do trabalho, 2 a 4 frases, com o motivo (cliente reclamou, o caixa precisa, o dono pediu...). Pode citar colegas inventados.
+  CLAREZA (o mais importante): a mensagem e os critérios têm que deixar 100% claro o que a função recebe, o que devolve e o que fazer nos casos especiais. Os "criterios" listam TUDO que vai ser cobrado na revisão; nada fora deles pode ser cobrado depois. Os "testes" batem exatamente com os critérios (confira cada um de cabeça, rodando no código corrigido, antes de responder).
+  "mensagem": a ordem do gerente, como mensagem de chat do trabalho, 2 a 4 frases, com o motivo (cliente reclamou, o caixa precisa, o dono pediu...). Pode citar colegas.
   "criterios": 2 a 4 critérios objetivos, cada um verificável por um teste.
-  "codigoExtra": código que entra no fim do arquivo quando a tarefa começa. Em "nova": só a assinatura da função com um comentário TODO dentro${py ? ' e pass' : ''}. Em "bug": a função com o defeito. Em "melhoria": vazio (a função já está no arquivo).
+  "codigoExtra": código que entra no fim do arquivo quando a tarefa começa. Em "nova": só a assinatura da função com um comentário TODO dentro${py ? ' e pass' : ''}. Em "bug" e "melhoria": vazio (a função já está no arquivo).
   "testes": 3 a 5 testes chamando a função só com valores JSON (números, textos, listas, objetos, true/false). Cada teste funciona sozinho, sem depender de outra tarefa ter mudado os dados.
   "dica": uma pista que não entrega a resposta.
 ${
@@ -208,7 +238,7 @@ function OfficeHome({ lang, projects, onOpen }: { lang: Lang; projects: OfficePr
       type Raw = { titulo?: string; tipo?: string; mensagem?: string; criterios?: string[]; funcao?: string; codigoExtra?: string; testes?: { args?: unknown[]; esperado?: unknown }[]; dica?: string; conceito?: string; conceitoTipo?: string }
       const o = await ai.json<{ ramo?: string; empresa?: string; produto?: string; resumo?: string; gerente?: { nome?: string; cargo?: string; genero?: string }; arquivo?: string; codigoInicial?: string; tarefas?: Raw[] }>(
         projectPrompt(lang, lv, sector, projects.map((p) => p.company), cand.novos, cand.revisao),
-        { fresh: true },
+        { fresh: true, tier: 'complex' },
       )
       // No máximo um conceito novo e uma revisão, e só da lista oferecida
       const taken = new Set<string>()
@@ -480,7 +510,7 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
       const ai = await getAI()
       if (!ai) throw new AIError('unavailable', 'O Claude não está disponível aqui. Abra o Mendonça pelo claude.ai.')
       const attempt = task.attempts + 1
-      const o = await ai.json<{ aprovado?: boolean; criterios?: unknown[]; fala?: string; problemas?: unknown[]; extra?: string; usouConceito?: boolean }>(reviewPrompt(p, task, code, ran, attempt), { fresh: true })
+      const o = await ai.json<{ aprovado?: boolean; criterios?: unknown[]; fala?: string; problemas?: unknown[]; extra?: string; usouConceito?: boolean }>(reviewPrompt(p, task, code, ran, attempt), { fresh: true, tier: 'complex' })
       const crit = task.criteria.map((_, i) => (Array.isArray(o?.criterios) ? o.criterios[i] !== false : true))
       const ok = !!o?.aprovado && crit.every(Boolean)
       const problems = ok ? [] : Array.isArray(o?.problemas) ? o.problemas.map(String).filter(Boolean).slice(0, 6) : []
