@@ -633,7 +633,7 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
                 </>
               }
             >
-              <CodeEditor value={code} onChange={p.finishedAt ? () => {} : setCode} lang={p.lang} bare tall />
+              <CodeEditor value={code} onChange={setCode} readOnly={!!p.finishedAt} lang={p.lang} bare tall />
               {run && (
                 <div className="border-t border-white/5 px-5 py-3 font-mono text-[12.5px]">
                   <div className="mb-1.5 text-[10.5px] font-bold tracking-wider text-[#596071] uppercase">Terminal</div>

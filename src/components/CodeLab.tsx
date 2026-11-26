@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Box, Braces, Building2 as Building, Brackets, CheckCircle2, Dices, Eye, GitBranch, Lightbulb, Loader2, Lock, Play, Repeat, Send, Sparkles, Trash2, Type, Wand2, XCircle } from 'lucide-react'
 import { db, uid } from '../db/db'
@@ -12,6 +12,8 @@ import type { CodeReview } from '../db/types'
 import { Card } from './ui'
 import { Fx } from './Fx'
 import { Office } from './CodeOffice'
+import { CodeEditor, IdeWindow } from './CodeEditor'
+export { CodeEditor, IdeWindow }
 
 export type Lang = CodeChallenge['lang']
 export const LANG_NAME: Record<Lang, string> = { python: 'Python', javascript: 'JavaScript' }
@@ -131,91 +133,6 @@ export function runJS(code: string, fn?: string, tests?: CodeChallenge['tests'])
 
 /* ---------------- Editor ---------------- */
 
-/** Editor simples: números de linha, Tab = 4 espaços e Enter mantendo a indentação. */
-const LINE_H = 21.6
-export function CodeEditor({ value, onChange, lang, highlight, tall = false, bare = false, markers, onMarker }: { value: string; onChange: (v: string) => void; lang: Lang; highlight?: number; tall?: boolean; bare?: boolean; markers?: Map<number, number>; onMarker?: (step: number) => void }) {
-  const ref = useRef<HTMLTextAreaElement>(null)
-  const gutter = useRef<HTMLDivElement>(null)
-  const [scroll, setScroll] = useState(0)
-  const lines = value.split('\n').length
-
-  // Linha apontada pela Mendi: rola até ela
-  useEffect(() => {
-    const el = ref.current
-    if (!el || !highlight) return
-    const y = (highlight - 1) * LINE_H
-    if (y < el.scrollTop || y > el.scrollTop + el.clientHeight - 40) el.scrollTop = Math.max(0, y - 60)
-  }, [highlight])
-
-  const insert = (text: string, back = 0) => {
-    const el = ref.current!
-    const { selectionStart: a, selectionEnd: b } = el
-    el.setRangeText(text, a, b, 'end')
-    el.selectionStart = el.selectionEnd = a + text.length - back
-    onChange(el.value)
-  }
-  const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    const el = e.currentTarget
-    if (e.key === 'Tab') {
-      e.preventDefault()
-      insert('    ')
-    } else if (e.key === 'Enter') {
-      e.preventDefault()
-      const before = el.value.slice(0, el.selectionStart)
-      const line = before.slice(before.lastIndexOf('\n') + 1)
-      let indent = line.match(/^\s*/)![0]
-      if (/[:{[(]\s*$/.test(line)) indent += '    '
-      insert('\n' + indent)
-    }
-  }
-
-  return (
-    <div className={`relative flex overflow-hidden bg-[#16181d] font-mono text-[13.5px] leading-[1.6] ${bare ? '' : 'rounded-2xl shadow-inner'} ${tall ? 'h-[460px]' : 'max-h-[460px] min-h-[260px]'}`}>
-      {highlight ? <div className="cl-hl pointer-events-none absolute inset-x-0 z-0 bg-[#ffd34d]/15 shadow-[inset_3px_0_0_#ffd34d]" style={{ top: 12 + (highlight - 1) * LINE_H - scroll, height: LINE_H }} /> : null}
-      <div ref={gutter} className="relative z-10 w-11 shrink-0 overflow-hidden bg-[#1d2027] py-3 pr-2 pl-2 text-right text-[#596071] select-none">
-        {Array.from({ length: Math.max(lines, tall ? 24 : 12) }, (_, i) => {
-          const step = markers?.get(i + 1)
-          return step !== undefined ? (
-            <button
-              key={i}
-              type="button"
-              onClick={() => onMarker?.(step)}
-              style={{ height: LINE_H }}
-              className={`ml-auto grid w-[18px] place-items-center rounded-full text-[10px] font-extrabold transition ${highlight === i + 1 ? 'bg-[#ffd34d] text-[#16181d]' : 'bg-[#ffd34d]/25 text-[#ffd34d] hover:bg-[#ffd34d]/50'}`}
-              title="Ver comentário da Mendi"
-            >
-              {step + 1}
-            </button>
-          ) : (
-            <div key={i} className={highlight === i + 1 ? 'font-bold text-[#ffd34d]' : undefined}>
-              {i + 1}
-            </div>
-          )
-        })}
-      </div>
-      <textarea
-        ref={ref}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={onKey}
-        onScroll={(e) => {
-          const t = e.currentTarget.scrollTop
-          if (gutter.current) gutter.current.scrollTop = t
-          setScroll(t)
-        }}
-        spellCheck={false}
-        autoCapitalize="off"
-        autoCorrect="off"
-        aria-label={`Seu código em ${LANG_NAME[lang]}`}
-        className="thin-scroll relative z-10 h-full min-h-[260px] w-full resize-none bg-transparent px-3 py-3 whitespace-pre text-[#e6e9f2] caret-[#7ef0b5] outline-none"
-        style={{ tabSize: 4 }}
-      />
-    </div>
-  )
-}
-
-/* ---------------- Texto com blocos de código ---------------- */
-
 export function RichText({ text }: { text: string }) {
   const parts = text.split(/```[\w+-]*\n?([\s\S]*?)(?:```|$)/g)
   return (
@@ -282,12 +199,14 @@ export function CodeLab() {
               key={d.id}
               onClick={() => setTab(d.id)}
               aria-pressed={on}
-              className="cl-door flex flex-col items-start gap-2.5 rounded-[22px] border-2 bg-white p-5 text-left"
+              className="cl-door flex items-center gap-3.5 rounded-[22px] border-2 bg-white px-4 py-3.5 text-left"
               style={{ borderColor: on ? d.ring : '#e6e8ee', boxShadow: on ? `0 14px 26px -18px ${d.ring}` : undefined }}
             >
-              {d.art}
-              <span className="font-display text-[19px] font-extrabold">{d.title}</span>
-              <span className="text-[13px] leading-snug text-slate-600">{d.text}</span>
+              <span className="shrink-0 [&>svg]:h-[52px] [&>svg]:w-[52px]">{d.art}</span>
+              <span className="min-w-0">
+                <span className="block font-display text-[17px] font-extrabold">{d.title}</span>
+                <span className="mt-0.5 block text-[12.5px] leading-snug text-slate-600">{d.text}</span>
+              </span>
             </button>
           )
         })}
@@ -466,22 +385,6 @@ function DoorDoubts() {
 }
 
 /** Janela escura de editor, com bolinhas no topo e ações à direita. */
-export function IdeWindow({ file, actions, children, className = '' }: { file: string; actions?: ReactNode; children: ReactNode; className?: string }) {
-  return (
-    <div className={`overflow-hidden rounded-[20px] bg-[#16181d] shadow-[0_20px_40px_-24px_rgba(16,24,40,.8)] ${className}`}>
-      <div className="flex flex-wrap items-center gap-3 border-b border-white/5 bg-[#1d2027] px-4 py-2.5">
-        <span className="flex gap-1.5">
-          <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-          <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
-          <span className="h-3 w-3 rounded-full bg-[#28c840]" />
-        </span>
-        <span className="rounded-lg bg-[#16181d] px-3 py-1 font-mono text-xs text-[#e6e9f2]">{file}</span>
-        {actions && <span className="ml-auto flex flex-wrap gap-2">{actions}</span>}
-      </div>
-      {children}
-    </div>
-  )
-}
 export const ideBtn = 'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition disabled:opacity-40'
 const slug = (t: string, lang: Lang) =>
   t
@@ -1131,22 +1034,17 @@ function Mentor({ lang }: { lang: Lang }) {
   return (
     <div className="space-y-4">
       {/* Editor no estilo de uma IDE: seu código e a versão da Mendi lado a lado */}
-      <div className="overflow-hidden rounded-[22px] bg-[#16181d] shadow-[0_20px_40px_-24px_rgba(16,24,40,.8)]">
-        <div className="flex items-center gap-3 border-b border-white/5 bg-[#1d2027] px-4 py-2.5">
-          <span className="flex gap-1.5">
-            <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-            <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
-            <span className="h-3 w-3 rounded-full bg-[#28c840]" />
-          </span>
-          <span className="rounded-lg bg-[#16181d] px-3 py-1 font-mono text-xs text-[#e6e9f2]">{file}</span>
-          <span className="ml-auto flex gap-2">
-            {lang === 'javascript' && (
-              <button onClick={async () => setRun(await runJS(code))} disabled={!code.trim()} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/20 disabled:opacity-40">
-                <Play size={13} fill="currentColor" /> Rodar
-              </button>
-            )}
-          </span>
-        </div>
+      <IdeWindow
+        file={file}
+        className="rounded-[22px]"
+        actions={
+          lang === 'javascript' && (
+            <button onClick={async () => setRun(await runJS(code))} disabled={!code.trim()} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/20 disabled:opacity-40">
+              <Play size={13} fill="currentColor" /> Rodar
+            </button>
+          )
+        }
+      >
         <div className="grid lg:grid-cols-2">
           <CodeEditor value={code} onChange={setCode} lang={lang} highlight={result?.done ? undefined : step?.line || undefined} tall bare markers={markers} onMarker={setCur} />
           <div className="flex min-h-[200px] flex-col border-t border-white/5 lg:border-t-0 lg:border-l">
@@ -1183,7 +1081,7 @@ function Mentor({ lang }: { lang: Lang }) {
             {busy ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />} {busy ? 'Lendo…' : result ? 'Revisar de novo' : 'Pedir ajuda'}
           </button>
         </div>
-      </div>
+      </IdeWindow>
       {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
 
       {/* Aprovado: nota e fim */}
