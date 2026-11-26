@@ -516,3 +516,31 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 @keyframes cl-pen { 0%, 100% { transform: rotate(0) } 50% { transform: rotate(-9deg) translateY(-1px) } }
 @keyframes cl-type { 0% { stroke-dashoffset: 0 } 30% { stroke-dashoffset: 100 } 70%, 100% { stroke-dashoffset: 0 } }
 @keyframes cl-dot { 0%, 100% { opacity: .4; transform: translateY(0) } 40% { opacity: 1; transform: translateY(-2px) } }
+
+/* Gerentes do modo Empresarial */
+.bs-breathe { animation: bs-breathe 3.2s ease-in-out infinite; transform-origin: 60px 120px; }
+.bs-bounce { animation: bs-bounce .9s ease-in-out infinite; }
+.bs-shake { animation: bs-shake .32s ease-in-out infinite; transform-origin: 60px 110px; }
+.bs-blink { transform-box: fill-box; transform-origin: center; animation: bs-blink 4.2s infinite; }
+.bs-flush { animation: bs-flush 1.2s ease-in-out infinite; }
+.bs-steam circle { animation: bs-steam 1.3s ease-out infinite; transform-box: fill-box; }
+.bs-steam circle:nth-child(2n) { animation-delay: .35s; }
+.bs-curse { animation: bs-curse .6s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: left bottom; }
+.bs-vein { animation: bs-curse .5s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+.bs-sweat { animation: bs-sweat 1.8s ease-in infinite; }
+.bs-dots circle { animation: bs-dot 1.2s ease-in-out infinite; }
+.bs-dots circle:nth-child(2) { animation-delay: .2s; }
+.bs-dots circle:nth-child(3) { animation-delay: .4s; }
+.bs-spark path { animation: bs-spark 1.1s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.bs-spark path:nth-child(2) { animation-delay: .45s; }
+@keyframes bs-breathe { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-1.2px) } }
+@keyframes bs-bounce { 0%, 100% { transform: translateY(0) } 45% { transform: translateY(-4px) } }
+@keyframes bs-shake { 0%, 100% { transform: translateX(0) rotate(0) } 25% { transform: translateX(-1.8px) rotate(-1.2deg) } 75% { transform: translateX(1.8px) rotate(1.2deg) } }
+@keyframes bs-blink { 0%, 93%, 100% { transform: scaleY(1) } 96% { transform: scaleY(.12) } }
+@keyframes bs-flush { 0%, 100% { opacity: .3 } 50% { opacity: .48 } }
+@keyframes bs-steam { 0% { transform: translateY(4px) scale(.6); opacity: 0 } 30% { opacity: .95 } 100% { transform: translateY(-9px) scale(1.15); opacity: 0 } }
+@keyframes bs-curse { from { transform: scale(.94) rotate(-3deg) } to { transform: scale(1.06) rotate(3deg) } }
+@keyframes bs-sweat { 0% { transform: translateY(0); opacity: 0 } 20% { opacity: 1 } 100% { transform: translateY(10px); opacity: 0 } }
+@keyframes bs-dot { 0%, 100% { opacity: .25 } 50% { opacity: 1 } }
+@keyframes bs-spark { 0%, 100% { transform: scale(.5); opacity: .3 } 50% { transform: scale(1.1); opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { [class^='bs-'], [class^='bs-'] * { animation: none !important; } }

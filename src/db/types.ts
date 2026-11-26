@@ -331,8 +331,13 @@ export interface OfficeTask {
   hint?: string
   done: boolean
   attempts: number
-  feedback?: { ok: boolean; summary: string; points: string[]; next: string }
+  feedback?: { ok: boolean; summary: string; points: string[]; next: string; criteria?: boolean[]; extra?: string; usedConcept?: boolean }
+  /** Histórico das revisões (para o gerente não mudar de ideia entre uma entrega e outra). */
+  reviews?: { ok: boolean; summary: string; points: string[] }[]
   qa?: { q: string; a: string }[]
+  /** Conceito do banco que a tarefa usa: apresentado pelo nome (novo) ou cobrado sem aviso (revisão). */
+  concept?: string
+  conceptKind?: 'novo' | 'revisao'
 }
 
 /** Projeto do modo Empresarial: uma empresa inventada, um arquivo que cresce e uma fila de tarefas. */
@@ -345,7 +350,7 @@ export interface OfficeProject {
   company: string
   product: string
   pitch: string
-  manager: { name: string; role: string }
+  manager: { name: string; role: string; gender?: 'm' | 'f' }
   fileName: string
   code: string
   tasks: OfficeTask[]

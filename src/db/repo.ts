@@ -554,7 +554,7 @@ export async function rateCard(id: string, rating: ReviewRating) {
 
 // ---------- Backup ----------
 
-const TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews', 'mapPositions', 'mapLinks', 'achievements', 'cards', 'challenges', 'errors', 'writings', 'practice', 'code', 'snippets', 'projects'] as const
+const TABLES = ['subjects', 'topics', 'notes', 'weeks', 'blocks', 'sessions', 'settings', 'reviews', 'mapPositions', 'mapLinks', 'achievements', 'cards', 'challenges', 'errors', 'writings', 'practice', 'code', 'snippets', 'projects', 'concepts'] as const
 
 export async function exportBackup(): Promise<string> {
   const data: Record<string, unknown[]> = {}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Bug, CheckCircle2, Dices, Dumbbell, Eye, Gamepad2, GraduationCap, HeartPulse, Landmark, Lightbulb, Loader2, Lock, MessageCircle, Play, Plus, Send, Store, Trash2, Truck, UtensilsCrossed, Wrench, XCircle } from 'lucide-react'
+import { Bug, CheckCircle2, Sparkles, Dices, Dumbbell, Eye, Gamepad2, GraduationCap, HeartPulse, Landmark, Lightbulb, Loader2, Lock, MessageCircle, Play, Plus, Send, Store, Trash2, Truck, UtensilsCrossed, Wrench, XCircle } from 'lucide-react'
 import { db, uid } from '../db/db'
 import type { OfficeProject, OfficeTask } from '../db/types'
 import { AIError, getAI } from '../lib/ai'
@@ -8,6 +8,8 @@ import { centerOf, confetti, playSfx } from '../lib/sfx'
 import { showMascot } from '../lib/mascotBus'
 import { askConfirm } from './confirm'
 import { Capybara } from './Capybara'
+import { applyConceptResult, conceptId, conceptState, pickCandidates } from '../lib/concepts'
+import { Boss, bossGender, type BossMood } from './OfficeBoss'
 import { CodeEditor, GradeRing, IdeWindow, LANG_NAME, RichText, ideBtn, runJS, type Lang, type RunResult } from './CodeLab'
 
 /*
@@ -42,7 +44,26 @@ const KIND: Record<OfficeTask['kind'], { label: string; icon: ReactNode; cls: st
 
 /* ---------------- Prompts ---------------- */
 
-const projectPrompt = (lang: Lang, level: (typeof LEVELS)[number], sector: string, avoid: string[]) => {
+/** Como o gerente fala: gente de verdade, não robô. */
+const VOZ = `JEITO DE FALAR: você é uma pessoa de verdade mandando mensagem no chat do trabalho. Português do Brasil do dia a dia, informal, frases curtas, direto. Pode usar "pô", "cara", "beleza", "tá", "pra", "show", "massa". PROIBIDO soar como robô: nada de "Ótimo trabalho", "Excelente", "Parabéns pelo esforço", "Vamos lá", "Lembre-se", "Certifique-se", "É importante", "Fique à vontade", nada de emoji, tópicos ou markdown. Fale do código dele de forma concreta: o nome da função, a linha, o valor que você testou e o que saiu.
+Exemplos do tom certo:
+- "Boa, rodou liso aqui. Já pode subir."
+- "Quase. Testei totalPedido([]) e deu erro em vez de 0. Dá uma olhada no começo da função."
+- "Cara, de novo? Continua somando 10 reais em vez de 10%. Faz a conta no papel com 40 antes de me mandar."`
+
+const lit = (v: unknown, lang: Lang): string => {
+  if (lang === 'javascript') return JSON.stringify(v) ?? 'undefined'
+  if (v === null || v === undefined) return 'None'
+  if (v === true) return 'True'
+  if (v === false) return 'False'
+  if (Array.isArray(v)) return `[${v.map((x) => lit(x, lang)).join(', ')}]`
+  if (typeof v === 'object') return `{${Object.entries(v as Record<string, unknown>).map(([k, x]) => `${JSON.stringify(k)}: ${lit(x, lang)}`).join(', ')}}`
+  return JSON.stringify(v)
+}
+/** Linha de exemplo: chamada → resultado esperado, na sintaxe da linguagem. */
+const exampleLine = (t: OfficeTask, x: NonNullable<OfficeTask['tests']>[number], lang: Lang) => `${t.fn}(${x.args.map((a) => lit(a, lang)).join(', ')}) → ${lit(x.expected, lang)}`
+
+const projectPrompt = (lang: Lang, level: (typeof LEVELS)[number], sector: string, avoid: string[], novos: string[], revisao: string[]) => {
   const py = lang === 'python'
   return `Você é o gerente de uma empresa brasileira inventada e vai passar um PROJETO de programação para um funcionário novo. Ele ainda está aprendendo: já sabe o básico e está entrando no intermediário.
 Linguagem: ${LANG_NAME[lang]}. Cargo do funcionário: ${level.id}. Ramo da empresa: ${sector === 'Qualquer' ? 'escolha um ramo do dia a dia' : sector}.
@@ -51,39 +72,74 @@ Monte:
 - Uma empresa com nome criativo e um sistema pequeno e realista que ela precisa (ex.: pedidos de uma lanchonete, estoque de uma loja, notas de uma escola, ranking de um campeonato).
 - "codigoInicial": o começo do arquivo do sistema, com dados de exemplo (${py ? 'listas e dicionários' : 'arrays e objetos'}) e 0 a 2 funções prontas que o funcionário vai ler ou usar. Comentários curtos em português. As funções RETORNAM valores (nada de ${py ? 'input()' : 'prompt()'}).
 - Exatamente ${level.tasks} tarefas, da mais fácil para a mais difícil. Cada tarefa mexe em UMA função, com nome em ${py ? 'snake_case' : 'camelCase'}, em português sem acento.
-  Tipos: "nova" (criar a função), "bug" (uma função escrita por um colega tem UM defeito realista; o funcionário precisa achar e corrigir; nenhum comentário pode apontar o defeito), "melhoria" (mudar uma função que já existe no arquivo: validação, caso de borda, parâmetro novo com valor padrão).
+  Tipos: "nova" (criar a função), "bug" (uma função escrita por um colega tem UM defeito realista; o funcionário precisa achar e corrigir; nenhum comentário pode apontar o defeito), "melhoria" (mudar uma função que já existe no arquivo).
   ${level.rules}
-  "mensagem": a ordem do gerente, como mensagem de chat do trabalho: informal, direta, 2 a 4 frases, com o motivo (cliente reclamou, o caixa precisa, o dono pediu...). Pode citar colegas inventados.
-  "criterios": 2 a 4 critérios de aceite objetivos.
+  CLAREZA (o mais importante): a mensagem e os critérios têm que deixar 100% claro o que a função recebe, o que devolve e o que fazer nos casos especiais (lista vazia, item que não existe, valor inválido...). Os "criterios" listam TUDO que vai ser cobrado na revisão; nada fora deles pode ser cobrado depois. Os "testes" batem exatamente com os critérios (confira cada um de cabeça antes de responder).
+  "mensagem": a ordem do gerente, como mensagem de chat do trabalho, 2 a 4 frases, com o motivo (cliente reclamou, o caixa precisa, o dono pediu...). Pode citar colegas inventados.
+  "criterios": 2 a 4 critérios objetivos, cada um verificável por um teste.
   "codigoExtra": código que entra no fim do arquivo quando a tarefa começa. Em "nova": só a assinatura da função com um comentário TODO dentro${py ? ' e pass' : ''}. Em "bug": a função com o defeito. Em "melhoria": vazio (a função já está no arquivo).
   "testes": 3 a 5 testes chamando a função só com valores JSON (números, textos, listas, objetos, true/false). Cada teste funciona sozinho, sem depender de outra tarefa ter mudado os dados.
   "dica": uma pista que não entrega a resposta.
+${
+  novos.length
+    ? `- RECURSO NOVO: escolha UM destes que caia bem no projeto: ${novos.join('; ')}. Uma tarefa (não a primeira) deve ter esse recurso como o jeito natural de resolver. Na mensagem dessa tarefa cite só o nome, do jeito que um colega falaria ("usa um enumerate aí que fica mais limpo"), SEM explicar como funciona. Marque essa tarefa com "conceito" (o nome exatamente como na lista) e "conceitoTipo":"novo".`
+    : ''
+}
+${
+  revisao.length
+    ? `- REVISÃO SURPRESA: se algum destes combinar com o projeto, faça UMA outra tarefa cuja solução natural use ele, mas NÃO cite o nome nem dê pista em lugar nenhum: ${revisao.join('; ')}. Marque com "conceito" (o nome exatamente como na lista) e "conceitoTipo":"revisao". Se nenhum combinar, não force.`
+    : ''
+}
+${VOZ}
 Responda SOMENTE com JSON:
-{"ramo":"um destes: ${SECTORS.slice(1).map((x) => x.id).join(", ")}","empresa":"","produto":"nome curto do sistema","resumo":"2 frases: a empresa e o que o sistema faz","gerente":{"nome":"nome e sobrenome","cargo":""},"arquivo":"nome_do_arquivo.${py ? 'py' : 'js'}","codigoInicial":"","tarefas":[{"titulo":"curto","tipo":"nova","mensagem":"","criterios":[""],"funcao":"","codigoExtra":"","testes":[{"args":[],"esperado":null}],"dica":""}]}`
+{"ramo":"um destes: ${SECTORS.slice(1)
+    .map((x) => x.id)
+    .join(', ')}","empresa":"","produto":"nome curto do sistema","resumo":"2 frases: a empresa e o que o sistema faz","gerente":{"nome":"nome e sobrenome","cargo":"","genero":"m ou f"},"arquivo":"nome_do_arquivo.${py ? 'py' : 'js'}","codigoInicial":"","tarefas":[{"titulo":"curto","tipo":"nova","mensagem":"","criterios":[""],"funcao":"","codigoExtra":"","testes":[{"args":[],"esperado":null}],"dica":"","conceito":"","conceitoTipo":""}]}`
 }
 
 const head = (p: OfficeProject) => `Você é ${p.manager.name}, ${p.manager.role} da ${p.company}. O funcionário (cargo: ${p.level}) está aprendendo a programar em ${LANG_NAME[p.lang]}.
 Projeto: ${p.product}. ${p.pitch}`
 
-const taskText = (t: OfficeTask) => `Tarefa ${t.id} (${KIND[t.kind].label}): ${t.title}
+const taskText = (t: OfficeTask, lang: Lang) => `Tarefa ${t.id} (${KIND[t.kind].label}): ${t.title}
 Pedido: ${t.message}
-Critérios de aceite:
-${t.criteria.map((c) => `- ${c}`).join('\n')}`
+Critérios de aceite (numerados):
+${t.criteria.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+${t.fn && t.tests?.length ? `Testes da função:\n${t.tests.map((x) => `- ${exampleLine(t, x, lang)}`).join('\n')}` : ''}`
 
-const reviewPrompt = (p: OfficeProject, t: OfficeTask, code: string, ran: string) => `${head(p)}
-Você está fazendo o code review da entrega.
-${taskText(t)}
-
+const reviewPrompt = (p: OfficeProject, t: OfficeTask, code: string, ran: string, attempt: number) => `${head(p)}
+Você está revisando a entrega número ${attempt} desta tarefa.
+${taskText(t, p.lang)}
+${ran ? `\nResultado REAL dos testes rodando o código dele:\n${ran}\n` : ''}${
+  t.reviews?.length
+    ? `\nSuas revisões anteriores desta tarefa (seja coerente com elas):\n${t.reviews
+        .slice(-4)
+        .map((r, i) => `Entrega ${t.reviews!.length - Math.min(4, t.reviews!.length) + i + 1}: ${r.ok ? 'aprovou' : 'reprovou'}. Você disse: "${r.summary}"${r.points.length ? ` | Problemas: ${r.points.join(' / ')}` : ''}`)
+        .join('\n')}\n`
+    : ''
+}
 Arquivo inteiro do projeto:
 \`\`\`
 ${code}
 \`\`\`
-${ran ? `Resultado real dos testes ao rodar:\n${ran}\n` : ''}
-Avalie SÓ esta tarefa (outras partes do arquivo podem estar com TODO). Aprove se cumprir todos os critérios e funcionar nos casos de borda. Se não aprovar, diga ONDE está o problema e dê uma pista, sem escrever o código da resposta. Fale como um gerente gente boa: direto, português simples, frases curtas.
-Responda SOMENTE com JSON: {"aprovado":true,"resumo":"1 frase","pontos":["até 3 observações"],"proximo":"1 frase curta"}`
+
+REGRAS DA REVISÃO (siga à risca):
+1. Você SÓ pode reprovar por um critério de aceite não cumprido ou por um teste que falha. Nada de exigência nova. Estilo, nome de variável, eficiência ou "dava pra melhorar" NUNCA reprovam: isso vai em "extra".
+2. ${p.lang === 'python' ? 'Rode cada teste de cabeça, linha por linha, no código dele.' : 'Use o resultado real dos testes acima.'} Se um teste contradiz os critérios, o teste está errado: ignore esse teste.
+3. Marque cada critério como true ou false em "criterios", na mesma ordem.
+4. Se reprovar, liste TODOS os problemas de uma vez em "problemas" (não guarde nada pra próxima entrega). Cada problema é um caso concreto: a chamada que você testou, o que deveria dar, o que o código dele dá e em que parte do código está o erro. Não escreva a correção.
+5. Coerência: não volte atrás no que já aceitou e não troque o pedido. Se ele corrigiu o que você apontou e os critérios batem, aprove.
+6. Avalie só esta tarefa. Partes do arquivo de outras tarefas (com TODO) não contam.
+7. "aprovado" é true só se todos os critérios forem true.
+${t.concept ? `8. Diga em "usouConceito" se o código dele usa \`${t.concept}\`. Isso NÃO aprova nem reprova.${t.conceptKind === 'revisao' ? ' Não cite esse nome na "fala" nem nos "problemas".' : ''}` : ''}
+
+${VOZ}
+${attempt >= 3 ? `Humor: é a ${attempt}ª entrega e você está perdendo a paciência. Se reprovar, mostre irritação de leve no começo da fala ("Cara, de novo?", "Pô, sério?"), sem xingar de verdade, e continue sendo bem específico.` : 'Humor: tranquilo.'}
+
+Responda SOMENTE com JSON:
+{"aprovado":true,"criterios":[true],"fala":"sua mensagem pra ele, 1 a 3 frases","problemas":["..."],"extra":"opcional: uma melhoria que NÃO reprova, ou vazio","usouConceito":false}`
 
 const askPrompt = (p: OfficeProject, t: OfficeTask, code: string, qa: { q: string; a: string }[], q: string) => `${head(p)}
-${taskText(t)}
+${taskText(t, p.lang)}
 
 Código atual do arquivo:
 \`\`\`
@@ -96,39 +152,22 @@ ${qa
 
 Funcionário: ${q}
 
-Responda como o gerente que ajuda mas não faz o trabalho por ele: até 5 frases, português simples. Explique o conceito e, se ajudar, mostre um exemplo pequeno em bloco \`\`\` que NÃO seja a resposta da tarefa.
+Responda como um colega mais experiente que ajuda mas não faz o trabalho por ele: até 4 frases. Se ajudar, mostre um exemplo pequeno em bloco \`\`\` que NÃO seja a resposta da tarefa.${t.conceptKind === 'revisao' && t.concept ? ` Não cite \`${t.concept}\`.` : ''}
+${VOZ}
 
 Você:`
 
 const finalPrompt = (p: OfficeProject, code: string) => `${head(p)}
-O funcionário terminou todas as tarefas. Tentativas até aprovar: ${p.tasks.map((t) => `${t.id}=${t.attempts}`).join(', ')}.
+O funcionário terminou todas as tarefas. Entregas até aprovar: ${p.tasks.map((t) => `${t.id}=${t.attempts}`).join(', ')}.
 Arquivo final:
 \`\`\`
 ${code}
 \`\`\`
 Dê a avaliação final, lembrando que ele está aprendendo (cargo ${p.level}): nota inteira de 0 a 10, um veredito de 1 a 2 frases e até 3 dicas para crescer.
+${VOZ}
 Responda SOMENTE com JSON: {"nota":8,"veredito":"","dicas":[""]}`
 
 /* ---------------- Peças ---------------- */
-
-const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]!.toUpperCase())
-    .join('')
-
-function Avatar({ name, from, to, size = 40 }: { name: string; from: string; to: string; size?: number }) {
-  return (
-    <span className="relative shrink-0" style={{ width: size, height: size }}>
-      <span className="grid h-full w-full place-items-center rounded-full font-display font-extrabold text-white" style={{ background: `linear-gradient(145deg, ${from}, ${to})`, fontSize: size * 0.36 }}>
-        {initials(name)}
-      </span>
-      <span className="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-white bg-[#28c840]" />
-    </span>
-  )
-}
 
 function Bars({ n, on }: { n: number; on: boolean }) {
   return (
@@ -165,11 +204,21 @@ function OfficeHome({ lang, projects, onOpen }: { lang: Lang; projects: OfficePr
       const ai = await getAI()
       if (!ai) throw new AIError('unavailable', 'O Claude não está disponível aqui. Abra o Mendonça pelo claude.ai.')
       const lv = LEVELS.find((l) => l.id === level)!
-      type Raw = { titulo?: string; tipo?: string; mensagem?: string; criterios?: string[]; funcao?: string; codigoExtra?: string; testes?: { args?: unknown[]; esperado?: unknown }[]; dica?: string }
-      const o = await ai.json<{ ramo?: string; empresa?: string; produto?: string; resumo?: string; gerente?: { nome?: string; cargo?: string }; arquivo?: string; codigoInicial?: string; tarefas?: Raw[] }>(
-        projectPrompt(lang, lv, sector, projects.map((p) => p.company)),
+      const cand = pickCandidates(lang, LEVELS.indexOf(lv) + 1, await db.concepts.toArray(), Date.now())
+      type Raw = { titulo?: string; tipo?: string; mensagem?: string; criterios?: string[]; funcao?: string; codigoExtra?: string; testes?: { args?: unknown[]; esperado?: unknown }[]; dica?: string; conceito?: string; conceitoTipo?: string }
+      const o = await ai.json<{ ramo?: string; empresa?: string; produto?: string; resumo?: string; gerente?: { nome?: string; cargo?: string; genero?: string }; arquivo?: string; codigoInicial?: string; tarefas?: Raw[] }>(
+        projectPrompt(lang, lv, sector, projects.map((p) => p.company), cand.novos, cand.revisao),
         { fresh: true },
       )
+      // No máximo um conceito novo e uma revisão, e só da lista oferecida
+      const taken = new Set<string>()
+      const conceptOf = (t: Raw): Pick<OfficeTask, 'concept' | 'conceptKind'> => {
+        const kind = t.conceitoTipo === 'revisao' ? 'revisao' : t.conceitoTipo === 'novo' ? 'novo' : null
+        const name = String(t.conceito ?? '').trim()
+        if (!kind || taken.has(kind) || !(kind === 'novo' ? cand.novos : cand.revisao).includes(name)) return {}
+        taken.add(kind)
+        return { concept: name, conceptKind: kind }
+      }
       const tasks: OfficeTask[] = (o?.tarefas ?? [])
         .filter((t) => t?.titulo && t.mensagem)
         .map((t, i) => ({
@@ -184,6 +233,7 @@ function OfficeHome({ lang, projects, onOpen }: { lang: Lang; projects: OfficePr
           hint: t.dica ? String(t.dica) : undefined,
           done: false,
           attempts: 0,
+          ...conceptOf(t),
         }))
       if (!o?.empresa || tasks.length < 2) throw new Error()
       const ext = lang === 'python' ? '.py' : '.js'
@@ -198,7 +248,7 @@ function OfficeHome({ lang, projects, onOpen }: { lang: Lang; projects: OfficePr
         company: String(o.empresa),
         product: String(o.produto ?? 'Sistema'),
         pitch: String(o.resumo ?? ''),
-        manager: { name: String(o.gerente?.nome ?? 'Gerente'), role: String(o.gerente?.cargo ?? 'Gerente de projeto') },
+        manager: { name: String(o.gerente?.nome ?? 'Gerente'), role: String(o.gerente?.cargo ?? 'Gerente de projeto'), ...(o.gerente?.genero === 'f' || o.gerente?.genero === 'm' ? { gender: o.gerente.genero } : {}) },
         fileName: file,
         code: withPatch(String(o.codigoInicial ?? ''), tasks[0]),
         tasks: tasks.map((t, i) => (i === 0 && t.patch ? { ...t, patched: true } : t)),
@@ -267,6 +317,7 @@ function OfficeHome({ lang, projects, onOpen }: { lang: Lang; projects: OfficePr
         </button>
       </div>
 
+      <div className="space-y-4">
       {/* projetos como "repositórios" */}
       <div className="overflow-hidden rounded-[20px] bg-[#16181d] text-[#e6e9f2]">
         <div className="border-b border-white/5 bg-[#1d2027] px-4 py-3 text-xs font-bold tracking-wider text-[#8a93a8] uppercase">Seus projetos</div>
@@ -298,6 +349,46 @@ function OfficeHome({ lang, projects, onOpen }: { lang: Lang; projects: OfficePr
           </div>
         )}
       </div>
+      <ConceptBank lang={lang} />
+      </div>
+    </div>
+  )
+}
+
+/** Banco de conceitos: o que você já usou nos projetos e quando volta numa revisão surpresa. */
+function ConceptBank({ lang }: { lang: Lang }) {
+  const all = useLiveQuery(() => db.concepts.where('lang').equals(lang).toArray(), [lang], [])
+  const now = Date.now()
+  const list = [...all].sort((a, b) => b.lastAt - a.lastAt)
+  const label = { aprendendo: 'aprendendo', aprendido: 'aprendido', fixado: 'fixado' } as const
+  const tone = { aprendendo: 'bg-[#fff4dc] text-[#b7791f]', aprendido: 'bg-[#eef2ff] text-[#3e63f2]', fixado: 'bg-[#e9f9f2] text-[#0f8a63]' } as const
+  return (
+    <div className="rounded-[20px] border border-line bg-white p-4">
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-xs font-bold tracking-wider text-muted uppercase">Banco de conceitos</span>
+        {list.length > 0 && <span className="text-[11px] font-bold text-muted">{list.length}</span>}
+      </div>
+      {list.length === 0 ? (
+        <p className="py-3 text-[13px] leading-snug text-muted">Cada projeto traz um recurso de {LANG_NAME[lang]} que você ainda não usou. Usou, ele vem pra cá e volta de surpresa depois.</p>
+      ) : (
+        <div className="thin-scroll max-h-[320px] space-y-1 overflow-y-auto pt-1">
+          {list.map((c) => {
+            const st = conceptState(c)
+            const due = c.history.some((h) => h.ok) && c.due <= now
+            return (
+              <div key={c.id} className="flex items-center gap-2 rounded-lg px-1.5 py-1.5">
+                <code className="min-w-0 flex-1 truncate font-mono text-[12.5px] font-semibold text-ink">{c.name}</code>
+                <span className="flex gap-0.5" title={`${c.streak} acerto(s) seguido(s)`}>
+                  {[1, 2, 3].map((k) => (
+                    <span key={k} className={`h-1.5 w-3 rounded-full ${k <= c.streak ? 'bg-[#2fcf9b]' : 'bg-[#e6e8ee]'}`} />
+                  ))}
+                </span>
+                <span className={`rounded-md px-1.5 py-0.5 text-[10.5px] font-bold ${due ? 'bg-[#ffecef] text-[#c9273b]' : tone[st]}`}>{due ? 'pode voltar' : label[st]}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -388,10 +479,19 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
       }
       const ai = await getAI()
       if (!ai) throw new AIError('unavailable', 'O Claude não está disponível aqui. Abra o Mendonça pelo claude.ai.')
-      const o = await ai.json<{ aprovado?: boolean; resumo?: string; pontos?: string[]; proximo?: string }>(reviewPrompt(p, task, code, ran), { fresh: true })
-      const fb = { ok: !!o?.aprovado, summary: String(o?.resumo ?? ''), points: Array.isArray(o?.pontos) ? o.pontos.map(String).slice(0, 3) : [], next: String(o?.proximo ?? '') }
-      await patchTask(view, { feedback: fb, attempts: task.attempts + 1, done: task.done || fb.ok })
-      if (fb.ok) {
+      const attempt = task.attempts + 1
+      const o = await ai.json<{ aprovado?: boolean; criterios?: unknown[]; fala?: string; problemas?: unknown[]; extra?: string; usouConceito?: boolean }>(reviewPrompt(p, task, code, ran, attempt), { fresh: true })
+      const crit = task.criteria.map((_, i) => (Array.isArray(o?.criterios) ? o.criterios[i] !== false : true))
+      const ok = !!o?.aprovado && crit.every(Boolean)
+      const problems = ok ? [] : Array.isArray(o?.problemas) ? o.problemas.map(String).filter(Boolean).slice(0, 6) : []
+      const fb = { ok, summary: String(o?.fala ?? ''), points: problems, next: '', criteria: crit, extra: o?.extra ? String(o.extra) : '', usedConcept: !!o?.usouConceito }
+      await patchTask(view, { feedback: fb, attempts: attempt, done: task.done || ok, reviews: [...(task.reviews ?? []), { ok, summary: fb.summary, points: problems }].slice(-6) })
+      if (ok) {
+        // Banco de conceitos: registra se usou o recurso novo ou lembrou do antigo
+        if (task.concept && task.conceptKind && !task.done) {
+          const id = conceptId(p.lang, task.concept)
+          await db.concepts.put(applyConceptResult(await db.concepts.get(id), p.lang, task.concept, task.conceptKind, fb.usedConcept, p.company, Date.now()))
+        }
         playSfx('ok')
         const [x, y] = centerOf(box.current)
         confetti(x, y, 60, ['#5b7cff', '#ffd34d', '#ffffff'])
@@ -436,6 +536,8 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
   }
 
   const fb = task?.feedback
+  const gender = bossGender(p.manager)
+  const mood: BossMood = loading === 'entregar' ? 'pensando' : !fb ? 'neutro' : fb.ok ? 'feliz' : (task?.attempts ?? 0) >= 3 ? 'bravo' : 'chateado'
   return (
     <div ref={box} className="space-y-4">
       <button onClick={onBack} className="text-xs font-bold text-muted hover:text-ink">
@@ -541,7 +643,9 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
             {/* Mensagem do gerente */}
             <div className="rounded-[20px] border border-line bg-white p-4 sm:p-5">
               <div className="flex items-start gap-3">
-                <Avatar name={p.manager.name} from={s.from} to={s.to} />
+                <span className="-mt-1 -ml-1 rounded-2xl bg-[#f3f5fa]">
+                  <Boss gender={gender} mood={task.done ? 'feliz' : 'neutro'} size={70} />
+                </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-x-2">
                     <span className="font-bold">{p.manager.name}</span>
@@ -550,18 +654,40 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
                   <div className="mt-1.5 rounded-2xl rounded-tl-md bg-[#f3f5fa] px-4 py-3 text-[14.5px] leading-relaxed text-slate-800">{task.message}</div>
                 </div>
               </div>
-              <div className="mt-4 sm:pl-[52px]">
-                <div className="mb-1.5 flex items-center gap-2 text-xs font-bold tracking-wider text-muted uppercase">
+              <div className="mt-4 sm:pl-[78px]">
+                <div className="mb-1.5 flex flex-wrap items-center gap-2 text-xs font-bold tracking-wider text-muted uppercase">
                   {task.id} · {task.title}
+                  {task.concept && task.conceptKind === 'novo' && (
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[#fff4dc] px-2 py-0.5 font-mono text-[11px] tracking-normal text-[#b7791f] normal-case" title="Recurso que você ainda não usou. Pesquisa e se vira!">
+                      <Sparkles size={11} /> novo: {task.concept}
+                    </span>
+                  )}
                 </div>
                 <ul className="space-y-1.5">
-                  {task.criteria.map((c, i) => (
-                    <li key={i} className="flex gap-2 text-sm text-slate-700">
-                      {task.done ? <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[#0f8a63]" /> : <span className="mt-1 h-3.5 w-3.5 shrink-0 rounded border-2 border-slate-300" />}
-                      <RichText text={c} />
-                    </li>
-                  ))}
+                  {task.criteria.map((c, i) => {
+                    const st = task.done ? true : fb?.criteria?.[i]
+                    return (
+                      <li key={i} className="flex gap-2 text-sm text-slate-700">
+                        {st === true ? <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[#0f8a63]" /> : st === false ? <XCircle size={16} className="mt-0.5 shrink-0 text-[#d92f45]" /> : <span className="mt-1 h-3.5 w-3.5 shrink-0 rounded border-2 border-slate-300" />}
+                        <span className={st === false ? 'font-semibold text-[#9e1d2f]' : undefined}>
+                          <RichText text={c} />
+                        </span>
+                      </li>
+                    )
+                  })}
                 </ul>
+                {task.fn && !!task.tests?.length && (
+                  <div className="mt-3">
+                    <div className="mb-1 text-[11px] font-bold tracking-wider text-muted uppercase">Exemplos</div>
+                    <div className="space-y-1">
+                      {task.tests.slice(0, 3).map((x, i) => (
+                        <div key={i} className="w-fit max-w-full overflow-x-auto rounded-lg bg-[#16181d] px-3 py-1.5 font-mono text-[12.5px] whitespace-nowrap text-[#e6e9f2]">
+                          {exampleLine(task, x, p.lang).replace(/ → .*$/, '')} <span className="text-[#596071]">→</span> <span className="text-[#7ef0b5]">{exampleLine(task, x, p.lang).replace(/^.* → /, '')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {task.fn && (
                   <p className="mt-2.5 text-xs text-muted">
                     Função: <code className="rounded-md bg-[#eef0f6] px-1.5 py-0.5 font-mono text-[12px] text-[#3e63f2]">{task.fn}</code>
@@ -629,7 +755,16 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
                       ))}
                     </ul>
                   )}
-                  {task.fn && <p className="mt-2 text-xs text-[#8a93a8]">Função: <code className="font-mono text-[#9cc7ff]">{task.fn}</code></p>}
+                  {task.fn && !!task.tests?.length && (
+                    <div className="mt-2.5 space-y-1">
+                      {task.tests.slice(0, 3).map((x, i) => (
+                        <div key={i} className="overflow-x-auto rounded-lg bg-black/30 px-2.5 py-1.5 font-mono text-[12px] whitespace-nowrap">
+                          {exampleLine(task, x, p.lang)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {task.concept && task.conceptKind === 'novo' && <p className="mt-2 font-mono text-xs text-[#ffd866]">novo: {task.concept}</p>}
                 </>
               }
               actions={
@@ -672,39 +807,67 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
             </IdeWindow>
             {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
 
-            {/* Code review do gerente */}
-            {fb && (
-              <div className={`capi-pop rounded-[20px] border-2 bg-white p-5 ${fb.ok ? 'border-[#9fe6cb]' : 'border-[#ffd1d7]'}`}>
-                <div className="flex items-start gap-3">
-                  <Avatar name={p.manager.name} from={s.from} to={s.to} size={36} />
+            {/* Code review do gerente: ele falando, com a cara do resultado */}
+            {(fb || loading === 'entregar') && (
+              <div data-review className={`capi-pop rounded-[20px] border-2 bg-white p-4 sm:p-5 ${loading === 'entregar' ? 'border-line' : fb!.ok ? 'border-[#9fe6cb]' : mood === 'bravo' ? 'border-[#ff9aa6]' : 'border-[#ffd1d7]'}`}>
+                <div className="flex items-start gap-3 sm:gap-4">
+                  <span className={`shrink-0 rounded-2xl ${mood === 'bravo' ? 'bg-[#fff0f1]' : mood === 'feliz' ? 'bg-[#eefbf5]' : 'bg-[#f3f5fa]'}`}>
+                    <Boss gender={gender} mood={mood} size={104} />
+                  </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`rounded-lg px-2.5 py-1 text-xs font-extrabold ${fb.ok ? 'bg-[#e9f9f2] text-[#0f8a63]' : 'bg-[#ffecef] text-[#c9273b]'}`}>{fb.ok ? 'Aprovado' : 'Precisa de ajuste'}</span>
-                      <span className="text-xs text-muted">
-                        {task.attempts} {task.attempts === 1 ? 'entrega' : 'entregas'}
-                      </span>
+                    <div className="flex flex-wrap items-baseline gap-x-2">
+                      <span className="font-bold">{p.manager.name.split(' ')[0]}</span>
+                      {loading === 'entregar' ? (
+                        <span className="text-xs text-muted">testando seu código…</span>
+                      ) : (
+                        <>
+                          <span className={`rounded-lg px-2 py-0.5 text-[11px] font-extrabold ${fb!.ok ? 'bg-[#e9f9f2] text-[#0f8a63]' : 'bg-[#ffecef] text-[#c9273b]'}`}>{fb!.ok ? 'Aprovado' : 'Voltou pra você'}</span>
+                          <span className="text-xs text-muted">
+                            {task.attempts}ª entrega
+                          </span>
+                        </>
+                      )}
                     </div>
-                    <p className="mt-2 text-sm text-slate-800">{fb.summary}</p>
-                    {fb.points.length > 0 && (
-                      <ul className="mt-2.5 space-y-1.5">
-                        {fb.points.map((pt, i) => (
-                          <li key={i} className="flex gap-2 text-sm text-slate-700">
-                            <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${fb.ok ? 'bg-[#0f8a63]' : 'bg-[#c9273b]'}`} />
-                            <RichText text={pt} />
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {fb.next && !p.finishedAt && <p className="mt-2.5 text-sm font-semibold text-slate-800">{fb.next}</p>}
-                    {fb.ok && isCurrent && view < p.tasks.length - 1 && (
-                      <button onClick={nextTask} className="mt-4 rounded-xl bg-[#3e63f2] px-4 py-2 text-sm font-bold text-white hover:brightness-110">
-                        Próxima tarefa
-                      </button>
-                    )}
-                    {fb.ok && view === p.tasks.length - 1 && !p.finishedAt && (
-                      <button onClick={() => void finish(code)} disabled={!!loading} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#3e63f2] px-4 py-2 text-sm font-bold text-white hover:brightness-110 disabled:opacity-60">
-                        {loading === 'final' && <Loader2 size={14} className="animate-spin" />} {loading === 'final' ? 'Fechando o projeto…' : 'Entregar projeto'}
-                      </button>
+                    {loading === 'entregar' ? (
+                      <div className="mt-2 w-fit rounded-2xl rounded-tl-md bg-[#f3f5fa] px-4 py-3 text-[14.5px] text-slate-500">Peraí, deixa eu rodar aqui…</div>
+                    ) : (
+                      fb && (
+                        <>
+                          <div className={`mt-2 rounded-2xl rounded-tl-md px-4 py-3 text-[14.5px] leading-relaxed ${fb.ok ? 'bg-[#eefbf5] text-slate-800' : mood === 'bravo' ? 'bg-[#fff0f1] text-[#5c1420]' : 'bg-[#f3f5fa] text-slate-800'}`}>{fb.summary}</div>
+                          {fb.points.length > 0 && (
+                            <div className="mt-3">
+                              <div className="mb-1.5 text-[11px] font-bold tracking-wider text-muted uppercase">O que eu testei e não bateu</div>
+                              <ul className="space-y-1.5">
+                                {fb.points.map((pt, i) => (
+                                  <li key={i} className="flex gap-2 text-sm text-slate-700">
+                                    <XCircle size={15} className="mt-0.5 shrink-0 text-[#d92f45]" />
+                                    <RichText text={pt} />
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {fb.ok && task.concept && task.conceptKind && (
+                            <p className={`mt-3 inline-flex flex-wrap items-center gap-1.5 rounded-xl px-3 py-1.5 text-[13px] font-semibold ${fb.usedConcept ? 'bg-[#e9f9f2] text-[#0f8a63]' : 'bg-[#fff4dc] text-[#8a5a00]'}`}>
+                              <Sparkles size={13} />
+                              {fb.usedConcept ? (task.conceptKind === 'revisao' ? 'Lembrou do ' : 'Usou o ') : 'Dava pra usar '}
+                              <code className="font-mono">{task.concept}</code>
+                              {fb.usedConcept ? (task.conceptKind === 'revisao' ? ' sem ninguém pedir. Foi pro banco.' : '. Foi pro banco de conceitos.') : ' aqui. Ele volta numa próxima.'}
+                            </p>
+                          )}
+                          {fb.extra && <p className="mt-2.5 text-[13px] text-muted">Só uma ideia, não conta: {fb.extra}</p>}
+                          {fb.ok && isCurrent && view < p.tasks.length - 1 && (
+                            <button onClick={nextTask} className="mt-4 block rounded-xl bg-[#3e63f2] px-4 py-2 text-sm font-bold text-white hover:brightness-110">
+                              Próxima tarefa
+                            </button>
+                          )}
+                          {fb.ok && view === p.tasks.length - 1 && !p.finishedAt && (
+                            <button onClick={() => void finish(code)} disabled={!!loading} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#3e63f2] px-4 py-2 text-sm font-bold text-white hover:brightness-110 disabled:opacity-60">
+                              {loading === 'final' && <Loader2 size={14} className="animate-spin" />} {loading === 'final' ? 'Fechando o projeto…' : 'Entregar projeto'}
+                            </button>
+                          )}
+                        </>
+                      )
                     )}
                   </div>
                 </div>

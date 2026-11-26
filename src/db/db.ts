@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
+import type { CodeConcept } from '../lib/concepts'
 import type { OfficeProject, Block, Challenge, ErrorEntry, Writing, Flashcard, MapLink, MapPosition, Note, Review, Session, Settings, Subject, TimerState, Topic, UnlockedAchievement, Week, Practice, CodeChallenge, CodeReview } from './types'
 
 /**
@@ -26,6 +27,7 @@ export class MendoncaDB extends Dexie {
   code!: EntityTable<CodeChallenge, 'id'>
   snippets!: EntityTable<CodeReview, 'id'>
   projects!: EntityTable<OfficeProject, 'id'>
+  concepts!: EntityTable<CodeConcept, 'id'>
 
   constructor() {
     super('mendonca')
@@ -55,6 +57,8 @@ export class MendoncaDB extends Dexie {
     this.version(9).stores({ snippets: 'id, createdAt' })
     // Modo Empresarial (projetos com tarefas do gerente)
     this.version(10).stores({ projects: 'id, createdAt' })
+    // Banco de conceitos do modo Empresarial
+    this.version(11).stores({ concepts: 'id, lang, due' })
   }
 }
 
