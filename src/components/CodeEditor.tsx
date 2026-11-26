@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
-import { Maximize2, Minimize2, Minus, Plus } from 'lucide-react'
+import { ChevronDown, ChevronUp, Maximize2, Minimize2, Minus, Plus, Target } from 'lucide-react'
 import { Compartment, EditorState, Prec, RangeSet, RangeSetBuilder, StateEffect, StateField, type Extension } from '@codemirror/state'
 import { Decoration, EditorView, GutterMarker, ViewPlugin, drawSelection, gutter, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers, type DecorationSet, type ViewUpdate } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap, indentLess, indentMore, toggleComment } from '@codemirror/commands'
@@ -18,8 +18,9 @@ const LANG_NAME: Record<Lang, string> = { python: 'Python', javascript: 'JavaScr
 const FullCtx = createContext<{ full: boolean; toggle: () => void } | null>(null)
 
 /** Janela escura de editor (bolinhas, nome do arquivo, botões). Pode abrir em tela cheia. */
-export function IdeWindow({ file, actions, children, className = '' }: { file: string; actions?: ReactNode; children: ReactNode; className?: string }) {
+export function IdeWindow({ file, actions, children, className = '', goal }: { file: string; actions?: ReactNode; children: ReactNode; className?: string; goal?: ReactNode }) {
   const [full, setFull] = useState(false)
+  const [goalOpen, setGoalOpen] = useState(true)
   useEffect(() => {
     if (!full) return
     const prev = document.body.style.overflow
@@ -52,6 +53,24 @@ export function IdeWindow({ file, actions, children, className = '' }: { file: s
           </span>
         </div>
         <div className={full ? 'thin-scroll min-h-0 flex-1 overflow-auto' : ''}>{children}</div>
+        {full && goal ? (
+          goalOpen ? (
+            <div className="capi-pop absolute top-[60px] right-4 z-20 w-[360px] max-w-[calc(100%-2rem)] rounded-2xl border border-[#2d323d] bg-[#242833]/95 p-4 text-[#e6e9f2] shadow-[0_18px_40px_-16px_rgba(0,0,0,.8)] backdrop-blur">
+              <div className="mb-2 flex items-center gap-2">
+                <Target size={15} className="text-[#7ef0b5]" />
+                <span className="text-[11px] font-extrabold tracking-[.12em] text-[#7ef0b5] uppercase">Objetivo</span>
+                <button onClick={() => setGoalOpen(false)} className="ml-auto grid h-6 w-6 place-items-center rounded-md text-[#8a93a8] hover:bg-white/10 hover:text-white" title="Esconder">
+                  <ChevronUp size={15} />
+                </button>
+              </div>
+              <div className="thin-scroll max-h-[45vh] overflow-y-auto text-[13.5px] leading-relaxed text-[#c9cede]">{goal}</div>
+            </div>
+          ) : (
+            <button onClick={() => setGoalOpen(true)} className="absolute top-[60px] right-4 z-20 inline-flex items-center gap-1.5 rounded-xl border border-[#2d323d] bg-[#242833] px-3 py-1.5 text-xs font-bold text-[#7ef0b5] shadow-lg hover:bg-[#2b303c]">
+              <Target size={13} /> Objetivo <ChevronDown size={13} />
+            </button>
+          )
+        ) : null}
       </div>
     </FullCtx.Provider>
   )
@@ -106,11 +125,6 @@ const theme = EditorView.theme(
     '.cm-step-gutter .cm-gutterElement': { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 2px 0 6px' },
     '.cm-step': { display: 'grid', placeItems: 'center', width: '18px', height: '18px', borderRadius: '999px', fontSize: '10px', fontWeight: '800', cursor: 'pointer', backgroundColor: '#ffd34d40', color: '#ffd34d', fontFamily: 'Inter, sans-serif' },
     '.cm-step.on': { backgroundColor: '#ffd34d', color: '#16181d' },
-    // Indentação colorida (uma cor por nível)
-    '.cm-ind0': { backgroundColor: '#ffd8661c', boxShadow: 'inset 1px 0 0 #ffd86670' },
-    '.cm-ind1': { backgroundColor: '#7fd7f51c', boxShadow: 'inset 1px 0 0 #7fd7f570' },
-    '.cm-ind2': { backgroundColor: '#ff7ab21c', boxShadow: 'inset 1px 0 0 #ff7ab270' },
-    '.cm-ind3': { backgroundColor: '#a8e07a1c', boxShadow: 'inset 1px 0 0 #a8e07a70' },
   },
   { dark: true },
 )
@@ -120,7 +134,6 @@ const BRACKETS = ['#ffd866', '#ff7ab2', '#7fd7f5', '#a8e07a', '#c3a6ff', '#ffa45
 const FN_COLORS = ['#ffd866', '#7fd7f5', '#ff9ecf', '#a8e07a', '#ffa45b', '#c3a6ff', '#5ae0c0', '#ffb86c']
 const bracketMarks = BRACKETS.map((c) => Decoration.mark({ attributes: { style: `color:${c}` } }))
 const fnMarks = FN_COLORS.map((c) => Decoration.mark({ attributes: { style: `color:${c};font-weight:600` } }))
-const indentMarks = [0, 1, 2, 3].map((i) => Decoration.mark({ class: `cm-ind${i}` }))
 const hash = (s: string) => {
   let h = 7
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
@@ -133,16 +146,6 @@ const DEF_PARENTS = new Set(['FunctionDefinition', 'FunctionDeclaration'])
 function paint(view: EditorView): DecorationSet {
   const { state } = view
   const marks: { from: number; to: number; deco: Decoration }[] = []
-  // Indentação
-  for (const { from, to } of view.visibleRanges) {
-    for (let pos = from; pos <= to; ) {
-      const line = state.doc.lineAt(pos)
-      const lead = /^[ \t]*/.exec(line.text)![0]
-      if (lead.length < line.text.length)
-        for (let col = 0, lvl = 0; col < lead.length; col += 4, lvl++) marks.push({ from: line.from + col, to: line.from + Math.min(col + 4, lead.length), deco: indentMarks[lvl % 4] })
-      pos = line.to + 1
-    }
-  }
   // Colchetes e nomes de função
   let depth = 0
   syntaxTree(state).iterate({
@@ -174,7 +177,7 @@ const colorful = ViewPlugin.fromClass(
       this.decorations = paint(view)
     }
     update(u: ViewUpdate) {
-      if (u.docChanged || u.viewportChanged || syntaxTree(u.startState) !== syntaxTree(u.state)) this.decorations = paint(u.view)
+      if (u.docChanged || syntaxTree(u.startState) !== syntaxTree(u.state)) this.decorations = paint(u.view)
     }
   },
   { decorations: (v) => v.decorations },

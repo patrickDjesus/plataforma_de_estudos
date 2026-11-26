@@ -613,6 +613,25 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
             {/* Arquivo do projeto */}
             <IdeWindow
               file={p.fileName}
+              goal={
+                <>
+                  <div className="mb-1 font-bold text-white">
+                    {task.id} · {task.title}
+                  </div>
+                  <p>{task.message}</p>
+                  {task.criteria.length > 0 && (
+                    <ul className="mt-2.5 space-y-1">
+                      {task.criteria.map((c, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#7ef0b5]" />
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {task.fn && <p className="mt-2 text-xs text-[#8a93a8]">Função: <code className="font-mono text-[#9cc7ff]">{task.fn}</code></p>}
+                </>
+              }
               actions={
                 <>
                   {p.lang === 'javascript' && task.fn && (

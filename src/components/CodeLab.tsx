@@ -628,6 +628,21 @@ function Challenges({ lang }: { lang: Lang }) {
       </button>
       <IdeWindow
         file={slug(cur.title, cur.lang)}
+        goal={
+          <>
+            <div className="mb-1 font-bold text-white">{cur.title}</div>
+            <p className="whitespace-pre-wrap">{cur.statement}</p>
+            {cur.examples.length > 0 && (
+              <div className="mt-2.5 space-y-1">
+                {cur.examples.map((e, i) => (
+                  <div key={i} className="rounded-lg bg-black/30 px-2.5 py-1.5 font-mono text-[12px]">
+                    {e.input} <span className="text-[#596071]">→</span> <span className="text-[#7ef0b5]">{e.output}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        }
         actions={
           <>
             {cur.hint && (
@@ -1037,6 +1052,7 @@ function Mentor({ lang }: { lang: Lang }) {
       <IdeWindow
         file={file}
         className="rounded-[22px]"
+        goal={goal.trim() ? <p>{goal}</p> : undefined}
         actions={
           lang === 'javascript' && (
             <button onClick={async () => setRun(await runJS(code))} disabled={!code.trim()} className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/20 disabled:opacity-40">
