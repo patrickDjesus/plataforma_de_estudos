@@ -18,7 +18,7 @@ const LANG_NAME: Record<Lang, string> = { python: 'Python', javascript: 'JavaScr
 const FullCtx = createContext<{ full: boolean; toggle: () => void } | null>(null)
 
 /** Janela escura de editor (bolinhas, nome do arquivo, botões). Pode abrir em tela cheia. */
-export function IdeWindow({ file, actions, children, className = '', goal }: { file: string; actions?: ReactNode; children: ReactNode; className?: string; goal?: ReactNode }) {
+export function IdeWindow({ file, actions, children, className = '', goal, fill = false }: { file: string; actions?: ReactNode; children: ReactNode; className?: string; goal?: ReactNode; fill?: boolean }) {
   const [full, setFull] = useState(false)
   const [goalOpen, setGoalOpen] = useState(true)
   useEffect(() => {
@@ -36,7 +36,7 @@ export function IdeWindow({ file, actions, children, className = '', goal }: { f
   }, [full])
   return (
     <FullCtx.Provider value={{ full, toggle: () => setFull((v) => !v) }}>
-      <div className={full ? 'fixed inset-0 z-[80] flex flex-col bg-[#16181d]' : `overflow-hidden rounded-[20px] bg-[#16181d] shadow-[0_20px_40px_-24px_rgba(16,24,40,.8)] ${className}`}>
+      <div className={full ? 'fixed inset-0 z-[80] flex flex-col bg-[#16181d]' : `overflow-hidden rounded-[20px] bg-[#16181d] shadow-[0_20px_40px_-24px_rgba(16,24,40,.8)] ${fill ? 'flex flex-col' : ''} ${className}`}>
         <div className="flex flex-wrap items-center gap-3 border-b border-white/5 bg-[#1d2027] px-4 py-2.5">
           <span className="flex gap-1.5">
             <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
@@ -52,7 +52,7 @@ export function IdeWindow({ file, actions, children, className = '', goal }: { f
             </button>
           </span>
         </div>
-        <div className={full ? 'thin-scroll min-h-0 flex-1 overflow-auto' : ''}>{children}</div>
+        <div className={full ? (fill ? 'flex min-h-0 flex-1 flex-col' : 'thin-scroll min-h-0 flex-1 overflow-auto') : fill ? 'flex min-h-0 flex-1 flex-col' : ''}>{children}</div>
         {full && goal ? (
           goalOpen ? (
             <div className="capi-pop absolute top-[60px] right-4 z-20 w-[360px] max-w-[calc(100%-2rem)] rounded-2xl border border-[#2d323d] bg-[#242833]/95 p-4 text-[#e6e9f2] shadow-[0_18px_40px_-16px_rgba(0,0,0,.8)] backdrop-blur">
@@ -286,6 +286,7 @@ export function CodeEditor({
   markers,
   onMarker,
   readOnly = false,
+  fill = false,
 }: {
   value: string
   onChange: (v: string) => void
@@ -296,6 +297,7 @@ export function CodeEditor({
   markers?: Map<number, number>
   onMarker?: (step: number) => void
   readOnly?: boolean
+  fill?: boolean
 }) {
   const host = useRef<HTMLDivElement>(null)
   const view = useRef<EditorView | null>(null)
@@ -427,9 +429,9 @@ export function CodeEditor({
     view.current?.requestMeasure()
   }, [size, full])
 
-  const height = full ? 'h-[calc(100dvh-92px)]' : tall ? 'h-[460px]' : 'h-[420px]'
+  const height = fill ? 'flex-1' : full ? 'h-[calc(100dvh-92px)]' : tall ? 'h-[460px]' : 'h-[420px]'
   return (
-    <div className={`flex min-w-0 flex-col bg-[#16181d] ${bare ? '' : 'overflow-hidden rounded-2xl shadow-inner'}`}>
+    <div className={`flex min-w-0 flex-col bg-[#16181d] ${fill ? 'min-h-0 flex-1' : ''} ${bare ? '' : 'overflow-hidden rounded-2xl shadow-inner'}`}>
       <div ref={host} className={`min-h-0 min-w-0 ${height}`} style={{ ['--code-size' as string]: `${size}px` }} />
       <div className="flex items-center gap-3 border-t border-white/5 bg-[#1d2027] px-3 py-1 font-mono text-[11px] text-[#8a93a8] select-none">
         <span>

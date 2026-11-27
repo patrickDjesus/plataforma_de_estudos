@@ -332,6 +332,8 @@ export interface OfficeTask {
   done: boolean
   attempts: number
   feedback?: { ok: boolean; summary: string; points: string[]; next: string; criteria?: boolean[]; extra?: string; usedConcept?: boolean }
+  /** Conversa da tarefa com o gerente, em ordem. */
+  log?: OfficeLog[]
   /** Histórico das revisões (para o gerente não mudar de ideia entre uma entrega e outra). */
   reviews?: { ok: boolean; summary: string; points: string[] }[]
   qa?: { q: string; a: string }[]
@@ -339,6 +341,11 @@ export interface OfficeTask {
   concept?: string
   conceptKind?: 'novo' | 'revisao'
 }
+
+export type OfficeLog =
+  | { t: 'entrega'; at: number; n: number }
+  | { t: 'revisao'; at: number; ok: boolean; fala: string; problemas: string[]; extra?: string; mood: 'feliz' | 'chateado' | 'bravo'; concept?: { name: string; kind: 'novo' | 'revisao'; used: boolean } }
+  | { t: 'pergunta' | 'resposta' | 'dica'; at: number; text: string }
 
 /** Projeto do modo Empresarial: uma empresa inventada, um arquivo que cresce e uma fila de tarefas. */
 export interface OfficeProject {

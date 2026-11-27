@@ -544,3 +544,18 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 @keyframes bs-dot { 0%, 100% { opacity: .25 } 50% { opacity: 1 } }
 @keyframes bs-spark { 0%, 100% { transform: scale(.5); opacity: .3 } 50% { transform: scale(1.1); opacity: 1 } }
 @media (prefers-reduced-motion: reduce) { [class^='bs-'], [class^='bs-'] * { animation: none !important; } }
+
+/* Página do projeto (Empresarial) */
+.of-win { animation: of-win 5s ease-in-out infinite; }
+.of-cloud { animation: of-cloud 18s linear infinite; }
+.of-cloud2 { animation-duration: 26s; animation-delay: -9s; }
+.of-float { animation: of-float 3.4s ease-in-out infinite; }
+.of-live { animation: of-live 1.6s ease-in-out infinite; }
+.of-typing i { width: 7px; height: 7px; border-radius: 999px; background: #a5adbf; animation: bs-dot 1.1s ease-in-out infinite; }
+.of-typing i:nth-child(2) { animation-delay: .18s; }
+.of-typing i:nth-child(3) { animation-delay: .36s; }
+@keyframes of-win { 0%, 100% { opacity: .9 } 40% { opacity: .9 } 50% { opacity: .2 } 70% { opacity: .55 } }
+@keyframes of-cloud { from { transform: translateX(-90px) } to { transform: translateX(320px) } }
+@keyframes of-float { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-4px) } }
+@keyframes of-live { 0%, 100% { opacity: 1 } 50% { opacity: .45 } }
+@media (prefers-reduced-motion: reduce) { .of-win, .of-cloud, .of-float, .of-live, .of-typing i { animation: none !important; } }

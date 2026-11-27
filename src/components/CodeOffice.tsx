@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Bug, CheckCircle2, Sparkles, Dices, Dumbbell, Eye, Gamepad2, GraduationCap, HeartPulse, Landmark, Lightbulb, Loader2, Lock, MessageCircle, Play, Plus, Send, Store, Trash2, Truck, UtensilsCrossed, Wrench, XCircle } from 'lucide-react'
+import { Bug, CheckCircle2, Sparkles, Dices, Dumbbell, Eye, Gamepad2, GraduationCap, HeartPulse, Landmark, Loader2, Lock, Play, Plus, Send, Store, Trash2, Truck, UtensilsCrossed, Wrench, XCircle } from 'lucide-react'
 import { db, uid } from '../db/db'
-import type { OfficeProject, OfficeTask } from '../db/types'
+import type { OfficeLog, OfficeProject, OfficeTask } from '../db/types'
 import { AIError, getAI } from '../lib/ai'
 import { centerOf, confetti, playSfx } from '../lib/sfx'
 import { showMascot } from '../lib/mascotBus'
@@ -438,19 +438,25 @@ function Briefcase() {
 
 function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () => void }) {
   const p = project
-  const s = sectorOf(p.sector)
   const [code, setCode] = useState(p.code)
   const [view, setView] = useState(Math.min(p.current, p.tasks.length - 1))
   const [loading, setLoading] = useState<'' | 'rodar' | 'entregar' | 'perguntar' | 'final'>('')
   const [error, setError] = useState('')
   const [run, setRun] = useState<RunResult | null>(null)
-  const [hint, setHint] = useState(false)
-  const [asking, setAsking] = useState(false)
   const [q, setQ] = useState('')
   const box = useRef<HTMLDivElement>(null)
+  const strip = useRef<HTMLDivElement>(null)
+  const thread = useRef<HTMLDivElement>(null)
   const task = p.tasks[view]
   const isCurrent = view === p.current && !p.finishedAt
   const done = p.tasks.filter((t) => t.done).length
+  const gender = bossGender(p.manager)
+  const first = p.manager.name.split(' ')[0]
+
+  // Abre já na área de trabalho
+  useEffect(() => {
+    strip.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
 
   // Salva o arquivo enquanto você digita
   useEffect(() => {
@@ -459,10 +465,32 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
     return () => window.clearTimeout(t)
   }, [code, p.id, p.code])
 
-  const patchTask = (i: number, patch: Partial<OfficeTask>, extra: Partial<OfficeProject> = {}) => {
-    const tasks = p.tasks.map((t, k) => (k === i ? { ...t, ...patch } : t))
+  // Conversa da tarefa (projetos antigos não tinham o registro: monta a partir das revisões e perguntas)
+  const log: OfficeLog[] = task
+    ? (task.log ?? [
+        ...(task.reviews ?? []).map((r): OfficeLog => ({ t: 'revisao', at: 0, ok: r.ok, fala: r.summary, problemas: r.points, mood: r.ok ? 'feliz' : 'chateado' })),
+        ...(task.qa ?? []).flatMap((x): OfficeLog[] => [
+          { t: 'pergunta', at: 0, text: x.q },
+          { t: 'resposta', at: 0, text: x.a },
+        ]),
+      ])
+    : []
+  const lastReview = [...log].reverse().find((e) => e.t === 'revisao') as Extract<OfficeLog, { t: 'revisao' }> | undefined
+  const mood: BossMood = loading === 'entregar' ? 'pensando' : task?.done ? 'feliz' : lastReview ? lastReview.mood : 'neutro'
+  const crit = task?.feedback?.criteria
+
+  useEffect(() => {
+    const el = thread.current
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+  }, [log.length, loading, view, p.finishedAt])
+
+  const fresh = async () => (await db.projects.get(p.id)) ?? p
+  const patchTask = async (i: number, patch: (t: OfficeTask) => Partial<OfficeTask>, extra: Partial<OfficeProject> = {}) => {
+    const cur = await fresh()
+    const tasks = cur.tasks.map((t, k) => (k === i ? { ...t, ...patch(t) } : t))
     return db.projects.update(p.id, { tasks, ...extra })
   }
+  const addLog = (i: number, ...entries: OfficeLog[]) => patchTask(i, (t) => ({ log: [...(t.log ?? log), ...entries].slice(-60) }))
 
   const doRun = async () => {
     if (!task) return
@@ -476,8 +504,7 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
     try {
       const ai = await getAI()
       if (!ai) throw new AIError('unavailable', 'O Claude não está disponível aqui.')
-      const fresh = (await db.projects.get(p.id)) ?? p
-      const o = await ai.json<{ nota?: number; veredito?: string; dicas?: string[] }>(finalPrompt(fresh, finalCode), { fresh: true })
+      const o = await ai.json<{ nota?: number; veredito?: string; dicas?: string[] }>(finalPrompt(await fresh(), finalCode), { fresh: true })
       const grade = Math.max(0, Math.min(10, Math.round(Number(o?.nota ?? 7))))
       const verdict = String(o?.veredito ?? '')
       const tips = Array.isArray(o?.dicas) ? o.dicas.map(String).slice(0, 3) : []
@@ -496,11 +523,13 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
   }
 
   const deliver = async () => {
-    if (!task || !code.trim()) return
+    if (!task || !code.trim() || loading) return
     setLoading('entregar')
     setError('')
+    const attempt = task.attempts + 1
     try {
       await db.projects.update(p.id, { code })
+      await addLog(view, { t: 'entrega', at: Date.now(), n: attempt })
       let ran = ''
       if (p.lang === 'javascript' && task.fn) {
         const r = await runJS(code, task.fn, task.tests)
@@ -509,13 +538,28 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
       }
       const ai = await getAI()
       if (!ai) throw new AIError('unavailable', 'O Claude não está disponível aqui. Abra o Mendonça pelo claude.ai.')
-      const attempt = task.attempts + 1
       const o = await ai.json<{ aprovado?: boolean; criterios?: unknown[]; fala?: string; problemas?: unknown[]; extra?: string; usouConceito?: boolean }>(reviewPrompt(p, task, code, ran, attempt), { fresh: true, tier: 'complex' })
       const crit = task.criteria.map((_, i) => (Array.isArray(o?.criterios) ? o.criterios[i] !== false : true))
       const ok = !!o?.aprovado && crit.every(Boolean)
       const problems = ok ? [] : Array.isArray(o?.problemas) ? o.problemas.map(String).filter(Boolean).slice(0, 6) : []
       const fb = { ok, summary: String(o?.fala ?? ''), points: problems, next: '', criteria: crit, extra: o?.extra ? String(o.extra) : '', usedConcept: !!o?.usouConceito }
-      await patchTask(view, { feedback: fb, attempts: attempt, done: task.done || ok, reviews: [...(task.reviews ?? []), { ok, summary: fb.summary, points: problems }].slice(-6) })
+      const entry: OfficeLog = {
+        t: 'revisao',
+        at: Date.now(),
+        ok,
+        fala: fb.summary,
+        problemas: problems,
+        extra: fb.extra || undefined,
+        mood: ok ? 'feliz' : attempt >= 3 ? 'bravo' : 'chateado',
+        ...(ok && task.concept && task.conceptKind ? { concept: { name: task.concept, kind: task.conceptKind, used: fb.usedConcept } } : {}),
+      }
+      await patchTask(view, (t) => ({
+        feedback: fb,
+        attempts: attempt,
+        done: t.done || ok,
+        reviews: [...(t.reviews ?? []), { ok, summary: fb.summary, points: problems }].slice(-6),
+        log: [...(t.log ?? log), entry].slice(-60),
+      }))
       if (ok) {
         // Banco de conceitos: registra se usou o recurso novo ou lembrou do antigo
         if (task.concept && task.conceptKind && !task.done) {
@@ -523,7 +567,7 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
           await db.concepts.put(applyConceptResult(await db.concepts.get(id), p.lang, task.concept, task.conceptKind, fb.usedConcept, p.company, Date.now()))
         }
         playSfx('ok')
-        const [x, y] = centerOf(box.current)
+        const [x, y] = centerOf(thread.current)
         confetti(x, y, 60, ['#5b7cff', '#ffd34d', '#ffffff'])
         if (view === p.tasks.length - 1) await finish(code)
       } else playSfx('bad')
@@ -540,24 +584,24 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
     if (!nt) return
     const nextCode = withPatch(code, nt)
     setCode(nextCode)
-    await patchTask(i, { patched: true }, { current: i, code: nextCode })
+    await patchTask(i, () => ({ patched: true }), { current: i, code: nextCode })
     setView(i)
     setRun(null)
-    setHint(false)
-    setAsking(false)
     playSfx('pop')
   }
 
   const ask = async () => {
-    if (!task || !q.trim()) return
+    const text = q.trim()
+    if (!task || !text || loading) return
     setLoading('perguntar')
     setError('')
+    setQ('')
     try {
+      await addLog(view, { t: 'pergunta', at: Date.now(), text })
       const ai = await getAI()
       if (!ai) throw new AIError('unavailable', 'O Claude não está disponível aqui.')
-      const a = (await ai.text(askPrompt(p, task, code, task.qa ?? [], q.trim()), { tier: 'quick', fresh: true })).trim()
-      await patchTask(view, { qa: [...(task.qa ?? []), { q: q.trim(), a }] })
-      setQ('')
+      const a = (await ai.text(askPrompt(p, task, code, task.qa ?? [], text), { tier: 'quick', fresh: true })).trim()
+      await patchTask(view, (t) => ({ qa: [...(t.qa ?? []), { q: text, a }], log: [...(t.log ?? log), { t: 'resposta' as const, at: Date.now(), text: a }].slice(-60) }))
     } catch (e) {
       setError(e instanceof AIError ? e.message : 'Não consegui responder agora.')
     } finally {
@@ -565,140 +609,101 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
     }
   }
 
-  const fb = task?.feedback
-  const gender = bossGender(p.manager)
-  const mood: BossMood = loading === 'entregar' ? 'pensando' : !fb ? 'neutro' : fb.ok ? 'feliz' : (task?.attempts ?? 0) >= 3 ? 'bravo' : 'chateado'
+  const hintUsed = log.some((e) => e.t === 'dica')
+  const askHint = () => task?.hint && !hintUsed && addLog(view, { t: 'pergunta', at: Date.now(), text: 'Me dá uma luz?' }, { t: 'dica', at: Date.now(), text: task.hint })
+
+  const pick = (i: number) => {
+    setView(i)
+    setRun(null)
+    setError('')
+  }
+
   return (
-    <div ref={box} className="space-y-4">
+    <div ref={box} className="space-y-3">
       <button onClick={onBack} className="text-xs font-bold text-muted hover:text-ink">
         ← Projetos
       </button>
 
-      {/* Empresa */}
-      <div className="relative overflow-hidden rounded-[22px] p-5 text-white sm:p-6" style={{ background: `linear-gradient(135deg, ${s.from}, ${s.to})` }}>
-        <svg className="pointer-events-none absolute -top-6 -right-6 h-48 w-48 opacity-15" viewBox="0 0 100 100" aria-hidden="true">
-          <rect x="18" y="30" width="26" height="62" rx="3" fill="#fff" />
-          <rect x="50" y="10" width="32" height="82" rx="3" fill="#fff" />
-          {[0, 1, 2, 3, 4, 5].map((r) => [0, 1].map((c) => <rect key={`${r}${c}`} x={56 + c * 13} y={18 + r * 12} width="7" height="6" rx="1" fill={s.to} />))}
-        </svg>
-        <div className="relative flex flex-wrap items-center gap-4">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/20 [&_svg]:h-7 [&_svg]:w-7">{s.icon}</span>
-          <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-extrabold tracking-[.12em] text-white/75 uppercase">
-              {p.product} · {p.level}
-            </div>
-            <h2 className="font-display text-2xl leading-tight font-extrabold">{p.company}</h2>
-            {p.pitch && <p className="mt-1 max-w-2xl text-sm text-white/85">{p.pitch}</p>}
-          </div>
-          <div className="min-w-[180px]">
-            <div className="mb-1.5 flex justify-between text-xs font-bold text-white/85">
-              <span>Entregas</span>
-              <span>
-                {done}/{p.tasks.length}
+      <CompanyBanner project={p} done={done} />
+
+      {/* Quadro: fichas das tarefas lado a lado */}
+      <div ref={strip} className="thin-scroll flex scroll-mt-[84px] gap-2 overflow-x-auto pb-1">
+        {p.tasks.map((t, i) => {
+          const locked = i > p.current
+          const on = i === view
+          const k = KIND[t.kind]
+          const bar = t.done ? '#2fcf9b' : locked ? '#e6e8ee' : '#3e63f2'
+          return (
+            <button
+              key={t.id}
+              disabled={locked}
+              onClick={() => pick(i)}
+              className={`group relative min-w-[168px] flex-1 overflow-hidden rounded-2xl border-2 bg-white px-3.5 pt-3 pb-3.5 text-left transition ${on ? 'border-[#3e63f2] shadow-[0_10px_22px_-16px_#3e63f2]' : 'border-line hover:-translate-y-0.5 hover:border-[#c9d4ff]'} ${locked ? 'cursor-not-allowed opacity-55' : ''}`}
+            >
+              <span className="flex items-center gap-1.5">
+                {t.done ? <CheckCircle2 size={15} className="text-[#0f8a63]" /> : locked ? <Lock size={14} className="text-slate-400" /> : <span className="of-live h-2.5 w-2.5 rounded-full bg-[#3e63f2]" />}
+                <span className="font-mono text-[11px] font-bold text-muted">{t.id}</span>
+                <span className={`ml-auto inline-flex items-center gap-0.5 rounded-md px-1.5 py-px text-[10.5px] font-bold ${k.cls}`}>
+                  {k.icon}
+                  {k.label}
+                </span>
               </span>
-            </div>
-            <div className="flex gap-1">
-              {p.tasks.map((t, i) => (
-                <span key={t.id} className={`h-2.5 flex-1 rounded-full ${t.done ? 'bg-white' : i === p.current ? 'bg-white/55' : 'bg-white/20'}`} />
-              ))}
-            </div>
-          </div>
-        </div>
+              <span className={`mt-1.5 line-clamp-2 block text-[13.5px] leading-snug font-bold ${t.done ? 'text-slate-500' : 'text-ink'}`}>{locked ? 'Ainda não chegou' : t.title}</span>
+              <span className="absolute inset-x-0 bottom-0 h-1" style={{ background: bar }} />
+            </button>
+          )
+        })}
       </div>
 
-      {/* Avaliação final */}
-      {p.finishedAt && (
-        <div className="capi-pop flex flex-wrap items-center gap-5 rounded-[22px] border-2 border-[#c9d4ff] bg-white p-5">
-          <GradeRing grade={p.grade ?? 0} />
-          <div className="min-w-0 flex-1">
-            <div className="font-display text-lg font-bold text-[#3e63f2]">Projeto entregue</div>
-            <p className="mt-0.5 text-sm text-slate-700">{p.verdict}</p>
-            {!!p.tips?.length && (
-              <ul className="mt-2.5 space-y-1.5">
-                {p.tips.map((t, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-slate-700">
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#3e63f2]" />
-                    <RichText text={t} />
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className="mt-2 text-xs text-muted">O arquivo final foi para a Biblioteca.</p>
-          </div>
-        </div>
-      )}
-
-      <div className="grid items-start gap-4 lg:grid-cols-[290px_minmax(0,1fr)]">
-        {/* Quadro de tarefas */}
-        <div className="rounded-[20px] border border-line bg-white p-3">
-          <div className="px-2 pt-1 pb-2 text-xs font-bold tracking-wider text-muted uppercase">Quadro</div>
-          <div className="space-y-1.5">
-            {p.tasks.map((t, i) => {
-              const locked = i > p.current
-              const on = i === view
-              const k = KIND[t.kind]
-              return (
-                <button
-                  key={t.id}
-                  disabled={locked}
-                  onClick={() => {
-                    setView(i)
-                    setHint(false)
-                    setAsking(false)
-                    setRun(null)
-                  }}
-                  className={`flex w-full items-start gap-2.5 rounded-xl border-2 p-2.5 text-left transition ${on ? 'border-[#3e63f2] bg-[#f3f6ff]' : 'border-transparent hover:bg-slate-50'} ${locked ? 'opacity-50' : ''}`}
-                >
-                  <span className="mt-0.5 shrink-0">
-                    {t.done ? <CheckCircle2 size={17} className="text-[#0f8a63]" /> : locked ? <Lock size={16} className="text-slate-400" /> : <span className="block h-[17px] w-[17px] rounded-full border-2 border-[#3e63f2] bg-white" />}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-1.5">
-                      <span className="font-mono text-[11px] font-bold text-muted">{t.id}</span>
-                      <span className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-px text-[10.5px] font-bold ${k.cls}`}>
-                        {k.icon}
-                        {k.label}
-                      </span>
-                    </span>
-                    <span className={`mt-0.5 block text-[13px] leading-snug font-semibold ${t.done ? 'text-slate-500' : ''}`}>{locked ? 'Bloqueada' : t.title}</span>
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {task && (
-          <div className="min-w-0 space-y-4">
-            {/* Mensagem do gerente */}
-            <div className="rounded-[20px] border border-line bg-white p-4 sm:p-5">
-              <div className="flex items-start gap-3">
-                <span className="-mt-1 -ml-1 rounded-2xl bg-[#f3f5fa]">
-                  <Boss gender={gender} mood={task.done ? 'feliz' : 'neutro'} size={70} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-baseline gap-x-2">
-                    <span className="font-bold">{p.manager.name}</span>
-                    <span className="text-xs text-muted">{p.manager.role}</span>
-                  </div>
-                  <div className="mt-1.5 rounded-2xl rounded-tl-md bg-[#f3f5fa] px-4 py-3 text-[14.5px] leading-relaxed text-slate-800">{task.message}</div>
+      {/* Área de trabalho: conversa com o gerente + editor */}
+      {task && (
+        <div className="grid gap-3 lg:h-[calc(100dvh-196px)] lg:min-h-[540px] lg:grid-cols-[minmax(330px,410px)_minmax(0,1fr)]">
+          <section className="flex h-[560px] min-h-0 flex-col overflow-hidden rounded-[22px] border border-line bg-white lg:h-auto">
+            {/* cabeçalho do chat */}
+            <div className="flex items-center gap-3 border-b border-line bg-[#fafbfd] px-3.5 py-2">
+              <span className={`mr-2.5 rounded-2xl transition-colors ${mood === 'bravo' ? 'bg-[#ffe3e6]' : mood === 'feliz' ? 'bg-[#e3f8ee]' : 'bg-[#eef1f7]'}`}>
+                <Boss gender={gender} mood={mood} size={58} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-bold">{p.manager.name}</div>
+                <div className="flex items-center gap-1.5 text-xs text-muted">
+                  <span className={`h-2 w-2 rounded-full ${loading === 'entregar' || loading === 'perguntar' ? 'of-live bg-[#ffb648]' : 'bg-[#28c840]'}`} />
+                  {loading === 'entregar' ? 'testando seu código…' : loading === 'perguntar' ? 'digitando…' : p.manager.role}
                 </div>
               </div>
-              <div className="mt-4 sm:pl-[78px]">
-                <div className="mb-1.5 flex flex-wrap items-center gap-2 text-xs font-bold tracking-wider text-muted uppercase">
+              <span className="rounded-lg bg-[#f1f3f8] px-2 py-1 text-[11px] font-bold text-muted">{task.attempts} entrega{task.attempts === 1 ? '' : 's'}</span>
+            </div>
+
+            {/* conversa */}
+            <div ref={thread} className="thin-scroll min-h-0 flex-1 space-y-3 overflow-y-auto bg-[#f6f7fb] px-3.5 py-4">
+              <div className="text-center">
+                <span className="rounded-full bg-white px-3 py-1 font-mono text-[11px] font-bold text-muted shadow-[0_1px_0_#e6e8ee]">
                   {task.id} · {task.title}
+                </span>
+              </div>
+              <Bubble>{task.message}</Bubble>
+
+              {/* ficha da tarefa */}
+              <div className="rounded-2xl border border-line bg-white p-3.5">
+                <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                  <span className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10.5px] font-bold ${KIND[task.kind].cls}`}>
+                    {KIND[task.kind].icon}
+                    {KIND[task.kind].label}
+                  </span>
+                  {task.fn && <code className="rounded-md bg-[#eef2ff] px-1.5 py-0.5 font-mono text-[11.5px] font-semibold text-[#3e63f2]">{task.fn}</code>}
                   {task.concept && task.conceptKind === 'novo' && (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-[#fff4dc] px-2 py-0.5 font-mono text-[11px] tracking-normal text-[#b7791f] normal-case" title="Recurso que você ainda não usou. Pesquisa e se vira!">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-[#fff4dc] px-1.5 py-0.5 font-mono text-[11px] font-semibold text-[#b7791f]" title="Recurso que você ainda não usou. Pesquisa e se vira!">
                       <Sparkles size={11} /> novo: {task.concept}
                     </span>
                   )}
                 </div>
+                <div className="mb-1 text-[11px] font-bold tracking-wider text-muted uppercase">Pra aprovar</div>
                 <ul className="space-y-1.5">
                   {task.criteria.map((c, i) => {
-                    const st = task.done ? true : fb?.criteria?.[i]
+                    const st = task.done ? true : crit?.[i]
                     return (
-                      <li key={i} className="flex gap-2 text-sm text-slate-700">
-                        {st === true ? <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[#0f8a63]" /> : st === false ? <XCircle size={16} className="mt-0.5 shrink-0 text-[#d92f45]" /> : <span className="mt-1 h-3.5 w-3.5 shrink-0 rounded border-2 border-slate-300" />}
+                      <li key={i} className="flex gap-2 text-[13.5px] leading-snug text-slate-700">
+                        {st === true ? <CheckCircle2 size={16} className="mt-px shrink-0 text-[#0f8a63]" /> : st === false ? <XCircle size={16} className="mt-px shrink-0 text-[#d92f45]" /> : <span className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-2 border-slate-300" />}
                         <span className={st === false ? 'font-semibold text-[#9e1d2f]' : undefined}>
                           <RichText text={c} />
                         </span>
@@ -707,204 +712,275 @@ function ProjectView({ project, onBack }: { project: OfficeProject; onBack: () =
                   })}
                 </ul>
                 {task.fn && !!task.tests?.length && (
-                  <div className="mt-3">
-                    <div className="mb-1 text-[11px] font-bold tracking-wider text-muted uppercase">Exemplos</div>
-                    <div className="space-y-1">
-                      {task.tests.slice(0, 3).map((x, i) => (
-                        <div key={i} className="w-fit max-w-full overflow-x-auto rounded-lg bg-[#16181d] px-3 py-1.5 font-mono text-[12.5px] whitespace-nowrap text-[#e6e9f2]">
-                          {exampleLine(task, x, p.lang).replace(/ → .*$/, '')} <span className="text-[#596071]">→</span> <span className="text-[#7ef0b5]">{exampleLine(task, x, p.lang).replace(/^.* → /, '')}</span>
+                  <div className="mt-3 space-y-1">
+                    {task.tests.slice(0, 3).map((x, i) => {
+                      const [call, out] = exampleLine(task, x, p.lang).split(' → ')
+                      return (
+                        <div key={i} className="thin-scroll overflow-x-auto rounded-lg bg-[#16181d] px-2.5 py-1.5 font-mono text-[12px] whitespace-nowrap text-[#e6e9f2]">
+                          {call} <span className="text-[#596071]">→</span> <span className="text-[#7ef0b5]">{out}</span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {task.fn && (
-                  <p className="mt-2.5 text-xs text-muted">
-                    Função: <code className="rounded-md bg-[#eef0f6] px-1.5 py-0.5 font-mono text-[12px] text-[#3e63f2]">{task.fn}</code>
-                  </p>
-                )}
-                {isCurrent && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {task.hint && (
-                      <button onClick={() => setHint((v) => !v)} className="inline-flex items-center gap-1.5 rounded-xl bg-[#fff4dc] px-3 py-1.5 text-xs font-bold text-[#b7791f] hover:brightness-95">
-                        <Lightbulb size={13} /> Dica
-                      </button>
-                    )}
-                    <button onClick={() => setAsking((v) => !v)} className="inline-flex items-center gap-1.5 rounded-xl bg-[#eef2ff] px-3 py-1.5 text-xs font-bold text-[#3e63f2] hover:brightness-95">
-                      <MessageCircle size={13} /> Perguntar
-                    </button>
-                  </div>
-                )}
-                {hint && task.hint && <div className="capi-pop mt-3 rounded-xl border border-[#ffe08a] bg-[#fffaeb] px-3.5 py-2.5 text-sm text-[#7a5a00]">{task.hint}</div>}
-
-                {(asking || (task.qa?.length ?? 0) > 0) && (
-                  <div className="mt-3 space-y-2.5">
-                    {(task.qa ?? []).map((x, i) => (
-                      <div key={i} className="space-y-1.5">
-                        <div className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-tr-md bg-[#3e63f2] px-3.5 py-2 text-sm text-white">{x.q}</div>
-                        <div className="w-fit max-w-[92%] rounded-2xl rounded-tl-md bg-[#f3f5fa] px-3.5 py-2 text-slate-800">
-                          <RichText text={x.a} />
-                        </div>
-                      </div>
-                    ))}
-                    {asking && isCurrent && (
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault()
-                          void ask()
-                        }}
-                        className="flex gap-2"
-                      >
-                        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Pergunte para ${p.manager.name.split(' ')[0]}…`} className="min-w-0 flex-1 rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-[#3e63f2]" />
-                        <button disabled={!q.trim() || loading === 'perguntar'} className="grid w-10 place-items-center rounded-xl bg-[#3e63f2] text-white disabled:opacity-50">
-                          {loading === 'perguntar' ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-                        </button>
-                      </form>
-                    )}
+                      )
+                    })}
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Arquivo do projeto */}
-            <IdeWindow
-              file={p.fileName}
-              goal={
-                <>
-                  <div className="mb-1 font-bold text-white">
-                    {task.id} · {task.title}
-                  </div>
-                  <p>{task.message}</p>
-                  {task.criteria.length > 0 && (
-                    <ul className="mt-2.5 space-y-1">
-                      {task.criteria.map((c, i) => (
-                        <li key={i} className="flex gap-2">
-                          <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#7ef0b5]" />
-                          <span>{c}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {task.fn && !!task.tests?.length && (
-                    <div className="mt-2.5 space-y-1">
-                      {task.tests.slice(0, 3).map((x, i) => (
-                        <div key={i} className="overflow-x-auto rounded-lg bg-black/30 px-2.5 py-1.5 font-mono text-[12px] whitespace-nowrap">
-                          {exampleLine(task, x, p.lang)}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {task.concept && task.conceptKind === 'novo' && <p className="mt-2 font-mono text-xs text-[#ffd866]">novo: {task.concept}</p>}
-                </>
-              }
-              actions={
-                <>
-                  {p.lang === 'javascript' && task.fn && (
-                    <button onClick={doRun} disabled={!!loading} className={`${ideBtn} bg-[#5b7cff] text-white hover:brightness-110`}>
-                      {loading === 'rodar' ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} fill="currentColor" />} Rodar
-                    </button>
-                  )}
-                  {isCurrent && !task.done && (
-                    <button onClick={deliver} disabled={!!loading || !code.trim()} className={`${ideBtn} bg-[#2fcf9b] text-[#08321f] hover:brightness-110`}>
-                      {loading === 'entregar' ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />} {loading === 'entregar' ? 'Revisando…' : 'Entregar'}
-                    </button>
-                  )}
-                  {!isCurrent && (
-                    <span className={`${ideBtn} bg-white/10 text-[#8a93a8]`}>
-                      <Eye size={13} /> {p.finishedAt ? 'Projeto entregue' : 'Tarefa entregue'}
+              {log.map((e, i) =>
+                e.t === 'entrega' ? (
+                  <div key={i} className="flex justify-end">
+                    <span className="inline-flex items-center gap-1.5 rounded-2xl rounded-br-md bg-[#3e63f2] px-3 py-1.5 text-[13px] font-semibold text-white">
+                      <Send size={12} /> {e.n}ª entrega
                     </span>
-                  )}
-                </>
-              }
-            >
-              <CodeEditor value={code} onChange={setCode} readOnly={!!p.finishedAt} lang={p.lang} bare tall />
-              {run && (
-                <div className="border-t border-white/5 px-5 py-3 font-mono text-[12.5px]">
-                  <div className="mb-1.5 text-[10.5px] font-bold tracking-wider text-[#596071] uppercase">Terminal</div>
-                  {run.error && <p className="text-rose-300">{run.error}</p>}
-                  {run.results.map((r, i) => (
-                    <div key={i} className="flex items-start gap-2 text-[#c9cede]">
-                      {r.ok ? <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[#2fcf9b]" /> : <XCircle size={14} className="mt-0.5 shrink-0 text-rose-400" />}
-                      <span className="min-w-0 break-all">
-                        {r.label} → <b className={r.ok ? 'text-[#7ef0b5]' : 'text-rose-300'}>{r.got}</b>
-                        {!r.ok && <span className="text-[#596071]"> (esperado {r.expected})</span>}
-                      </span>
-                    </div>
-                  ))}
-                  {run.logs.length > 0 && <pre className="thin-scroll mt-2 max-h-32 overflow-auto text-[#8a93a8]">{run.logs.join('\n')}</pre>}
+                  </div>
+                ) : e.t === 'pergunta' ? (
+                  <div key={i} className="flex justify-end">
+                    <div className="max-w-[85%] rounded-2xl rounded-br-md bg-[#3e63f2] px-3.5 py-2 text-[13.5px] text-white">{e.text}</div>
+                  </div>
+                ) : e.t !== 'revisao' ? (
+                  <Bubble key={i} tone={e.t === 'dica' ? 'dica' : undefined}>
+                    <RichText text={e.text} />
+                  </Bubble>
+                ) : (
+                  <div key={i} className="space-y-2">
+                    <Bubble tone={e.ok ? 'ok' : e.mood === 'bravo' ? 'bravo' : 'erro'}>
+                      <p>{e.fala}</p>
+                      {e.problemas.length > 0 && (
+                        <ul className="mt-2 space-y-1.5 border-t border-black/5 pt-2">
+                          {e.problemas.map((pt, k) => (
+                            <li key={k} className="flex gap-1.5 text-[13px]">
+                              <XCircle size={14} className="mt-0.5 shrink-0 text-[#d92f45]" />
+                              <RichText text={pt} />
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {e.concept && (
+                        <p className={`mt-2 border-t border-black/5 pt-2 text-[12.5px] font-semibold ${e.concept.used ? 'text-[#0f8a63]' : 'text-[#8a5a00]'}`}>
+                          {e.concept.used ? (e.concept.kind === 'revisao' ? 'Lembrou do ' : 'Usou o ') : 'Dava pra usar '}
+                          <code className="font-mono">{e.concept.name}</code>
+                          {e.concept.used ? '. Foi pro banco de conceitos.' : ' aqui. Ele volta numa próxima.'}
+                        </p>
+                      )}
+                      {e.extra && <p className="mt-2 border-t border-black/5 pt-2 text-[12.5px] text-slate-500">Só uma ideia, não conta: {e.extra}</p>}
+                    </Bubble>
+                    {e === lastReview && lastReview.ok && isCurrent && (
+                      <div className="pl-1">
+                        {view < p.tasks.length - 1 ? (
+                          <button onClick={nextTask} className="act-btn inline-flex items-center gap-2 rounded-xl bg-[#3e63f2] px-4 py-2 text-sm font-bold text-white">
+                            Pegar a próxima tarefa →
+                          </button>
+                        ) : (
+                          !p.finishedAt && (
+                            <button onClick={() => void finish(code)} disabled={!!loading} className="act-btn inline-flex items-center gap-2 rounded-xl bg-[#3e63f2] px-4 py-2 text-sm font-bold text-white disabled:opacity-60">
+                              {loading === 'final' && <Loader2 size={14} className="animate-spin" />} {loading === 'final' ? 'Fechando o projeto…' : 'Entregar o projeto'}
+                            </button>
+                          )
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ),
+              )}
+
+              {(loading === 'entregar' || loading === 'perguntar') && (
+                <div className="w-fit rounded-2xl rounded-bl-md bg-white px-4 py-3 shadow-[0_1px_0_#e6e8ee]">
+                  <span className="of-typing flex gap-1">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
                 </div>
               )}
-            </IdeWindow>
-            {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
 
-            {/* Code review do gerente: ele falando, com a cara do resultado */}
-            {(fb || loading === 'entregar') && (
-              <div data-review className={`capi-pop rounded-[20px] border-2 bg-white p-4 sm:p-5 ${loading === 'entregar' ? 'border-line' : fb!.ok ? 'border-[#9fe6cb]' : mood === 'bravo' ? 'border-[#ff9aa6]' : 'border-[#ffd1d7]'}`}>
-                <div className="flex items-start gap-3 sm:gap-4">
-                  <span className={`shrink-0 rounded-2xl ${mood === 'bravo' ? 'bg-[#fff0f1]' : mood === 'feliz' ? 'bg-[#eefbf5]' : 'bg-[#f3f5fa]'}`}>
-                    <Boss gender={gender} mood={mood} size={104} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-baseline gap-x-2">
-                      <span className="font-bold">{p.manager.name.split(' ')[0]}</span>
-                      {loading === 'entregar' ? (
-                        <span className="text-xs text-muted">testando seu código…</span>
-                      ) : (
-                        <>
-                          <span className={`rounded-lg px-2 py-0.5 text-[11px] font-extrabold ${fb!.ok ? 'bg-[#e9f9f2] text-[#0f8a63]' : 'bg-[#ffecef] text-[#c9273b]'}`}>{fb!.ok ? 'Aprovado' : 'Voltou pra você'}</span>
-                          <span className="text-xs text-muted">
-                            {task.attempts}ª entrega
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    {loading === 'entregar' ? (
-                      <div className="mt-2 w-fit rounded-2xl rounded-tl-md bg-[#f3f5fa] px-4 py-3 text-[14.5px] text-slate-500">Peraí, deixa eu rodar aqui…</div>
-                    ) : (
-                      fb && (
-                        <>
-                          <div className={`mt-2 rounded-2xl rounded-tl-md px-4 py-3 text-[14.5px] leading-relaxed ${fb.ok ? 'bg-[#eefbf5] text-slate-800' : mood === 'bravo' ? 'bg-[#fff0f1] text-[#5c1420]' : 'bg-[#f3f5fa] text-slate-800'}`}>{fb.summary}</div>
-                          {fb.points.length > 0 && (
-                            <div className="mt-3">
-                              <div className="mb-1.5 text-[11px] font-bold tracking-wider text-muted uppercase">O que eu testei e não bateu</div>
-                              <ul className="space-y-1.5">
-                                {fb.points.map((pt, i) => (
-                                  <li key={i} className="flex gap-2 text-sm text-slate-700">
-                                    <XCircle size={15} className="mt-0.5 shrink-0 text-[#d92f45]" />
-                                    <RichText text={pt} />
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          {fb.ok && task.concept && task.conceptKind && (
-                            <p className={`mt-3 inline-flex flex-wrap items-center gap-1.5 rounded-xl px-3 py-1.5 text-[13px] font-semibold ${fb.usedConcept ? 'bg-[#e9f9f2] text-[#0f8a63]' : 'bg-[#fff4dc] text-[#8a5a00]'}`}>
-                              <Sparkles size={13} />
-                              {fb.usedConcept ? (task.conceptKind === 'revisao' ? 'Lembrou do ' : 'Usou o ') : 'Dava pra usar '}
-                              <code className="font-mono">{task.concept}</code>
-                              {fb.usedConcept ? (task.conceptKind === 'revisao' ? ' sem ninguém pedir. Foi pro banco.' : '. Foi pro banco de conceitos.') : ' aqui. Ele volta numa próxima.'}
-                            </p>
-                          )}
-                          {fb.extra && <p className="mt-2.5 text-[13px] text-muted">Só uma ideia, não conta: {fb.extra}</p>}
-                          {fb.ok && isCurrent && view < p.tasks.length - 1 && (
-                            <button onClick={nextTask} className="mt-4 block rounded-xl bg-[#3e63f2] px-4 py-2 text-sm font-bold text-white hover:brightness-110">
-                              Próxima tarefa
-                            </button>
-                          )}
-                          {fb.ok && view === p.tasks.length - 1 && !p.finishedAt && (
-                            <button onClick={() => void finish(code)} disabled={!!loading} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#3e63f2] px-4 py-2 text-sm font-bold text-white hover:brightness-110 disabled:opacity-60">
-                              {loading === 'final' && <Loader2 size={14} className="animate-spin" />} {loading === 'final' ? 'Fechando o projeto…' : 'Entregar projeto'}
-                            </button>
-                          )}
-                        </>
-                      )
-                    )}
+              {p.finishedAt && view === p.tasks.length - 1 && (
+                <div className="capi-pop flex items-center gap-3 rounded-2xl border-2 border-[#c9d4ff] bg-white p-3.5">
+                  <GradeRing grade={p.grade ?? 0} size={70} />
+                  <div className="min-w-0 text-[13.5px] text-slate-700">
+                    <div className="font-display font-bold text-[#3e63f2]">Projeto entregue</div>
+                    <p className="mt-0.5">{p.verdict}</p>
+                    {!!p.tips?.length && <p className="mt-1 text-[12.5px] text-muted">{p.tips.join(' · ')}</p>}
                   </div>
                 </div>
+              )}
+              {error && <p className="text-center text-[13px] font-semibold text-rose-600">{error}</p>}
+            </div>
+
+            {/* escrever */}
+            {isCurrent && !task.done ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  void ask()
+                }}
+                className="border-t border-line bg-white p-2.5"
+              >
+                <div className="flex items-center gap-2">
+                  <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Mensagem para ${first}…`} className="min-w-0 flex-1 rounded-xl bg-[#f1f3f8] px-3.5 py-2.5 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-[#c9d4ff]" />
+                  <button disabled={!q.trim() || !!loading} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#3e63f2] text-white transition disabled:opacity-40" title="Enviar">
+                    <Send size={16} />
+                  </button>
+                </div>
+                {task.hint && !hintUsed && (
+                  <button type="button" onClick={() => void askHint()} className="mt-1.5 ml-1 text-xs font-semibold text-muted underline-offset-2 hover:text-[#b7791f] hover:underline">
+                    Travou? Pedir uma luz {gender === 'f' ? 'pra' : 'pro'} {first}
+                  </button>
+                )}
+              </form>
+            ) : (
+              <div className="border-t border-line bg-white px-4 py-3 text-center text-xs font-semibold text-muted">{p.finishedAt ? 'Projeto entregue.' : task.done ? 'Tarefa aprovada.' : 'Tarefa encerrada.'}</div>
+            )}
+          </section>
+
+          {/* Arquivo do projeto */}
+          <IdeWindow
+            fill
+            className="h-[600px] lg:h-auto"
+            file={p.fileName}
+            goal={
+              <>
+                <div className="mb-1 font-bold text-white">
+                  {task.id} · {task.title}
+                </div>
+                <p>{task.message}</p>
+                {task.criteria.length > 0 && (
+                  <ul className="mt-2.5 space-y-1">
+                    {task.criteria.map((c, i) => (
+                      <li key={i} className="flex gap-2">
+                        <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#7ef0b5]" />
+                        <span>{c}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {task.fn && !!task.tests?.length && (
+                  <div className="mt-2.5 space-y-1">
+                    {task.tests.slice(0, 3).map((x, i) => (
+                      <div key={i} className="overflow-x-auto rounded-lg bg-black/30 px-2.5 py-1.5 font-mono text-[12px] whitespace-nowrap">
+                        {exampleLine(task, x, p.lang)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {task.concept && task.conceptKind === 'novo' && <p className="mt-2 font-mono text-xs text-[#ffd866]">novo: {task.concept}</p>}
+              </>
+            }
+            actions={
+              <>
+                {p.lang === 'javascript' && task.fn && (
+                  <button onClick={doRun} disabled={!!loading} className={`${ideBtn} bg-[#5b7cff] text-white hover:brightness-110`}>
+                    {loading === 'rodar' ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} fill="currentColor" />} Rodar
+                  </button>
+                )}
+                {isCurrent && !task.done ? (
+                  <button onClick={deliver} disabled={!!loading || !code.trim()} className={`${ideBtn} bg-[#2fcf9b] text-[#08321f] hover:brightness-110`}>
+                    {loading === 'entregar' ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />} {loading === 'entregar' ? 'Revisando…' : 'Entregar'}
+                  </button>
+                ) : (
+                  <span className={`${ideBtn} bg-white/10 text-[#8a93a8]`}>
+                    <Eye size={13} /> {p.finishedAt ? 'Projeto entregue' : 'Tarefa aprovada'}
+                  </span>
+                )}
+              </>
+            }
+          >
+            <CodeEditor value={code} onChange={setCode} readOnly={!!p.finishedAt} lang={p.lang} bare fill />
+            {run && (
+              <div className="thin-scroll max-h-40 shrink-0 overflow-y-auto border-t border-white/5 px-5 py-3 font-mono text-[12.5px]">
+                <div className="mb-1.5 flex items-center text-[10.5px] font-bold tracking-wider text-[#596071] uppercase">
+                  Terminal
+                  <button onClick={() => setRun(null)} className="ml-auto rounded px-1.5 text-[#8a93a8] normal-case hover:bg-white/10" title="Fechar">
+                    ×
+                  </button>
+                </div>
+                {run.error && <p className="text-rose-300">{run.error}</p>}
+                {run.results.map((r, i) => (
+                  <div key={i} className="flex items-start gap-2 text-[#c9cede]">
+                    {r.ok ? <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[#2fcf9b]" /> : <XCircle size={14} className="mt-0.5 shrink-0 text-rose-400" />}
+                    <span className="min-w-0 break-all">
+                      {r.label} → <b className={r.ok ? 'text-[#7ef0b5]' : 'text-rose-300'}>{r.got}</b>
+                      {!r.ok && <span className="text-[#596071]"> (esperado {r.expected})</span>}
+                    </span>
+                  </div>
+                ))}
+                {run.logs.length > 0 && <pre className="mt-2 text-[#8a93a8]">{run.logs.join('\n')}</pre>}
               </div>
             )}
+          </IdeWindow>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Balão de mensagem do gerente. */
+function Bubble({ children, tone }: { children: ReactNode; tone?: 'ok' | 'erro' | 'bravo' | 'dica' }) {
+  const cls =
+    tone === 'ok'
+      ? 'bg-[#e3f8ee] text-[#0b4a33]'
+      : tone === 'bravo'
+        ? 'bg-[#ffe3e6] text-[#5c1420] ring-1 ring-[#ffb3bc]'
+        : tone === 'erro'
+          ? 'bg-white text-slate-800 ring-1 ring-[#ffd1d7]'
+          : tone === 'dica'
+            ? 'bg-[#fff6df] text-[#5a4200]'
+            : 'bg-white text-slate-800'
+  return <div className={`max-w-[94%] rounded-2xl rounded-bl-md px-3.5 py-2.5 text-[13.5px] leading-relaxed shadow-[0_1px_0_#e6e8ee] ${cls}`}>{children}</div>
+}
+
+/** Faixa da empresa: cor do ramo, prédios com janelas acendendo e o progresso das entregas. */
+function CompanyBanner({ project: p, done }: { project: OfficeProject; done: number }) {
+  const s = sectorOf(p.sector)
+  const wins = (x: number, y: number, cols: number, rows: number, key: string) =>
+    Array.from({ length: cols * rows }, (_, i) => (
+      <rect key={key + i} className="of-win" x={x + (i % cols) * 9} y={y + Math.floor(i / cols) * 11} width="5" height="6" rx="1" style={{ animationDelay: `${((i * 7 + key.length * 3) % 11) * 0.45}s` }} />
+    ))
+  return (
+    <div className="relative overflow-hidden rounded-[22px] text-white" style={{ background: `linear-gradient(120deg, ${s.from}, ${s.to})` }}>
+      <svg className="pointer-events-none absolute right-0 bottom-0 h-full w-[58%] max-w-[520px]" viewBox="0 0 300 120" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
+        <g className="of-cloud" fill="#fff" opacity=".35">
+          <ellipse cx="60" cy="26" rx="22" ry="7" />
+          <ellipse cx="74" cy="21" rx="13" ry="8" />
+        </g>
+        <g className="of-cloud of-cloud2" fill="#fff" opacity=".25">
+          <ellipse cx="200" cy="16" rx="18" ry="6" />
+          <ellipse cx="211" cy="12" rx="10" ry="6" />
+        </g>
+        <g fill="#000" opacity=".16">
+          <rect x="95" y="52" width="40" height="70" rx="3" />
+          <rect x="140" y="24" width="52" height="98" rx="3" />
+          <rect x="198" y="62" width="34" height="60" rx="3" />
+          <rect x="238" y="40" width="48" height="82" rx="3" />
+          <rect x="161" y="12" width="10" height="14" rx="2" />
+        </g>
+        <g fill="#fff3b0">
+          {wins(101, 60, 4, 5, 'a')}
+          {wins(147, 32, 5, 8, 'bb')}
+          {wins(204, 70, 3, 4, 'ccc')}
+          {wins(245, 48, 5, 6, 'dddd')}
+        </g>
+      </svg>
+      <div className="relative flex flex-wrap items-center gap-4 p-5 sm:pr-[38%]">
+        <span className="of-float grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,.4)] backdrop-blur [&_svg]:h-7 [&_svg]:w-7">{s.icon}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="font-display text-[22px] leading-tight font-extrabold">{p.company}</h2>
+            <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-bold">{p.level}</span>
           </div>
-        )}
+          <p className="mt-0.5 line-clamp-1 text-[13px] text-white/85" title={p.pitch}>
+            {p.product}
+            {p.pitch ? ` · ${p.pitch}` : ''}
+          </p>
+          <div className="mt-2.5 flex max-w-[360px] items-center gap-2">
+            <div className="flex flex-1 gap-1">
+              {p.tasks.map((t, i) => (
+                <span key={t.id} className={`h-2 flex-1 rounded-full transition-colors ${t.done ? 'bg-white' : i === p.current ? 'of-live bg-white/60' : 'bg-white/25'}`} />
+              ))}
+            </div>
+            <span className="text-xs font-bold text-white/90">
+              {done}/{p.tasks.length}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   )
