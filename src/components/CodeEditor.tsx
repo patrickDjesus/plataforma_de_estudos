@@ -438,7 +438,7 @@ export function CodeEditor({
           Ln {pos.line}, Col {pos.col}
         </span>
         <span className="hidden sm:inline">{LANG_NAME[lang]}</span>
-        <span className="hidden min-w-0 truncate text-[#596071] md:inline">Tab completa · Ctrl+/ comenta · Ctrl+Espaço sugere</span>
+        {!readOnly && <span className="hidden min-w-0 truncate text-[#596071] md:inline">Tab completa · Ctrl+/ comenta · Ctrl+Espaço sugere</span>}
         <span className="ml-auto flex items-center gap-1">
           <button type="button" onClick={() => zoom(-1)} className="grid h-5 w-5 place-items-center rounded hover:bg-white/10 hover:text-white" title="Diminuir (Ctrl -)">
             <Minus size={12} />
