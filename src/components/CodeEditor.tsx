@@ -433,12 +433,12 @@ export function CodeEditor({
   return (
     <div className={`flex min-w-0 flex-col bg-[#16181d] ${fill ? 'min-h-0 flex-1' : ''} ${bare ? '' : 'overflow-hidden rounded-2xl shadow-inner'}`}>
       <div ref={host} className={`min-h-0 min-w-0 ${height}`} style={{ ['--code-size' as string]: `${size}px` }} />
-      <div className="flex items-center gap-3 border-t border-white/5 bg-[#1d2027] px-3 py-1 font-mono text-[11px] text-[#8a93a8] select-none">
+      <div className="flex shrink-0 items-center gap-3 overflow-hidden border-t border-white/5 bg-[#1d2027] px-3 py-1 font-mono text-[11px] whitespace-nowrap text-[#8a93a8] select-none">
         <span>
           Ln {pos.line}, Col {pos.col}
         </span>
         <span className="hidden sm:inline">{LANG_NAME[lang]}</span>
-        <span className="hidden text-[#596071] md:inline">Tab completa · Ctrl+/ comenta · Ctrl+Espaço sugere</span>
+        <span className="hidden min-w-0 truncate text-[#596071] md:inline">Tab completa · Ctrl+/ comenta · Ctrl+Espaço sugere</span>
         <span className="ml-auto flex items-center gap-1">
           <button type="button" onClick={() => zoom(-1)} className="grid h-5 w-5 place-items-center rounded hover:bg-white/10 hover:text-white" title="Diminuir (Ctrl -)">
             <Minus size={12} />

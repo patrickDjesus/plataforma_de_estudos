@@ -559,3 +559,12 @@ h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
 @keyframes of-float { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-4px) } }
 @keyframes of-live { 0%, 100% { opacity: 1 } 50% { opacity: .45 } }
 @media (prefers-reduced-motion: reduce) { .of-win, .of-cloud, .of-float, .of-live, .of-typing i { animation: none !important; } }
+
+/* Escritório (Empresarial) */
+.font-hand { font-family: 'Caveat', 'Comic Sans MS', cursive; }
+.of-steam { animation: of-steam 2.6s ease-out infinite; }
+.of-postit { transform: rotate(var(--r, 0deg)); animation: of-postit 4s ease-in-out infinite; }
+.of-receipt { clip-path: polygon(0 0,100% 0,100% calc(100% - 7px),95% 100%,90% calc(100% - 7px),85% 100%,80% calc(100% - 7px),75% 100%,70% calc(100% - 7px),65% 100%,60% calc(100% - 7px),55% 100%,50% calc(100% - 7px),45% 100%,40% calc(100% - 7px),35% 100%,30% calc(100% - 7px),25% 100%,20% calc(100% - 7px),15% 100%,10% calc(100% - 7px),5% 100%,0 calc(100% - 7px)); }
+@keyframes of-steam { 0% { transform: translateY(6px) scaleX(.8); opacity: 0 } 40% { opacity: .85 } 100% { transform: translateY(-20px) scaleX(1.2); opacity: 0 } }
+@keyframes of-postit { 0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)) } 50% { transform: translateY(-3px) rotate(var(--r, 0deg)) } }
+@media (prefers-reduced-motion: reduce) { .of-steam, .of-postit { animation: none !important; } }
